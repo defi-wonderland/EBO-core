@@ -10,7 +10,7 @@ import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
 
 /**
  * @title EBOFinalityModule
- * @notice Module allowing users to call a function on a contract
+ * @notice Module allowing users to index data into the subgraph
  * as a result of a request being finalized
  */
 contract EBOFinalityModule is Module, IEBOFinalityModule {
@@ -40,20 +40,11 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
   }
 
   /// @inheritdoc IEBOFinalityModule
-  function decodeRequestData(bytes calldata _data) public pure returns (RequestParameters memory _params) {
-    _params = abi.decode(_data, (RequestParameters));
-  }
-
-  /// @inheritdoc IEBOFinalityModule
   function finalizeRequest(
     IOracle.Request calldata _request,
     IOracle.Response calldata _response,
     address _finalizer
   ) external override(Module, IEBOFinalityModule) onlyOracle {
-    RequestParameters memory _params = decodeRequestData(_request.finalityModuleData);
-
-    _params.target.call(_params.data);
-    emit Callback(_response.requestId, _params.target, _params.data);
     emit RequestFinalized(_response.requestId, _response, _finalizer);
     // emit NewEpoch(_response.epoch, _response.chainId, _response.block);
   }
@@ -70,29 +61,5 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     for (uint256 i; i < _length; ++i) {
       emit AmendEpoch(_epoch, _chainIds[i], _blockNumbers[i]);
     }
-  }
-
-  /// @inheritdoc IModule
-  function validateParameters(bytes calldata _encodedParameters)
-    external
-    view
-    override(Module, IModule)
-    returns (bool _valid)
-  {
-    RequestParameters memory _params = decodeRequestData(_encodedParameters);
-    _valid = _targetHasBytecode(_params.target) && _params.data.length != 0;
-  }
-
-  /**
-   * @notice Checks if a target address has bytecode
-   * @param _target The address to check
-   * @return _hasBytecode Whether the target has bytecode or not
-   */
-  function _targetHasBytecode(address _target) private view returns (bool _hasBytecode) {
-    uint256 _size;
-    assembly {
-      _size := extcodesize(_target)
-    }
-    _hasBytecode = _size > 0;
   }
 }

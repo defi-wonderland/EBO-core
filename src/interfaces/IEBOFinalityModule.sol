@@ -7,21 +7,13 @@ import {IFinalityModule} from
 
 /**
  * @title EBOFinalityModule
- * @notice Module allowing users to call a function on a contract
+ * @notice Module allowing users to index data into the subgraph
  * as a result of a request being finalized
  */
 interface IEBOFinalityModule is IFinalityModule {
   /*///////////////////////////////////////////////////////////////
                               EVENTS
   //////////////////////////////////////////////////////////////*/
-
-  /**
-   * @notice A callback has been executed
-   * @param _requestId The id of the request being finalized
-   * @param _target The target address for the callback
-   * @param _data The calldata forwarded to the target
-   */
-  event Callback(bytes32 indexed _requestId, address indexed _target, bytes _data);
 
   /**
    * @notice Emitted when the block number has been resolved for a particular epoch-chainId pair
@@ -54,20 +46,6 @@ interface IEBOFinalityModule is IFinalityModule {
   error EBOFinalityModule_LengthMismatch();
 
   /*///////////////////////////////////////////////////////////////
-                              STRUCTS
-  //////////////////////////////////////////////////////////////*/
-
-  /**
-   * @notice Parameters of the request as stored in the module
-   * @param target The target address for the callback
-   * @param data The calldata forwarded to the target
-   */
-  struct RequestParameters {
-    address target;
-    bytes data;
-  }
-
-  /*///////////////////////////////////////////////////////////////
                               LOGIC
   //////////////////////////////////////////////////////////////*/
 
@@ -78,15 +56,7 @@ interface IEBOFinalityModule is IFinalityModule {
   function ARBITRATOR() external view returns (address _arbitrator);
 
   /**
-   * @notice Returns the decoded data for a request
-   * @param _data The encoded request parameters
-   * @return _params The struct containing the parameters for the request
-   */
-  function decodeRequestData(bytes calldata _data) external view returns (RequestParameters memory _params);
-
-  /**
-   * @notice Finalizes the request by executing the callback call on the target
-   * @dev The success of the callback call is purposely not checked
+   * @notice Finalizes the request by publishing the response
    * @param _request The request being finalized
    * @param _response The final response
    * @param _finalizer The address that initiated the finalization
