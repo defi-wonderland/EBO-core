@@ -74,4 +74,14 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
       emit AmendEpoch(_epoch, _chainIds[_i], _blockNumbers[_i]);
     }
   }
+
+  /// @inheritdoc IEBOFinalityModule
+  function setEBORequestCreator(address _eboRequestCreator) external onlyArbitrator {
+    eboRequestCreator = _eboRequestCreator;
+  }
+
+  /// @inheritdoc IEBOFinalityModule
+  function setArbitrator(address _arbitrator) external onlyArbitrator {
+    arbitrator = _arbitrator;
+  }
 }

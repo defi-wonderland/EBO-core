@@ -87,4 +87,18 @@ interface IEBOFinalityModule is IFinalityModule {
    * @param _blockNumbers The amended block numbers
    */
   function amendEpoch(uint256 _epoch, uint256[] calldata _chainIds, uint256[] calldata _blockNumbers) external;
+
+  /**
+   * @notice Sets the address of the EBORequestCreator
+   * @dev Callable only by The Graph's Arbitrator
+   * @param _eboRequestCreator The address of the EBORequestCreator
+   */
+  function setEBORequestCreator(address _eboRequestCreator) external;
+
+  /**
+   * @notice Sets the address of The Graph's Arbitrator
+   * @dev Callable only by The Graph's Arbitrator
+   * @param _arbitrator The address of The Graph's Arbitrator
+   */
+  function setArbitrator(address _arbitrator) external;
 }
