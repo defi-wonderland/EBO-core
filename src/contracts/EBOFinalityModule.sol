@@ -15,27 +15,30 @@ import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
  */
 contract EBOFinalityModule is Module, IEBOFinalityModule {
   /// @inheritdoc IEBOFinalityModule
-  address public immutable ARBITRATOR;
+  address public eboRequestCreator;
+  /// @inheritdoc IEBOFinalityModule
+  address public arbitrator;
 
   /**
    * @notice Constructor
    * @param _oracle The address of the oracle
    * @param _arbitrator The address of The Graph's Arbitrator
    */
-  constructor(IOracle _oracle, address _arbitrator) Module(_oracle) {
-    ARBITRATOR = _arbitrator;
+  constructor(IOracle _oracle, address _eboRequestCreator, address _arbitrator) Module(_oracle) {
+    eboRequestCreator = _eboRequestCreator;
+    arbitrator = _arbitrator;
   }
 
   /**
    * @notice Checks that the caller is The Graph's Arbitrator
    */
   modifier onlyArbitrator() {
-    if (msg.sender != ARBITRATOR) revert EBOFinalityModule_OnlyArbitrator();
+    if (msg.sender != arbitrator) revert EBOFinalityModule_OnlyArbitrator();
     _;
   }
 
   /// @inheritdoc IModule
-  function moduleName() public pure returns (string memory _moduleName) {
+  function moduleName() external pure returns (string memory _moduleName) {
     _moduleName = 'EBOFinalityModule';
   }
 
@@ -45,8 +48,17 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     IOracle.Response calldata _response,
     address _finalizer
   ) external override(Module, IEBOFinalityModule) onlyOracle {
+    if (_request.requester != eboRequestCreator) revert EBOFinalityModule_InvalidRequester();
+    _validateResponse(_request, _response);
+
+    // uint256 _length = _response.chainIds.length;
+    // if (_length != _response.blocks.length) revert EBOFinalityModule_LengthMismatch();
+
+    // for (uint256 _i; _i < _length; ++_i) {
+    //   emit NewEpoch(_response.epoch, _response.chainIds[_i], _response.blocks[_i]);
+    // }
+
     emit RequestFinalized(_response.requestId, _response, _finalizer);
-    // emit NewEpoch(_response.epoch, _response.chainId, _response.block);
   }
 
   /// @inheritdoc IEBOFinalityModule
@@ -58,8 +70,8 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     uint256 _length = _chainIds.length;
     if (_length != _blockNumbers.length) revert EBOFinalityModule_LengthMismatch();
 
-    for (uint256 i; i < _length; ++i) {
-      emit AmendEpoch(_epoch, _chainIds[i], _blockNumbers[i]);
+    for (uint256 _i; _i < _length; ++_i) {
+      emit AmendEpoch(_epoch, _chainIds[_i], _blockNumbers[_i]);
     }
   }
 }

@@ -41,6 +41,11 @@ interface IEBOFinalityModule is IFinalityModule {
   error EBOFinalityModule_OnlyArbitrator();
 
   /**
+   * @notice Thrown when the requester is not the EBORequestCreator
+   */
+  error EBOFinalityModule_InvalidRequester();
+
+  /**
    * @notice Thrown when the lengths of chain IDs and block numbers do not match
    */
   error EBOFinalityModule_LengthMismatch();
@@ -50,13 +55,20 @@ interface IEBOFinalityModule is IFinalityModule {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Returns the address of The Graph's arbitrator
-   * @return _arbitrator The address of The Graph's arbitrator
+   * @notice Returns the address of the EBORequestCreator
+   * @return _eboRequestCreator The address of the EBORequestCreator
    */
-  function ARBITRATOR() external view returns (address _arbitrator);
+  function eboRequestCreator() external view returns (address _eboRequestCreator);
+
+  /**
+   * @notice Returns the address of The Graph's Arbitrator
+   * @return _arbitrator The address of The Graph's Arbitrator
+   */
+  function arbitrator() external view returns (address _arbitrator);
 
   /**
    * @notice Finalizes the request by publishing the response
+   * @dev Callable only by the oracle
    * @param _request The request being finalized
    * @param _response The final response
    * @param _finalizer The address that initiated the finalization
@@ -69,7 +81,7 @@ interface IEBOFinalityModule is IFinalityModule {
 
   /**
    * @notice Allows to amend data in case of an error or an emergency
-   * @dev Callable only with The Graph's Arbitrator
+   * @dev Callable only by The Graph's Arbitrator
    * @param _epoch The epoch to amend
    * @param _chainIds The chain IDs to amend
    * @param _blockNumbers The amended block numbers
