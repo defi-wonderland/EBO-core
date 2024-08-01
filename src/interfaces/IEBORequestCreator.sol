@@ -26,19 +26,19 @@ interface IEBORequestCreator {
    * @param _epoch The epoch of the request
    * @param _chainId The chain id of the request
    */
-  event RequestCreated(uint256 _epoch, uint256 _chainId);
+  event RequestCreated(uint256 indexed _epoch, string indexed _chainId);
 
   /**
    * @notice Emitted when a chain is added
    * @param _chainId The chain id added
    */
-  event ChainAdded(string _chainId);
+  event ChainAdded(string indexed _chainId);
 
   /**
    * @notice Emitted when a chain is removed
    * @param _chainId The chain id removed
    */
-  event ChainRemoved(string _chainId);
+  event ChainRemoved(string indexed _chainId);
 
   /**
    * @notice Emitted when the reward is set
@@ -82,18 +82,28 @@ interface IEBORequestCreator {
 
   /**
    * @notice The owner of the contract
+   * @return _owner The owner
    */
   function owner() external view returns (address _owner);
 
   /**
    * @notice The pending owner of the contract
+   * @return _pendingOwner The pending owner
    */
   function pendingOwner() external view returns (address _pendingOwner);
 
   /**
    * @notice The reward paid for each chain updated
+   * @return _reward The reward
    */
   function reward() external view returns (uint256 _reward);
+
+  /**
+   * @notice The chain ids
+   * @param _chainId The chain id to check
+   * @return _approved The chain id is approved
+   */
+  function chainIds(string calldata _chainId) external view returns (bool _approved);
 
   /*///////////////////////////////////////////////////////////////
                             LOGIC
@@ -144,10 +154,4 @@ interface IEBORequestCreator {
    * @param _reward The reward to set
    */
   function setReward(uint256 _reward) external;
-
-  /**
-   * @notice Get the chain ids
-   * @return _chainIdsValues The chain ids
-   */
-  function getChainIds() external view returns (string[] memory _chainIdsValues);
 }

@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
 
 contract EBORequestCreator is IEBORequestCreator {
-  using EnumerableSet for EnumerableSet.Bytes32Set;
-
   // /// @inheritdoc IEBORequestCreator
   // IOracle public oracle;
 
@@ -19,14 +16,11 @@ contract EBORequestCreator is IEBORequestCreator {
   /// @inheritdoc IEBORequestCreator
   uint256 public reward;
 
-  /**
-   * @notice The list of chain ids
-   */
-  EnumerableSet.Bytes32Set internal _chainIds;
+  /// @inheritdoc IEBORequestCreator
+  mapping(string _chainId => bool _approved) public chainIds;
 
   constructor(address _owner) {
     // oracle = _oracle;
-
     owner = _owner;
     reward = 0;
   }
@@ -60,17 +54,21 @@ contract EBORequestCreator is IEBORequestCreator {
 
   /// @inheritdoc IEBORequestCreator
   function addChain(string calldata _chainId) external onlyOwner {
-    if (!_chainIds.add(_chaindIdToBytes32(_chainId))) {
+    if (chainIds[_chainId]) {
       revert EBORequestCreator_ChainAlreadyAdded();
     }
+    chainIds[_chainId] = true;
+
     emit ChainAdded(_chainId);
   }
 
   /// @inheritdoc IEBORequestCreator
   function removeChain(string calldata _chainId) external onlyOwner {
-    if (!_chainIds.remove(_chaindIdToBytes32(_chainId))) {
+    if (!chainIds[_chainId]) {
       revert EBORequestCreator_ChainNotAdded();
     }
+    chainIds[_chainId] = false;
+
     emit ChainRemoved(_chainId);
   }
 
@@ -81,25 +79,9 @@ contract EBORequestCreator is IEBORequestCreator {
     emit RewardSet(_oldReward, _reward);
   }
 
-  /// @inheritdoc IEBORequestCreator
-  function getChainIds() external view returns (string[] memory _chainIdsValues) {
-    bytes32[] memory _chainIdsBytes = _chainIds.values();
-
-    for (uint256 _i; _i < _chainIdsBytes.length; _i++) {
-      _chainIdsValues[_i] = _chaindIdToString(_chainIdsBytes[_i]);
-    }
-  }
-
-  function _chaindIdToBytes32(string memory _chainId) internal pure returns (bytes32 _convertedChainId) {
-    assembly {
-      _convertedChainId := mload(add(_chainId, 32))
-    }
-  }
-
-  function _chaindIdToString(bytes32 _chainId) internal pure returns (string memory _convertedChainId) {
-    _convertedChainId = string(abi.encodePacked(_chainId));
-  }
-
+  /**
+   * @notice Checks if the sender is the owner
+   */
   modifier onlyOwner() {
     if (msg.sender != owner) {
       revert EBORequestCreator_OnlyOwner();
@@ -107,10 +89,14 @@ contract EBORequestCreator is IEBORequestCreator {
     _;
   }
 
+  /**
+   * @notice Checks if the sender is the pending owner
+   */
   modifier onlyPendingOwner() {
     if (msg.sender != pendingOwner) {
       revert EBORequestCreator_OnlyPendingOwner();
     }
+
     _;
   }
 }
