@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-// import {IOracle} from '@defi-wonderland/prophet-core-contracts/solidity/interfaces/IOracle.sol';
+import {IOracle} from '@defi-wonderland/prophet-core-contracts/solidity/interfaces/IOracle.sol';
 
 interface IEBORequestCreator {
   /*///////////////////////////////////////////////////////////////
@@ -23,10 +23,11 @@ interface IEBORequestCreator {
 
   /**
    * @notice Emitted when a request is created
+   * @param _requestId The id of the request
    * @param _epoch The epoch of the request
    * @param _chainId The chain id of the request
    */
-  event RequestCreated(uint256 indexed _epoch, string indexed _chainId);
+  event RequestCreated(bytes32 indexed _requestId, uint256 indexed _epoch, string indexed _chainId);
 
   /**
    * @notice Emitted when a chain is added
@@ -75,10 +76,10 @@ interface IEBORequestCreator {
                             VARIABLES
   //////////////////////////////////////////////////////////////*/
 
-  // /**
-  //  * @notice The oracle contract
-  //  */
-  // function oracle() external view returns (IOracle _oracle);
+  /**
+   * @notice The oracle contract
+   */
+  function oracle() external view returns (IOracle _oracle);
 
   /**
    * @notice The owner of the contract
@@ -98,13 +99,6 @@ interface IEBORequestCreator {
    */
   function reward() external view returns (uint256 _reward);
 
-  /**
-   * @notice The chain ids
-   * @param _chainId The chain id to check
-   * @return _approved The chain id is approved
-   */
-  function chainIds(string calldata _chainId) external view returns (bool _approved);
-
   /*///////////////////////////////////////////////////////////////
                             LOGIC
   //////////////////////////////////////////////////////////////*/
@@ -121,21 +115,11 @@ interface IEBORequestCreator {
   function acceptPendingOwner() external;
 
   /**
-   * @notice Create a request
-   * @param _requester The address of the requester
-   * @param _target The address of the target
-   * @param _data The data of the request
-   * @param _value The value of the request
-   * @param _nonce The nonce of the request
-   * @return _requestId The id of the request
+   * @notice Create requests
+   * @param _epoch The epoch of the request
+   * @param _chainIds The chain ids to update
    */
-  function createRequest(
-    address _requester,
-    address _target,
-    bytes calldata _data,
-    uint256 _value,
-    uint256 _nonce
-  ) external returns (bytes32 _requestId);
+  function createRequests(uint256 _epoch, string[] calldata _chainIds) external;
 
   /**
    * @notice Add a chain to the allowed chains which can be updated
