@@ -51,7 +51,7 @@ interface IEBOFinalityModule is IFinalityModule {
   error EBOFinalityModule_LengthMismatch();
 
   /*///////////////////////////////////////////////////////////////
-                              LOGIC
+                              VARIABLES
   //////////////////////////////////////////////////////////////*/
 
   /**
@@ -65,6 +65,10 @@ interface IEBOFinalityModule is IFinalityModule {
    * @return _arbitrator The address of The Graph's Arbitrator
    */
   function arbitrator() external view returns (address _arbitrator);
+
+  /*///////////////////////////////////////////////////////////////
+                              LOGIC
+  //////////////////////////////////////////////////////////////*/
 
   /**
    * @notice Finalizes the request by publishing the response

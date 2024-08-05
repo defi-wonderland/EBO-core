@@ -10,7 +10,7 @@ import {EBOFinalityModule} from 'contracts/EBOFinalityModule.sol';
 
 import 'forge-std/Test.sol';
 
-contract BaseTest is Test {
+contract EBOFinalityModule_Unit_BaseTest is Test {
   EBOFinalityModule public eboFinalityModule;
 
   IOracle public oracle;
@@ -47,32 +47,35 @@ contract BaseTest is Test {
   }
 }
 
-contract EBOFinalityModule_Unit_Constructor is BaseTest {
-  function test_setOracle() public {
+contract EBOFinalityModule_Unit_Constructor is EBOFinalityModule_Unit_BaseTest {
+  function test_setOracle() public view {
     assertEq(address(eboFinalityModule.ORACLE()), address(oracle));
   }
 
-  function test_setEBORequestCreator() public {
+  function test_setEBORequestCreator() public view {
     assertEq(eboFinalityModule.eboRequestCreator(), eboRequestCreator);
   }
 
-  function test_setArbitrator() public {
+  function test_setArbitrator() public view {
     assertEq(eboFinalityModule.arbitrator(), arbitrator);
   }
 }
 
-contract EBOFinalityModule_Unit_ModuleName is BaseTest {
-  function test_returnModuleName() public {
-    assertEq(eboFinalityModule.moduleName(), 'EBOFinalityModule');
-  }
-}
+contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTest {
+  modifier happyPath(IOracle.Request memory _request, IOracle.Response memory _response) {
+    _request.requester = eboRequestCreator;
+    _response.requestId = _getId(_request);
 
-contract EBOFinalityModule_Unit_FinalizeRequest is BaseTest {
+    vm.startPrank(address(oracle));
+    _;
+  }
+
   function test_revertOnlyOracle(
     IOracle.Request memory _request,
     IOracle.Response memory _response,
     address _finalizer
-  ) public {
+  ) public happyPath(_request, _response) {
+    vm.stopPrank();
     vm.expectRevert(IModule.Module_OnlyOracle.selector);
     eboFinalityModule.finalizeRequest(_request, _response, _finalizer);
   }
@@ -80,11 +83,12 @@ contract EBOFinalityModule_Unit_FinalizeRequest is BaseTest {
   function test_revertInvalidRequester(
     IOracle.Request memory _request,
     IOracle.Response memory _response,
-    address _finalizer
-  ) public {
-    vm.assume(_request.requester != eboRequestCreator);
+    address _finalizer,
+    address _requester
+  ) public happyPath(_request, _response) {
+    vm.assume(_requester != eboRequestCreator);
+    _request.requester = _requester;
 
-    vm.prank(address(oracle));
     vm.expectRevert(IEBOFinalityModule.EBOFinalityModule_InvalidRequester.selector);
     eboFinalityModule.finalizeRequest(_request, _response, _finalizer);
   }
@@ -92,12 +96,12 @@ contract EBOFinalityModule_Unit_FinalizeRequest is BaseTest {
   function test_revertInvalidResponseBody(
     IOracle.Request memory _request,
     IOracle.Response memory _response,
-    address _finalizer
-  ) public {
-    _request.requester = eboRequestCreator;
-    vm.assume(_response.requestId != _getId(_request));
+    address _finalizer,
+    bytes32 _requestId
+  ) public happyPath(_request, _response) {
+    vm.assume(_requestId != _getId(_request));
+    _response.requestId = _requestId;
 
-    vm.prank(address(oracle));
     vm.expectRevert(IModule.Module_InvalidResponseBody.selector);
     eboFinalityModule.finalizeRequest(_request, _response, _finalizer);
   }
@@ -106,12 +110,8 @@ contract EBOFinalityModule_Unit_FinalizeRequest is BaseTest {
     IOracle.Request memory _request,
     IOracle.Response memory _response,
     address _finalizer
-  ) public {
-    _request.requester = eboRequestCreator;
-    _response.requestId = _getId(_request);
+  ) public happyPath(_request, _response) {
     vm.skip(true);
-
-    vm.prank(address(oracle));
     // vm.expectEmit();
     // emit NewEpoch(_response.epoch, _response.chainId, _response.block);
     eboFinalityModule.finalizeRequest(_request, _response, _finalizer);
@@ -121,18 +121,14 @@ contract EBOFinalityModule_Unit_FinalizeRequest is BaseTest {
     IOracle.Request memory _request,
     IOracle.Response memory _response,
     address _finalizer
-  ) public {
-    _request.requester = eboRequestCreator;
-    _response.requestId = _getId(_request);
-
-    vm.prank(address(oracle));
+  ) public happyPath(_request, _response) {
     vm.expectEmit();
     emit RequestFinalized(_response.requestId, _response, _finalizer);
     eboFinalityModule.finalizeRequest(_request, _response, _finalizer);
   }
 }
 
-contract EBOFinalityModule_Unit_AmendEpoch is BaseTest {
+contract EBOFinalityModule_Unit_AmendEpoch is EBOFinalityModule_Unit_BaseTest {
   function test_revertOnlyArbitrator(
     uint256 _epoch,
     uint256[] calldata _chainIds,
@@ -171,7 +167,7 @@ contract EBOFinalityModule_Unit_AmendEpoch is BaseTest {
   }
 }
 
-contract EBOFinalityModule_Unit_SetEBORequestCreator is BaseTest {
+contract EBOFinalityModule_Unit_SetEBORequestCreator is EBOFinalityModule_Unit_BaseTest {
   function test_revertOnlyArbitrator(address _eboRequestCreator) public {
     vm.expectRevert(IEBOFinalityModule.EBOFinalityModule_OnlyArbitrator.selector);
     eboFinalityModule.setEBORequestCreator(_eboRequestCreator);
@@ -185,7 +181,7 @@ contract EBOFinalityModule_Unit_SetEBORequestCreator is BaseTest {
   }
 }
 
-contract EBOFinalityModule_Unit_SetArbitrator is BaseTest {
+contract EBOFinalityModule_Unit_SetArbitrator is EBOFinalityModule_Unit_BaseTest {
   function test_revertOnlyArbitrator(address _arbitrator) public {
     vm.expectRevert(IEBOFinalityModule.EBOFinalityModule_OnlyArbitrator.selector);
     eboFinalityModule.setArbitrator(_arbitrator);
@@ -196,5 +192,11 @@ contract EBOFinalityModule_Unit_SetArbitrator is BaseTest {
     eboFinalityModule.setArbitrator(_arbitrator);
 
     assertEq(eboFinalityModule.arbitrator(), _arbitrator);
+  }
+}
+
+contract EBOFinalityModule_Unit_ModuleName is EBOFinalityModule_Unit_BaseTest {
+  function test_returnModuleName() public view {
+    assertEq(eboFinalityModule.moduleName(), 'EBOFinalityModule');
   }
 }

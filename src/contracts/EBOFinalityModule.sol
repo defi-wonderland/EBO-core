@@ -20,16 +20,6 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
   address public arbitrator;
 
   /**
-   * @notice Constructor
-   * @param _oracle The address of the oracle
-   * @param _arbitrator The address of The Graph's Arbitrator
-   */
-  constructor(IOracle _oracle, address _eboRequestCreator, address _arbitrator) Module(_oracle) {
-    eboRequestCreator = _eboRequestCreator;
-    arbitrator = _arbitrator;
-  }
-
-  /**
    * @notice Checks that the caller is The Graph's Arbitrator
    */
   modifier onlyArbitrator() {
@@ -37,9 +27,14 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     _;
   }
 
-  /// @inheritdoc IModule
-  function moduleName() external pure returns (string memory _moduleName) {
-    _moduleName = 'EBOFinalityModule';
+  /**
+   * @notice Constructor
+   * @param _oracle The address of the oracle
+   * @param _arbitrator The address of The Graph's Arbitrator
+   */
+  constructor(IOracle _oracle, address _eboRequestCreator, address _arbitrator) Module(_oracle) {
+    eboRequestCreator = _eboRequestCreator;
+    arbitrator = _arbitrator;
   }
 
   /// @inheritdoc IEBOFinalityModule
@@ -79,5 +74,10 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
   /// @inheritdoc IEBOFinalityModule
   function setArbitrator(address _arbitrator) external onlyArbitrator {
     arbitrator = _arbitrator;
+  }
+
+  /// @inheritdoc IModule
+  function moduleName() external pure returns (string memory _moduleName) {
+    _moduleName = 'EBOFinalityModule';
   }
 }
