@@ -51,12 +51,8 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     if (_request.requester != eboRequestCreator) revert EBOFinalityModule_InvalidRequester();
     _validateResponse(_request, _response);
 
-    // uint256 _length = _response.chainIds.length;
-    // if (_length != _response.blocks.length) revert EBOFinalityModule_LengthMismatch();
-
-    // for (uint256 _i; _i < _length; ++_i) {
-    //   emit NewEpoch(_response.epoch, _response.chainIds[_i], _response.blocks[_i]);
-    // }
+    // TODO: Redeclare the `Response` struct
+    // emit NewEpoch(_response.epoch, _response.chainId, _response.block);
 
     emit RequestFinalized(_response.requestId, _response, _finalizer);
   }

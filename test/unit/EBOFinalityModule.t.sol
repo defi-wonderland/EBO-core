@@ -102,21 +102,6 @@ contract EBOFinalityModule_Unit_FinalizeRequest is BaseTest {
     eboFinalityModule.finalizeRequest(_request, _response, _finalizer);
   }
 
-  function test_revertLengthMismatch(
-    IOracle.Request memory _request,
-    IOracle.Response memory _response,
-    address _finalizer
-  ) public {
-    _request.requester = eboRequestCreator;
-    _response.requestId = _getId(_request);
-    vm.skip(true);
-    // vm.assume(_response.chainIds.length != _response.blocks.length);
-
-    vm.prank(address(oracle));
-    vm.expectRevert(IEBOFinalityModule.EBOFinalityModule_LengthMismatch.selector);
-    eboFinalityModule.finalizeRequest(_request, _response, _finalizer);
-  }
-
   function test_emitNewEpoch(
     IOracle.Request memory _request,
     IOracle.Response memory _response,
@@ -125,13 +110,10 @@ contract EBOFinalityModule_Unit_FinalizeRequest is BaseTest {
     _request.requester = eboRequestCreator;
     _response.requestId = _getId(_request);
     vm.skip(true);
-    // vm.assume(_response.chainIds.length == _response.blocks.length);
 
     vm.prank(address(oracle));
-    // for (uint256 _i; _i < _response.chainIds.length; ++_i) {
-    //   vm.expectEmit();
-    //   emit NewEpoch(_response.epoch, _response.chainIds[_i], _response.blocks[_i]);
-    // }
+    // vm.expectEmit();
+    // emit NewEpoch(_response.epoch, _response.chainId, _response.block);
     eboFinalityModule.finalizeRequest(_request, _response, _finalizer);
   }
 
@@ -142,8 +124,6 @@ contract EBOFinalityModule_Unit_FinalizeRequest is BaseTest {
   ) public {
     _request.requester = eboRequestCreator;
     _response.requestId = _getId(_request);
-    vm.skip(true);
-    // vm.assume(_response.chainIds.length == _response.blocks.length);
 
     vm.prank(address(oracle));
     vm.expectEmit();
