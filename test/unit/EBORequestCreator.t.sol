@@ -13,130 +13,135 @@ contract EBORequestCreatorForTest is EBORequestCreator {
 
   constructor(IOracle _oracle, address _owner) EBORequestCreator(_oracle, _owner) {}
 
-  function setPendingOwnerForTest(address _pendingOwner) external {
-    pendingOwner = _pendingOwner;
+  function setPendingArbitratorForTest(address _pendingArbitrator) external {
+    pendingArbitrator = _pendingArbitrator;
   }
 
   function setChainIdForTest(string calldata _chainId) external returns (bool _added) {
     _added = _chainIdsAllowed.add(_encodeChainId(_chainId));
   }
+
+  function setRequestIdPerChainAndEpochForTest(string calldata _chainId, uint256 _epoch, bytes32 _requestId) external {
+    requestIdPerChainAndEpoch[_chainId][_epoch] = _requestId;
+  }
 }
 
-abstract contract EBORequestCreatorUnitTest is Test {
+abstract contract EBORequestCreator_Unit_BaseTest is Test {
   /// Events
-  event PendingOwnerSetted(address _pendingOwner);
-  event OwnerSetted(address _oldOwner, address _newOwner);
+  event PendingArbitratorSetted(address _pendingArbitrator);
+  event ArbitratorSetted(address _oldArbitrator, address _newArbitrator);
   event RequestCreated(bytes32 indexed _requestId, uint256 indexed _epoch, string indexed _chainId);
   event ChainAdded(string indexed _chainId);
   event ChainRemoved(string indexed _chainId);
   event RewardSet(uint256 _oldReward, uint256 _newReward);
+  event RequestDataSet(EBORequestCreator.RequestData _requestData);
 
   /// Contracts
   EBORequestCreatorForTest public eboRequestCreator;
   IOracle public oracle;
 
   /// EOAs
-  address public owner;
+  address public arbitrator;
 
   function setUp() external {
-    owner = makeAddr('Owner');
+    arbitrator = makeAddr('Arbitrator');
     oracle = IOracle(makeAddr('Oracle'));
 
-    vm.prank(owner);
-    eboRequestCreator = new EBORequestCreatorForTest(oracle, owner);
+    vm.prank(arbitrator);
+    eboRequestCreator = new EBORequestCreatorForTest(oracle, arbitrator);
   }
 
-  function _revertIfNotOwner() internal {
-    vm.expectRevert(IEBORequestCreator.EBORequestCreator_OnlyOwner.selector);
+  function _revertIfNotArbitrator() internal {
+    vm.expectRevert(IEBORequestCreator.EBORequestCreator_OnlyArbitrator.selector);
   }
 }
 
-contract UnitEBORequestCreatorConstructor is EBORequestCreatorUnitTest {
+contract EBORequestCreator_Unit_Constructor is EBORequestCreator_Unit_BaseTest {
   /**
    * @notice Test the constructor
    */
-  function testConstructor() external view {
+  function test_constructor() external view {
     assertEq(eboRequestCreator.reward(), 0);
-    assertEq(eboRequestCreator.owner(), owner);
-    assertEq(eboRequestCreator.pendingOwner(), address(0));
+    assertEq(eboRequestCreator.arbitrator(), arbitrator);
+    assertEq(eboRequestCreator.pendingArbitrator(), address(0));
     assertEq(address(eboRequestCreator.oracle()), address(oracle));
   }
 }
 
-contract UnitEBORequestCreatorSetPendingOwner is EBORequestCreatorUnitTest {
-  modifier happyPath(address _pendingOwner) {
-    vm.startPrank(owner);
+contract EBORequestCreator_Unit_SetPendingArbitrator is EBORequestCreator_Unit_BaseTest {
+  modifier happyPath(address _pendingArbitrator) {
+    vm.startPrank(arbitrator);
     _;
   }
 
   /**
-   * @notice Test the revert if the caller is not the owner
+   * @notice Test the revert if the caller is not the arbitrator
    */
-  function testRevertIfNotOwner(address _pendingOwner) external {
-    _revertIfNotOwner();
-    eboRequestCreator.setPendingOwner(_pendingOwner);
+  function test_revertIfNotArbitrator(address _pendingArbitrator) external {
+    vm.expectRevert(IEBORequestCreator.EBORequestCreator_OnlyArbitrator.selector);
+    eboRequestCreator.setPendingArbitrator(_pendingArbitrator);
   }
 
   /**
-   * @notice Test the set pending owner
+   * @notice Test the set pending arbitrator
    */
-  function testSetPendingOwner(address _pendingOwner) external happyPath(_pendingOwner) {
-    eboRequestCreator.setPendingOwner(_pendingOwner);
+  function test_setPendingArbitrator(address _pendingArbitrator) external happyPath(_pendingArbitrator) {
+    eboRequestCreator.setPendingArbitrator(_pendingArbitrator);
 
-    assertEq(eboRequestCreator.pendingOwner(), _pendingOwner);
+    assertEq(eboRequestCreator.pendingArbitrator(), _pendingArbitrator);
   }
 
   /**
-   * @notice Test the emit pending owner setted
+   * @notice Test the emit pending arbitrator setted
    */
-  function testEmitPendingOwnerSetted(address _pendingOwner) external happyPath(_pendingOwner) {
+  function test_emitPendingArbitratorSetted(address _pendingArbitrator) external happyPath(_pendingArbitrator) {
     vm.expectEmit();
-    emit PendingOwnerSetted(_pendingOwner);
+    emit PendingArbitratorSetted(_pendingArbitrator);
 
-    eboRequestCreator.setPendingOwner(_pendingOwner);
+    eboRequestCreator.setPendingArbitrator(_pendingArbitrator);
   }
 }
 
-contract UnitEBORequestCreatorAcceptPendingOwner is EBORequestCreatorUnitTest {
-  modifier happyPath(address _pendingOwner) {
-    eboRequestCreator.setPendingOwnerForTest(_pendingOwner);
-    vm.startPrank(_pendingOwner);
+contract EBORequestCreator_Unit_AcceptPendingArbitrator is EBORequestCreator_Unit_BaseTest {
+  modifier happyPath(address _pendingArbitrator) {
+    eboRequestCreator.setPendingArbitratorForTest(_pendingArbitrator);
+    vm.startPrank(_pendingArbitrator);
     _;
   }
 
   /**
-   * @notice Test the revert if the caller is not the pending owner
+   * @notice Test the revert if the caller is not the pending arbitrator
    */
-  function testRevertIfNotPendingOwner() external {
-    vm.expectRevert(IEBORequestCreator.EBORequestCreator_OnlyPendingOwner.selector);
-    eboRequestCreator.acceptPendingOwner();
+  function test_revertIfNotPendingArbitrator() external {
+    vm.expectRevert(IEBORequestCreator.EBORequestCreator_OnlyPendingArbitrator.selector);
+    eboRequestCreator.acceptPendingArbitrator();
   }
 
   /**
-   * @notice Test the accept pending owner
+   * @notice Test the accept pending arbitrator
    */
-  function testAcceptPendingOwner(address _pendingOwner) external happyPath(_pendingOwner) {
-    eboRequestCreator.acceptPendingOwner();
+  function test_acceptPendingArbitrator(address _pendingArbitrator) external happyPath(_pendingArbitrator) {
+    eboRequestCreator.acceptPendingArbitrator();
 
-    assertEq(eboRequestCreator.owner(), _pendingOwner);
-    assertEq(eboRequestCreator.pendingOwner(), address(0));
+    assertEq(eboRequestCreator.arbitrator(), _pendingArbitrator);
+    assertEq(eboRequestCreator.pendingArbitrator(), address(0));
   }
 
   /**
-   * @notice Test the emit owner setted
+   * @notice Test the emit arbitrator setted
    */
-  function testEmitOwnerSetted(address _pendingOwner) external happyPath(_pendingOwner) {
+  function test_emitArbitratorSetted(address _pendingArbitrator) external happyPath(_pendingArbitrator) {
     vm.expectEmit();
-    emit OwnerSetted(owner, _pendingOwner);
+    emit ArbitratorSetted(arbitrator, _pendingArbitrator);
 
-    eboRequestCreator.acceptPendingOwner();
+    eboRequestCreator.acceptPendingArbitrator();
   }
 }
 
-contract UnitEBORequestCreatorCreateRequest is EBORequestCreatorUnitTest {
+contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest {
   string[] internal _cleanChainIds;
 
-  modifier happyPath(uint256 _epoch, string[] calldata _chainId) {
+  modifier happyPath(uint256 _epoch, string[] memory _chainId) {
     vm.assume(_epoch > 0);
     vm.assume(_chainId.length > 0 && _chainId.length < 30);
 
@@ -148,29 +153,48 @@ contract UnitEBORequestCreatorCreateRequest is EBORequestCreatorUnitTest {
       }
     }
 
-    vm.startPrank(owner);
+    vm.startPrank(arbitrator);
     _;
   }
 
   /**
-   * @notice Test the revert if the caller is not the owner
+   * @notice Test the revert if the caller is not the arbitrator
    */
-  function testRevertIfChainNotAdded() external {
+  function test_revertIfChainNotAdded() external {
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector));
 
     eboRequestCreator.createRequests(0, new string[](1));
   }
 
   /**
+   * @notice Test if the request id exists skip the request creation
+   */
+  function test_expectNotEmitRequestIdExists(
+    uint256 _epoch,
+    string calldata _chainId,
+    bytes32 _requestId
+  ) external happyPath(_epoch, new string[](1)) {
+    vm.assume(_requestId != bytes32(0));
+    eboRequestCreator.setChainIdForTest(_chainId);
+    eboRequestCreator.setRequestIdPerChainAndEpochForTest(_chainId, _epoch, _requestId);
+
+    vm.expectCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), 0);
+
+    string[] memory _chainIds = new string[](1);
+    _chainIds[0] = _chainId;
+
+    eboRequestCreator.createRequests(_epoch, _chainIds);
+  }
+  /**
    * @notice Test the create requests
    */
-  function testEmitCreateRequest(
+
+  function test_emitCreateRequest(
     uint256 _epoch,
     string[] calldata _chainIds,
     bytes32 _requestId
   ) external happyPath(_epoch, _chainIds) {
     for (uint256 _i; _i < _cleanChainIds.length; _i++) {
-      console.log(_cleanChainIds[_i]);
       vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), abi.encode(_requestId));
       vm.expectEmit();
       emit RequestCreated(_requestId, _epoch, _cleanChainIds[_i]);
@@ -180,24 +204,24 @@ contract UnitEBORequestCreatorCreateRequest is EBORequestCreatorUnitTest {
   }
 }
 
-contract UnitEBORequestCreatorAddChain is EBORequestCreatorUnitTest {
+contract EBORequestCreator_Unit_AddChain is EBORequestCreator_Unit_BaseTest {
   modifier happyPath() {
-    vm.startPrank(owner);
+    vm.startPrank(arbitrator);
     _;
   }
 
   /**
-   * @notice Test the revert if the caller is not the owner
+   * @notice Test the revert if the caller is not the arbitrator
    */
-  function testRevertIfNotOwner(string calldata _chainId) external {
-    _revertIfNotOwner();
+  function test_revertIfNotArbitrator(string calldata _chainId) external {
+    _revertIfNotArbitrator();
     eboRequestCreator.addChain(_chainId);
   }
 
   /**
    * @notice Test the revert if the chain is already added
    */
-  function testRevertIfChainAdded(string calldata _chainId) external happyPath {
+  function test_revertIfChainAdded(string calldata _chainId) external happyPath {
     eboRequestCreator.setChainIdForTest(_chainId);
 
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_ChainAlreadyAdded.selector));
@@ -207,7 +231,7 @@ contract UnitEBORequestCreatorAddChain is EBORequestCreatorUnitTest {
   /**
    * @notice Test the emit chain added
    */
-  function testEmitChainAdded(string calldata _chainId) external happyPath {
+  function test_emitChainAdded(string calldata _chainId) external happyPath {
     vm.expectEmit();
     emit ChainAdded(_chainId);
 
@@ -215,35 +239,35 @@ contract UnitEBORequestCreatorAddChain is EBORequestCreatorUnitTest {
   }
 }
 
-contract UnitEBORequestCreatorRemoveChain is EBORequestCreatorUnitTest {
+contract EBORequestCreator_Unit_RemoveChain is EBORequestCreator_Unit_BaseTest {
   modifier happyPath(string calldata _chainId) {
     eboRequestCreator.setChainIdForTest(_chainId);
-    vm.startPrank(owner);
+    vm.startPrank(arbitrator);
     _;
   }
 
   /**
-   * @notice Test the revert if the caller is not the owner
+   * @notice Test the revert if the caller is not the arbitrator
    */
-  function testRevertIfNotOwner(string calldata _chainId) external {
-    _revertIfNotOwner();
+  function test_revertIfNotArbitrator(string calldata _chainId) external {
+    _revertIfNotArbitrator();
     eboRequestCreator.removeChain(_chainId);
   }
 
   /**
    * @notice Test the revert if the chain is not added
    */
-  function testRevertIfChainNotAdded(string calldata _chainId) external {
+  function test_revertIfChainNotAdded(string calldata _chainId) external {
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector));
 
-    vm.prank(owner);
+    vm.prank(arbitrator);
     eboRequestCreator.removeChain(_chainId);
   }
 
   /**
    * @notice Test the emit chain removed
    */
-  function testEmitChainRemoved(string calldata _chainId) external happyPath(_chainId) {
+  function test_emitChainRemoved(string calldata _chainId) external happyPath(_chainId) {
     vm.expectEmit();
     emit ChainRemoved(_chainId);
 
@@ -251,24 +275,24 @@ contract UnitEBORequestCreatorRemoveChain is EBORequestCreatorUnitTest {
   }
 }
 
-contract UnitEBORequestCreatorSetReward is EBORequestCreatorUnitTest {
+contract EBORequestCreator_Unit_SetReward is EBORequestCreator_Unit_BaseTest {
   modifier happyPath(uint256 _reward) {
-    vm.startPrank(owner);
+    vm.startPrank(arbitrator);
     _;
   }
 
   /**
-   * @notice Test the revert if the caller is not the owner
+   * @notice Test the revert if the caller is not the arbitrator
    */
-  function testRevertIfNotOwner(uint256 _reward) external {
-    vm.expectRevert();
+  function test_revertIfNotArbitrator(uint256 _reward) external {
+    _revertIfNotArbitrator();
     eboRequestCreator.setReward(_reward);
   }
 
   /**
    * @notice Test the set reward
    */
-  function testSetReward(uint256 _reward) external happyPath(_reward) {
+  function test_setReward(uint256 _reward) external happyPath(_reward) {
     eboRequestCreator.setReward(_reward);
 
     assertEq(eboRequestCreator.reward(), _reward);
@@ -277,10 +301,69 @@ contract UnitEBORequestCreatorSetReward is EBORequestCreatorUnitTest {
   /**
    * @notice Test the emit reward set
    */
-  function testEmitRewardSet(uint256 _reward) external happyPath(_reward) {
+  function test_emitRewardSet(uint256 _reward) external happyPath(_reward) {
     vm.expectEmit();
     emit RewardSet(0, _reward);
 
     eboRequestCreator.setReward(_reward);
+  }
+}
+
+contract EBORequestCreator_Unit_SetRequestData is EBORequestCreator_Unit_BaseTest {
+  modifier happyPath(EBORequestCreator.RequestData calldata _requestData) {
+    vm.startPrank(arbitrator);
+    _;
+  }
+
+  /**
+   * @notice Test the revert if the caller is not the arbitrator
+   */
+  function test_revertIfNotArbitrator(EBORequestCreator.RequestData calldata _requestData) external {
+    _revertIfNotArbitrator();
+    eboRequestCreator.setRequestData(_requestData);
+  }
+
+  /**
+   * @notice Test the set request data
+   */
+  function test_setRequestData(EBORequestCreator.RequestData calldata _requestData) external happyPath(_requestData) {
+    eboRequestCreator.setRequestData(_requestData);
+
+    (
+      address _requestModule,
+      address _responseModule,
+      address _disputeModule,
+      address _resolutionModule,
+      address _finalityModule,
+      bytes memory _requestModuleData,
+      bytes memory _responseModuleData,
+      bytes memory _disputeModuleData,
+      bytes memory _resolutionModuleData,
+      bytes memory _finalityModuleData
+    ) = eboRequestCreator.requestData();
+
+    assertEq(_requestModule, _requestData.requestModule);
+    assertEq(_responseModule, _requestData.responseModule);
+    assertEq(_disputeModule, _requestData.disputeModule);
+    assertEq(_resolutionModule, _requestData.resolutionModule);
+    assertEq(_finalityModule, _requestData.finalityModule);
+    assertEq(_requestModuleData, _requestData.requestModuleData);
+    assertEq(_responseModuleData, _requestData.responseModuleData);
+    assertEq(_disputeModuleData, _requestData.disputeModuleData);
+    assertEq(_resolutionModuleData, _requestData.resolutionModuleData);
+    assertEq(_finalityModuleData, _requestData.finalityModuleData);
+  }
+
+  /**
+   * @notice Test the emit request data set
+   */
+  function test_emitRequestDataSet(EBORequestCreator.RequestData calldata _requestData)
+    external
+    happyPath(_requestData)
+  {
+    vm.expectEmit();
+    emit RequestDataSet(_requestData);
+
+    eboRequestCreator.setRequestData(_requestData);
   }
 }

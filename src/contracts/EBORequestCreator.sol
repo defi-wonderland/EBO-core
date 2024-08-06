@@ -11,70 +11,77 @@ contract EBORequestCreator is IEBORequestCreator {
   IOracle public oracle;
 
   /// @inheritdoc IEBORequestCreator
-  address public owner;
+  RequestData public requestData;
 
   /// @inheritdoc IEBORequestCreator
-  address public pendingOwner;
+  address public arbitrator;
+
+  /// @inheritdoc IEBORequestCreator
+  address public pendingArbitrator;
 
   /// @inheritdoc IEBORequestCreator
   uint256 public reward;
 
+  /// @inheritdoc IEBORequestCreator
+  mapping(string _chainId => mapping(uint256 _epoch => bytes32 _requestId)) public requestIdPerChainAndEpoch;
+
+  /**
+   * @notice The set of chain ids allowed
+   */
   EnumerableSet.Bytes32Set internal _chainIdsAllowed;
 
-  mapping(uint256 _epoch => EnumerableSet.Bytes32Set _chainIds) internal _epochChainIds;
-
-  constructor(IOracle _oracle, address _owner) {
+  constructor(IOracle _oracle, address _arbitrator) {
     oracle = _oracle;
-    owner = _owner;
+    arbitrator = _arbitrator;
     reward = 0;
   }
 
   /// @inheritdoc IEBORequestCreator
-  function setPendingOwner(address _pendingOwner) external onlyOwner {
-    pendingOwner = _pendingOwner;
+  function setPendingArbitrator(address _pendingArbitrator) external onlyArbitrator {
+    pendingArbitrator = _pendingArbitrator;
 
-    emit PendingOwnerSetted(_pendingOwner);
+    emit PendingArbitratorSetted(_pendingArbitrator);
   }
 
   /// @inheritdoc IEBORequestCreator
-  function acceptPendingOwner() external onlyPendingOwner {
-    address _oldOwner = owner;
-    owner = pendingOwner;
-    pendingOwner = address(0);
+  function acceptPendingArbitrator() external onlyPendingArbitrator {
+    address _oldArbitrator = arbitrator;
+    arbitrator = pendingArbitrator;
+    pendingArbitrator = address(0);
 
-    emit OwnerSetted(_oldOwner, owner);
+    emit ArbitratorSetted(_oldArbitrator, arbitrator);
   }
 
   /// @inheritdoc IEBORequestCreator
   function createRequests(uint256 _epoch, string[] calldata _chainIds) external {
     bytes32 _encodedChainId;
 
-    EnumerableSet.Bytes32Set storage _epochEncodedChainIds = _epochChainIds[_epoch];
+    RequestData memory _requestData = requestData;
 
     for (uint256 _i; _i < _chainIds.length; _i++) {
       _encodedChainId = _encodeChainId(_chainIds[_i]);
       if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
 
-      if (!_epochEncodedChainIds.contains(_encodedChainId)) {
-        _epochChainIds[_epoch].add(_encodedChainId);
-
+      if (requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] == bytes32(0)) {
         // TODO: COMPLETE THE REQUEST CREATION WITH THE PROPER MODULES
         IOracle.Request memory _request = IOracle.Request({
           nonce: 0,
-          requester: msg.sender,
-          requestModule: address(0),
-          responseModule: address(0),
-          disputeModule: address(0),
-          resolutionModule: address(0),
-          finalityModule: address(0),
-          requestModuleData: '',
-          responseModuleData: '',
-          disputeModuleData: '',
-          resolutionModuleData: '',
-          finalityModuleData: ''
+          requester: address(this),
+          requestModule: _requestData.requestModule,
+          responseModule: _requestData.responseModule,
+          disputeModule: _requestData.disputeModule,
+          resolutionModule: _requestData.resolutionModule,
+          finalityModule: _requestData.finalityModule,
+          requestModuleData: _requestData.requestModuleData,
+          responseModuleData: _requestData.responseModuleData,
+          disputeModuleData: _requestData.disputeModuleData,
+          resolutionModuleData: _requestData.resolutionModuleData,
+          finalityModuleData: _requestData.finalityModuleData
         });
 
         bytes32 _requestId = oracle.createRequest(_request, bytes32(0));
+
+        requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] = _requestId;
 
         emit RequestCreated(_requestId, _epoch, _chainIds[_i]);
       }
@@ -82,7 +89,7 @@ contract EBORequestCreator is IEBORequestCreator {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function addChain(string calldata _chainId) external onlyOwner {
+  function addChain(string calldata _chainId) external onlyArbitrator {
     bytes32 _encodedChainId = _encodeChainId(_chainId);
     if (_chainIdsAllowed.contains(_encodedChainId)) {
       revert EBORequestCreator_ChainAlreadyAdded();
@@ -93,7 +100,7 @@ contract EBORequestCreator is IEBORequestCreator {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function removeChain(string calldata _chainId) external onlyOwner {
+  function removeChain(string calldata _chainId) external onlyArbitrator {
     bytes32 _encodedChainId = _encodeChainId(_chainId);
     if (!_chainIdsAllowed.contains(_encodedChainId)) {
       revert EBORequestCreator_ChainNotAdded();
@@ -104,10 +111,17 @@ contract EBORequestCreator is IEBORequestCreator {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function setReward(uint256 _reward) external onlyOwner {
+  function setReward(uint256 _reward) external onlyArbitrator {
     uint256 _oldReward = reward;
     reward = _reward;
     emit RewardSet(_oldReward, _reward);
+  }
+
+  /// @inheritdoc IEBORequestCreator
+  function setRequestData(RequestData calldata _requestData) external onlyArbitrator {
+    requestData = _requestData;
+
+    emit RequestDataSet(_requestData);
   }
 
   /**
@@ -119,21 +133,21 @@ contract EBORequestCreator is IEBORequestCreator {
   }
 
   /**
-   * @notice Checks if the sender is the owner
+   * @notice Checks if the sender is the arbitrator
    */
-  modifier onlyOwner() {
-    if (msg.sender != owner) {
-      revert EBORequestCreator_OnlyOwner();
+  modifier onlyArbitrator() {
+    if (msg.sender != arbitrator) {
+      revert EBORequestCreator_OnlyArbitrator();
     }
     _;
   }
 
   /**
-   * @notice Checks if the sender is the pending owner
+   * @notice Checks if the sender is the pending arbitrator
    */
-  modifier onlyPendingOwner() {
-    if (msg.sender != pendingOwner) {
-      revert EBORequestCreator_OnlyPendingOwner();
+  modifier onlyPendingArbitrator() {
+    if (msg.sender != pendingArbitrator) {
+      revert EBORequestCreator_OnlyPendingArbitrator();
     }
 
     _;

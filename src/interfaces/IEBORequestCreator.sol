@@ -9,17 +9,17 @@ interface IEBORequestCreator {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Emitted when the pending owner is set
-   * @param _pendingOwner The address of the pending owner
+   * @notice Emitted when the pending arbitrator is set
+   * @param _pendingArbitrator The address of the pending arbitrator
    */
-  event PendingOwnerSetted(address _pendingOwner);
+  event PendingArbitratorSetted(address _pendingArbitrator);
 
   /**
-   * @notice Emitted when the owner is set
-   * @param _oldOwner The old owner address
-   * @param _newOwner The new owner address
+   * @notice Emitted when the abitrator is set
+   * @param _oldArbitrator The old abitrator address
+   * @param _newArbitrator The new abitrator address
    */
-  event OwnerSetted(address _oldOwner, address _newOwner);
+  event ArbitratorSetted(address _oldArbitrator, address _newArbitrator);
 
   /**
    * @notice Emitted when a request is created
@@ -48,19 +48,25 @@ interface IEBORequestCreator {
    */
   event RewardSet(uint256 _oldReward, uint256 _newReward);
 
+  /**
+   * @notice Emitted when a request data is set
+   * @param _requestData The request data
+   */
+  event RequestDataSet(RequestData _requestData);
+
   /*///////////////////////////////////////////////////////////////
                             ERRORS
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Thrown when the caller is not the owner
+   * @notice Thrown when the caller is not the arbitrator
    */
-  error EBORequestCreator_OnlyOwner();
+  error EBORequestCreator_OnlyArbitrator();
 
   /**
-   * @notice Thrown when the caller is not the pending owner
+   * @notice Thrown when the caller is not the pending arbitrator
    */
-  error EBORequestCreator_OnlyPendingOwner();
+  error EBORequestCreator_OnlyPendingArbitrator();
 
   /**
    * @notice hrown when the chain is already added
@@ -73,6 +79,23 @@ interface IEBORequestCreator {
   error EBORequestCreator_ChainNotAdded();
 
   /*///////////////////////////////////////////////////////////////
+                            STRUCTS
+  //////////////////////////////////////////////////////////////*/
+
+  struct RequestData {
+    address requestModule;
+    address responseModule;
+    address disputeModule;
+    address resolutionModule;
+    address finalityModule;
+    bytes requestModuleData;
+    bytes responseModuleData;
+    bytes disputeModuleData;
+    bytes resolutionModuleData;
+    bytes finalityModuleData;
+  }
+
+  /*///////////////////////////////////////////////////////////////
                             VARIABLES
   //////////////////////////////////////////////////////////////*/
 
@@ -82,16 +105,35 @@ interface IEBORequestCreator {
   function oracle() external view returns (IOracle _oracle);
 
   /**
-   * @notice The owner of the contract
-   * @return _owner The owner
+   * @notice The request data
    */
-  function owner() external view returns (address _owner);
+  function requestData()
+    external
+    view
+    returns (
+      address _requestModule,
+      address _responseModule,
+      address _disputeModule,
+      address _resolutionModule,
+      address _finalityModule,
+      bytes memory _requestModuleData,
+      bytes memory _responseModuleData,
+      bytes memory _disputeModuleData,
+      bytes memory _resolutionModuleData,
+      bytes memory _finalityModuleData
+    );
 
   /**
-   * @notice The pending owner of the contract
-   * @return _pendingOwner The pending owner
+   * @notice The arbitrator of the contract
+   * @return _arbitrator The arbitrator
    */
-  function pendingOwner() external view returns (address _pendingOwner);
+  function arbitrator() external view returns (address _arbitrator);
+
+  /**
+   * @notice The pending arbitrator of the contract
+   * @return _pendingArbitrator The pending owner
+   */
+  function pendingArbitrator() external view returns (address _pendingArbitrator);
 
   /**
    * @notice The reward paid for each chain updated
@@ -99,20 +141,31 @@ interface IEBORequestCreator {
    */
   function reward() external view returns (uint256 _reward);
 
+  /**
+   * @notice The request id per chain and epoch
+   * @param _chainId The chain id
+   * @param _epoch The epoch
+   * @return _requestId The request id
+   */
+  function requestIdPerChainAndEpoch(
+    string calldata _chainId,
+    uint256 _epoch
+  ) external view returns (bytes32 _requestId);
+
   /*///////////////////////////////////////////////////////////////
                             LOGIC
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Set the pending owner
-   * @param _pendingOwner The address of the pending owner
+   * @notice Set the pending arbitrator
+   * @param _pendingArbitrator The address of the pending arbitrator
    */
-  function setPendingOwner(address _pendingOwner) external;
+  function setPendingArbitrator(address _pendingArbitrator) external;
 
   /**
-   * @notice Accept the pending owner
+   * @notice Accept the pending arbitrator
    */
-  function acceptPendingOwner() external;
+  function acceptPendingArbitrator() external;
 
   /**
    * @notice Create requests
@@ -138,4 +191,10 @@ interface IEBORequestCreator {
    * @param _reward The reward to set
    */
   function setReward(uint256 _reward) external;
+
+  /**
+   * @notice Set the request data
+   * @param _requestData The request data to set
+   */
+  function setRequestData(RequestData calldata _requestData) external;
 }
