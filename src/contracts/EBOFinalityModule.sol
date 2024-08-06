@@ -44,10 +44,13 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     address _finalizer
   ) external override(Module, IEBOFinalityModule) onlyOracle {
     if (_request.requester != eboRequestCreator) revert EBOFinalityModule_InvalidRequester();
-    _validateResponse(_request, _response);
 
-    // TODO: Redeclare the `Response` struct
-    // emit NewEpoch(_response.epoch, _response.chainId, _response.block);
+    if (_response.requestId != 0) {
+      _validateResponse(_request, _response);
+
+      // TODO: Redeclare the `Response` struct
+      // emit NewEpoch(_response.epoch, _response.chainId, _response.block);
+    }
 
     emit RequestFinalized(_response.requestId, _response, _finalizer);
   }

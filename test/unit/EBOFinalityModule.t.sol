@@ -99,6 +99,7 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
     address _finalizer,
     bytes32 _requestId
   ) public happyPath(_request, _response) {
+    vm.assume(_requestId != 0);
     vm.assume(_requestId != _getId(_request));
     _response.requestId = _requestId;
 
