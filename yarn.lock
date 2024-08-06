@@ -190,48 +190,24 @@
     solc-typed-ast "18.1.2"
     yargs "17.7.2"
 
-"@defi-wonderland/prophet-core-contracts@0.0.0-a8dc38de":
-  version "0.0.0-a8dc38de"
-  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core-contracts/-/prophet-core-contracts-0.0.0-a8dc38de.tgz#3e662bc423887bc1bf12ac44a2c15346b56b6957"
-  integrity sha512-W0OG+bNBSunUvqeFPxlC/IzfxWwE9CpebBRSfOB9MP+7Wivn3KLtzD7neIFSxmWFDT479YBp715ZnTa87Lr6fQ==
-  dependencies:
-    "@defi-wonderland/solidity-utils" "0.0.0-3e9c8e8b"
-    "@openzeppelin/contracts" "^4.9.3"
-    ds-test "https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0"
-    forge-std "https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e"
-    solmate "https://github.com/transmissions11/solmate.git#bfc9c25865a274a7827fea5abf6e4fb64fc64e6c"
+"@defi-wonderland/prophet-core-contracts@0.0.0-c25103ea":
+  version "0.0.0-c25103ea"
+  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core-contracts/-/prophet-core-contracts-0.0.0-c25103ea.tgz#e7a83271251d6ffbe0644c5971e6748d41ae9255"
+  integrity sha512-VCIeXwutXaih/ZF0JeqBjqkIs1ALWoFmn9OMeM5ZGcRZfx3JSV+axhi4YiIQVfrTLxICyu2hnbIEV7T1OmLVMQ==
 
-"@defi-wonderland/prophet-core-contracts@^0.0.0-e73df4c1":
-  version "0.0.0-e73df4c1"
-  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core-contracts/-/prophet-core-contracts-0.0.0-e73df4c1.tgz#b5006963fe45c9079fc4a17d638f7199146ba5a2"
-  integrity sha512-7dFJ2xHXlbZQHYxYLkmkHf7RCpRahbPKt8bOJzUC/As6VpH8tNzwgV6+O1Ih+g77DIFqDUXdWgfaAB432USotA==
-  dependencies:
-    "@defi-wonderland/solidity-utils" "0.0.0-3e9c8e8b"
-    "@openzeppelin/contracts" "^4.9.3"
-    ds-test "https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0"
-    forge-std "https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e"
-    solmate "https://github.com/transmissions11/solmate.git#bfc9c25865a274a7827fea5abf6e4fb64fc64e6c"
+"@defi-wonderland/prophet-core-contracts@0.0.0-d01bc1a0":
+  version "0.0.0-d01bc1a0"
+  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core-contracts/-/prophet-core-contracts-0.0.0-d01bc1a0.tgz#ee4e8d970289a26966f6565b2f691d68d7b4232a"
+  integrity sha512-n4Dl1QgQAZafOtV7ef/fSoew2qlxWSdS389Z6PdIn7LxrHrzzRJi+nmJ1DJazMvMuhk/0dZbMhnaXMBi05E1zQ==
 
-"@defi-wonderland/prophet-modules-contracts@^0.0.0-2c7deca8":
-  version "0.0.0-2c7deca8"
-  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-modules-contracts/-/prophet-modules-contracts-0.0.0-2c7deca8.tgz#ae3461200039c62c655b291f7ce6d90011cb0ef5"
-  integrity sha512-ZK194P+TQUgs50CT0BudgSvadX8DOr8ZFzAfDnOyBY9BGkDDi9ztdE6Ff7BbytXm4wPr+9G1bVDNoTH4XvLu4Q==
+"@defi-wonderland/prophet-modules-contracts@0.0.0-ee716ee0":
+  version "0.0.0-ee716ee0"
+  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-modules-contracts/-/prophet-modules-contracts-0.0.0-ee716ee0.tgz#cfcc221e8682f6a3cfe77a7353d7b2d894e198e7"
+  integrity sha512-wFb2FKmIgblXdz8fgTd5D0/ps6wzsnET6yXPhlD6yR2nW2x+/trXf3EvA5hrFzYnkfzp8gaHf60kDns4FAweSA==
   dependencies:
-    "@defi-wonderland/prophet-core-contracts" "0.0.0-a8dc38de"
-    "@defi-wonderland/solidity-utils" "0.0.0-3e9c8e8b"
-    "@openzeppelin/contracts" "^4.9.3"
-    ds-test "https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0"
-    forge-std "https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e"
+    "@defi-wonderland/prophet-core-contracts" "0.0.0-c25103ea"
+    "@openzeppelin/contracts" "4.9.5"
     solmate "https://github.com/transmissions11/solmate.git#bfc9c25865a274a7827fea5abf6e4fb64fc64e6c"
-
-"@defi-wonderland/solidity-utils@0.0.0-3e9c8e8b":
-  version "0.0.0-3e9c8e8b"
-  resolved "https://registry.yarnpkg.com/@defi-wonderland/solidity-utils/-/solidity-utils-0.0.0-3e9c8e8b.tgz#1f9c47506e1679ea36d0854e9aa69bd210af4da0"
-  integrity sha512-HCN5TTO58jTrLrAcxXwTPm++P0u4dMDnwVkssszoEu0SmVKwegzZOdoA+gNbfOjjYydph+3+9bAZbNXj+UK2rg==
-  dependencies:
-    "@openzeppelin/contracts" "4.9.2"
-    ds-test "https://github.com/dapphub/ds-test"
-    forge-std "https://github.com/foundry-rs/forge-std"
 
 "@noble/curves@1.3.0", "@noble/curves@~1.3.0":
   version "1.3.0"
@@ -266,15 +242,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@openzeppelin/contracts@4.9.2":
-  version "4.9.2"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.9.2.tgz#1cb2d5e4d3360141a17dbc45094a8cad6aac16c1"
-  integrity sha512-mO+y6JaqXjWeMh9glYVzVu8HYPGknAAnWyxTRhGeckOruyXQMNnlcW6w/Dx9ftLeIQk6N+ZJFuVmTwF7lEIFrg==
-
-"@openzeppelin/contracts@^4.9.3":
-  version "4.9.6"
-  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.9.6.tgz#2a880a24eb19b4f8b25adc2a5095f2aa27f39677"
-  integrity sha512-xSmezSupL+y9VkHZJGDoCBpmnB2ogM13ccaYDWqJTfS3dbuHkgjuwDFUmaFauBCboQMGB/S5UqUl2y54X99BmA==
+"@openzeppelin/contracts@4.9.5":
+  version "4.9.5"
+  resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-4.9.5.tgz#1eed23d4844c861a1835b5d33507c1017fa98de8"
+  integrity sha512-ZK+W5mVhRppff9BE6YdR8CC52C8zAvsVAiWhEtQ5+oNxFE6h1WdeWo+FJSF8KKvtxxVYZ7MTP/5KoVpAU3aSWg==
 
 "@scure/base@~1.1.4":
   version "1.1.6"
@@ -702,20 +673,6 @@ dot-prop@^5.1.0:
   dependencies:
     is-obj "^2.0.0"
 
-"ds-test@git+https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0":
-  version "1.0.0"
-  uid e282159d5170298eb2455a6c05280ab5a73a4ef0
-  resolved "git+https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0"
-
-"ds-test@https://github.com/dapphub/ds-test":
-  version "1.0.0"
-  uid e282159d5170298eb2455a6c05280ab5a73a4ef0
-  resolved "https://github.com/dapphub/ds-test#e282159d5170298eb2455a6c05280ab5a73a4ef0"
-
-"ds-test@https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0":
-  version "1.0.0"
-  resolved "https://github.com/dapphub/ds-test.git#e282159d5170298eb2455a6c05280ab5a73a4ef0"
-
 emoji-regex@^10.3.0:
   version "10.3.0"
   resolved "https://registry.yarnpkg.com/emoji-regex/-/emoji-regex-10.3.0.tgz#76998b9268409eb3dae3de989254d456e70cfe23"
@@ -868,21 +825,9 @@ for-each@^0.3.3:
   dependencies:
     is-callable "^1.1.3"
 
-"forge-std@git+https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e":
-  version "1.5.6"
-  resolved "git+https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e"
-
 "forge-std@github:foundry-rs/forge-std#1.8.2":
   version "1.8.2"
   resolved "https://codeload.github.com/foundry-rs/forge-std/tar.gz/978ac6fadb62f5f0b723c996f64be52eddba6801"
-
-"forge-std@https://github.com/foundry-rs/forge-std":
-  version "1.9.1"
-  resolved "https://github.com/foundry-rs/forge-std#2cbff0602d340503dba9828ab6981053704d1384"
-
-"forge-std@https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e":
-  version "1.5.6"
-  resolved "https://github.com/foundry-rs/forge-std.git#e8a047e3f40f13fa37af6fe14e6e06283d9a060e"
 
 form-data@^4.0.0:
   version "4.0.0"
@@ -1783,10 +1728,6 @@ solhint-community@4.0.0:
 "solmate@git+https://github.com/transmissions11/solmate.git#bfc9c25865a274a7827fea5abf6e4fb64fc64e6c":
   version "6.1.0"
   resolved "git+https://github.com/transmissions11/solmate.git#bfc9c25865a274a7827fea5abf6e4fb64fc64e6c"
-
-"solmate@https://github.com/transmissions11/solmate.git#bfc9c25865a274a7827fea5abf6e4fb64fc64e6c":
-  version "6.1.0"
-  resolved "https://github.com/transmissions11/solmate.git#bfc9c25865a274a7827fea5abf6e4fb64fc64e6c"
 
 sort-object-keys@^1.1.3:
   version "1.1.3"
