@@ -72,7 +72,7 @@ contract Arbitrable_Unit_Constructor is Arbitrable_Unit_BaseTest {
   }
 }
 
-contract Arbitrable_Unit_ChangeArbitrator is Arbitrable_Unit_BaseTest {
+contract Arbitrable_Unit_SetArbitrator is Arbitrable_Unit_BaseTest {
   modifier happyPath() {
     vm.startPrank(council);
     _;
@@ -81,11 +81,11 @@ contract Arbitrable_Unit_ChangeArbitrator is Arbitrable_Unit_BaseTest {
   function test_revertOnlyCouncil(address _arbitrator) public happyPath {
     vm.stopPrank();
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
-    arbitrable.changeArbitrator(_arbitrator);
+    arbitrable.setArbitrator(_arbitrator);
   }
 
   function test_setArbitrator(address _arbitrator) public happyPath {
-    arbitrable.changeArbitrator(_arbitrator);
+    arbitrable.setArbitrator(_arbitrator);
 
     assertEq(arbitrable.arbitrator(), _arbitrator);
   }
@@ -93,11 +93,11 @@ contract Arbitrable_Unit_ChangeArbitrator is Arbitrable_Unit_BaseTest {
   function test_emitSetArbitrator(address _arbitrator) public happyPath {
     vm.expectEmit();
     emit SetArbitrator(_arbitrator);
-    arbitrable.changeArbitrator(_arbitrator);
+    arbitrable.setArbitrator(_arbitrator);
   }
 }
 
-contract Arbitrable_Unit_ChangeCouncil is Arbitrable_Unit_BaseTest {
+contract Arbitrable_Unit_SetPendingCouncil is Arbitrable_Unit_BaseTest {
   modifier happyPath() {
     vm.startPrank(council);
     _;
@@ -106,11 +106,11 @@ contract Arbitrable_Unit_ChangeCouncil is Arbitrable_Unit_BaseTest {
   function test_revertOnlyCouncil(address _pendingCouncil) public happyPath {
     vm.stopPrank();
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
-    arbitrable.changeCouncil(_pendingCouncil);
+    arbitrable.setPendingCouncil(_pendingCouncil);
   }
 
   function test_setPendingCouncil(address _pendingCouncil) public happyPath {
-    arbitrable.changeCouncil(_pendingCouncil);
+    arbitrable.setPendingCouncil(_pendingCouncil);
 
     assertEq(arbitrable.pendingCouncil(), _pendingCouncil);
   }
@@ -118,7 +118,7 @@ contract Arbitrable_Unit_ChangeCouncil is Arbitrable_Unit_BaseTest {
   function test_emitSetPendingCouncil(address _pendingCouncil) public happyPath {
     vm.expectEmit();
     emit SetPendingCouncil(_pendingCouncil);
-    arbitrable.changeCouncil(_pendingCouncil);
+    arbitrable.setPendingCouncil(_pendingCouncil);
   }
 }
 

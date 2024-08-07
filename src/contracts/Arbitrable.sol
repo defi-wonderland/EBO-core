@@ -62,12 +62,12 @@ abstract contract Arbitrable is IArbitrable {
   }
 
   /// @inheritdoc IArbitrable
-  function changeArbitrator(address __arbitrator) external onlyCouncil {
+  function setArbitrator(address __arbitrator) external onlyCouncil {
     _setArbitrator(__arbitrator);
   }
 
   /// @inheritdoc IArbitrable
-  function changeCouncil(address __pendingCouncil) external onlyCouncil {
+  function setPendingCouncil(address __pendingCouncil) external onlyCouncil {
     _setPendingCouncil(__pendingCouncil);
   }
 
