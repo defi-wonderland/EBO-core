@@ -1,5 +1,7 @@
 forge-std/=node_modules/forge-std/src
 halmos-cheatcodes=node_modules/halmos-cheatcodes
+@defi-wonderland/prophet-core-contracts/=node_modules/@defi-wonderland/prophet-core-contracts
+@defi-wonderland/prophet-modules-contracts/=node_modules/@defi-wonderland/prophet-modules-contracts
 
 contracts/=src/contracts
 interfaces/=src/interfaces
