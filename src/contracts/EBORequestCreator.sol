@@ -65,7 +65,7 @@ contract EBORequestCreator is IEBORequestCreator {
       if (requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] == bytes32(0)) {
         // TODO: COMPLETE THE REQUEST CREATION WITH THE PROPER MODULES
         IOracle.Request memory _request = IOracle.Request({
-          nonce: 0,
+          nonce: uint96(0),
           requester: address(this),
           requestModule: _requestData.requestModule,
           responseModule: _requestData.responseModule,

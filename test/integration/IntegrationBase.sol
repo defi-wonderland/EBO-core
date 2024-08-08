@@ -4,6 +4,7 @@ pragma solidity 0.8.26;
 import {Test} from 'forge-std/Test.sol';
 import {IERC20} from 'forge-std/interfaces/IERC20.sol';
 
+import {Oracle} from '@defi-wonderland/prophet-core-contracts/solidity/contracts/Oracle.sol';
 import {EBORequestCreator, IEBORequestCreator, IOracle} from 'contracts/EBORequestCreator.sol';
 
 contract IntegrationBase is Test {
@@ -20,6 +21,7 @@ contract IntegrationBase is Test {
     vm.createSelectFork(vm.rpcUrl('mainnet'), _FORK_BLOCK);
     vm.startPrank(_owner);
 
+    _oracle = new Oracle();
     _eboRequestCreator = new EBORequestCreator(_oracle, _arbitrator);
 
     vm.stopPrank();

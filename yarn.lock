@@ -190,17 +190,22 @@
     solc-typed-ast "18.1.2"
     yargs "17.7.2"
 
-"@defi-wonderland/prophet-core-contracts@0.0.0-c25103ea":
-  version "0.0.0-c25103ea"
-  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core-contracts/-/prophet-core-contracts-0.0.0-c25103ea.tgz#e7a83271251d6ffbe0644c5971e6748d41ae9255"
-  integrity sha512-VCIeXwutXaih/ZF0JeqBjqkIs1ALWoFmn9OMeM5ZGcRZfx3JSV+axhi4YiIQVfrTLxICyu2hnbIEV7T1OmLVMQ==
+"@defi-wonderland/prophet-core-contracts@0.0.0-438de1c5":
+  version "0.0.0-438de1c5"
+  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core-contracts/-/prophet-core-contracts-0.0.0-438de1c5.tgz#2b0238636c89eb71b07d57e12abfdea57c53b03b"
+  integrity sha512-UqdNRr2eH5DNSQ7qUriZbvR9LoXLXDMKTOjcjTTc8Gbq1aVcBhwFu4mSdrnhpQkXHjKtmsO0IfGcRHIGLvnXSQ==
 
-"@defi-wonderland/prophet-modules-contracts@0.0.0-ee716ee0":
-  version "0.0.0-ee716ee0"
-  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-modules-contracts/-/prophet-modules-contracts-0.0.0-ee716ee0.tgz#cfcc221e8682f6a3cfe77a7353d7b2d894e198e7"
-  integrity sha512-wFb2FKmIgblXdz8fgTd5D0/ps6wzsnET6yXPhlD6yR2nW2x+/trXf3EvA5hrFzYnkfzp8gaHf60kDns4FAweSA==
+"@defi-wonderland/prophet-core-contracts@0.0.0-d01bc1a0":
+  version "0.0.0-d01bc1a0"
+  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core-contracts/-/prophet-core-contracts-0.0.0-d01bc1a0.tgz#ee4e8d970289a26966f6565b2f691d68d7b4232a"
+  integrity sha512-n4Dl1QgQAZafOtV7ef/fSoew2qlxWSdS389Z6PdIn7LxrHrzzRJi+nmJ1DJazMvMuhk/0dZbMhnaXMBi05E1zQ==
+
+"@defi-wonderland/prophet-modules-contracts@0.0.0-1197c328":
+  version "0.0.0-1197c328"
+  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-modules-contracts/-/prophet-modules-contracts-0.0.0-1197c328.tgz#f58aa52a5a33fb39a9404bdf5e16ab75fcdde85f"
+  integrity sha512-78IRF5dSoHvVIzS9/NSqkuQrzPLrVKzRnBvOeSWt/vzoKy3Pm6rkcT5qzWZynIXbFNyMXGTa8HKYBWKFNlaE9A==
   dependencies:
-    "@defi-wonderland/prophet-core-contracts" "0.0.0-c25103ea"
+    "@defi-wonderland/prophet-core-contracts" "0.0.0-d01bc1a0"
     "@openzeppelin/contracts" "4.9.5"
     solmate "https://github.com/transmissions11/solmate.git#bfc9c25865a274a7827fea5abf6e4fb64fc64e6c"
 
