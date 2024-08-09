@@ -8,6 +8,9 @@ contract Integration_CreateRequest is IntegrationBase {
     string[] memory _chainIds = new string[](1);
     _chainIds[0] = 'chainId1';
 
+    // TODO: Replace with the implementation
+    vm.mockCall(address(_epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(1));
+
     // Create a request without approving the chain id
     vm.expectRevert(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector);
     vm.prank(_user);
