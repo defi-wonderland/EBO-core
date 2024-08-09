@@ -2,25 +2,18 @@
 pragma solidity 0.8.26;
 
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+
+import {Arbitrable} from 'contracts/Arbitrable.sol';
 import {IEBORequestCreator, IOracle} from 'interfaces/IEBORequestCreator.sol';
 
-contract EBORequestCreator is IEBORequestCreator {
+contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   /// @inheritdoc IEBORequestCreator
   IOracle public oracle;
 
   /// @inheritdoc IEBORequestCreator
-  RequestData public requestData;
-
-  /// @inheritdoc IEBORequestCreator
-  address public arbitrator;
-
-  /// @inheritdoc IEBORequestCreator
-  address public pendingArbitrator;
-
-  /// @inheritdoc IEBORequestCreator
-  uint256 public reward;
+  IOracle.Request public requestData;
 
   /// @inheritdoc IEBORequestCreator
   mapping(string _chainId => mapping(uint256 _epoch => bytes32 _requestId)) public requestIdPerChainAndEpoch;
@@ -30,33 +23,15 @@ contract EBORequestCreator is IEBORequestCreator {
    */
   EnumerableSet.Bytes32Set internal _chainIdsAllowed;
 
-  constructor(IOracle _oracle, address _arbitrator) {
+  constructor(IOracle _oracle, address _arbitrator, address _council) Arbitrable(_arbitrator, _council) {
     oracle = _oracle;
-    arbitrator = _arbitrator;
-    reward = 0;
-  }
-
-  /// @inheritdoc IEBORequestCreator
-  function setPendingArbitrator(address _pendingArbitrator) external onlyArbitrator {
-    pendingArbitrator = _pendingArbitrator;
-
-    emit PendingArbitratorSetted(_pendingArbitrator);
-  }
-
-  /// @inheritdoc IEBORequestCreator
-  function acceptPendingArbitrator() external onlyPendingArbitrator {
-    address _oldArbitrator = arbitrator;
-    arbitrator = pendingArbitrator;
-    pendingArbitrator = address(0);
-
-    emit ArbitratorSetted(_oldArbitrator, arbitrator);
   }
 
   /// @inheritdoc IEBORequestCreator
   function createRequests(uint256 _epoch, string[] calldata _chainIds) external {
     bytes32 _encodedChainId;
 
-    RequestData memory _requestData = requestData;
+    IOracle.Request memory _requestData = requestData;
 
     for (uint256 _i; _i < _chainIds.length; _i++) {
       _encodedChainId = _encodeChainId(_chainIds[_i]);
@@ -111,17 +86,47 @@ contract EBORequestCreator is IEBORequestCreator {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function setReward(uint256 _reward) external onlyArbitrator {
-    uint256 _oldReward = reward;
-    reward = _reward;
-    emit RewardSet(_oldReward, _reward);
+  function setRequestModuleData(address _requestModule, bytes calldata _requestModuleData) external onlyArbitrator {
+    requestData.requestModule = _requestModule;
+    requestData.requestModuleData = _requestModuleData;
+
+    emit RequestModuleDataSet(_requestModule, _requestModuleData);
   }
 
   /// @inheritdoc IEBORequestCreator
-  function setRequestData(RequestData calldata _requestData) external onlyArbitrator {
-    requestData = _requestData;
+  function setResponseModuleData(address _responseModule, bytes calldata _responseModuleData) external onlyArbitrator {
+    requestData.responseModule = _responseModule;
+    requestData.responseModuleData = _responseModuleData;
 
-    emit RequestDataSet(_requestData);
+    emit ResponseModuleDataSet(_responseModule, _responseModuleData);
+  }
+
+  /// TODO: Change module data to the specific interface when we have
+  /// @inheritdoc IEBORequestCreator
+  function setDisputeModuleData(address _disputeModule, bytes calldata _disputeModuleData) external onlyArbitrator {
+    requestData.disputeModule = _disputeModule;
+    requestData.disputeModuleData = _disputeModuleData;
+
+    emit DisputeModuleDataSet(_disputeModule, _disputeModuleData);
+  }
+
+  /// @inheritdoc IEBORequestCreator
+  function setResolutionModuleData(
+    address _resolutionModule,
+    bytes calldata _resolutionModuleData
+  ) external onlyArbitrator {
+    requestData.resolutionModule = _resolutionModule;
+    requestData.resolutionModuleData = _resolutionModuleData;
+
+    emit ResolutionModuleDataSet(_resolutionModule, _resolutionModuleData);
+  }
+
+  /// @inheritdoc IEBORequestCreator
+  function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external onlyArbitrator {
+    requestData.finalityModule = _finalityModule;
+    requestData.finalityModuleData = _finalityModuleData;
+
+    emit FinalityModuleDataSet(_finalityModule, _finalityModuleData);
   }
 
   /**
@@ -130,26 +135,5 @@ contract EBORequestCreator is IEBORequestCreator {
    */
   function _encodeChainId(string calldata _chainId) internal pure returns (bytes32 _encodedChainId) {
     _encodedChainId = keccak256(abi.encodePacked(_chainId));
-  }
-
-  /**
-   * @notice Checks if the sender is the arbitrator
-   */
-  modifier onlyArbitrator() {
-    if (msg.sender != arbitrator) {
-      revert EBORequestCreator_OnlyArbitrator();
-    }
-    _;
-  }
-
-  /**
-   * @notice Checks if the sender is the pending arbitrator
-   */
-  modifier onlyPendingArbitrator() {
-    if (msg.sender != pendingArbitrator) {
-      revert EBORequestCreator_OnlyPendingArbitrator();
-    }
-
-    _;
   }
 }

@@ -1,25 +1,12 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {IOracle} from '@defi-wonderland/prophet-core-contracts/solidity/interfaces/IOracle.sol';
+import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 
 interface IEBORequestCreator {
   /*///////////////////////////////////////////////////////////////
                             EVENTS
   //////////////////////////////////////////////////////////////*/
-
-  /**
-   * @notice Emitted when the pending arbitrator is set
-   * @param _pendingArbitrator The address of the pending arbitrator
-   */
-  event PendingArbitratorSetted(address _pendingArbitrator);
-
-  /**
-   * @notice Emitted when the abitrator is set
-   * @param _oldArbitrator The old abitrator address
-   * @param _newArbitrator The new abitrator address
-   */
-  event ArbitratorSetted(address _oldArbitrator, address _newArbitrator);
 
   /**
    * @notice Emitted when a request is created
@@ -42,31 +29,43 @@ interface IEBORequestCreator {
   event ChainRemoved(string indexed _chainId);
 
   /**
-   * @notice Emitted when the reward is set
-   * @param _oldReward The old reward value
-   * @param _newReward The new reward value
+   * @notice Emitted when the request data module is set
+   * @param _requestModule The request module
+   * @param _requestModuleData The request module data
    */
-  event RewardSet(uint256 _oldReward, uint256 _newReward);
+  event RequestModuleDataSet(address indexed _requestModule, bytes _requestModuleData);
 
   /**
-   * @notice Emitted when a request data is set
-   * @param _requestData The request data
+   * @notice Emitted when the response data module is set
+   * @param _responseModule The response module
+   * @param _responseModuleData The response module data
    */
-  event RequestDataSet(RequestData _requestData);
+  event ResponseModuleDataSet(address indexed _responseModule, bytes _responseModuleData);
+
+  /**
+   * @notice Emitted when the dispute data module is set
+   * @param _disputeModule The dispute module
+   * @param _disputeModuleData The dispute module data
+   */
+  event DisputeModuleDataSet(address indexed _disputeModule, bytes _disputeModuleData);
+
+  /**
+   * @notice Emitted when the resolution data module is set
+   * @param _resolutionModule The resolution module
+   * @param _resolutionModuleData The resolution module data
+   */
+  event ResolutionModuleDataSet(address indexed _resolutionModule, bytes _resolutionModuleData);
+
+  /**
+   * @notice Emitted when the finality data module is set
+   * @param _finalityModule The finality module
+   * @param _finalityModuleData The finality module data
+   */
+  event FinalityModuleDataSet(address indexed _finalityModule, bytes _finalityModuleData);
 
   /*///////////////////////////////////////////////////////////////
                             ERRORS
   //////////////////////////////////////////////////////////////*/
-
-  /**
-   * @notice Thrown when the caller is not the arbitrator
-   */
-  error EBORequestCreator_OnlyArbitrator();
-
-  /**
-   * @notice Thrown when the caller is not the pending arbitrator
-   */
-  error EBORequestCreator_OnlyPendingArbitrator();
 
   /**
    * @notice hrown when the chain is already added
@@ -77,23 +76,6 @@ interface IEBORequestCreator {
    * @notice Thrown when the chain is not added
    */
   error EBORequestCreator_ChainNotAdded();
-
-  /*///////////////////////////////////////////////////////////////
-                            STRUCTS
-  //////////////////////////////////////////////////////////////*/
-
-  struct RequestData {
-    address requestModule;
-    address responseModule;
-    address disputeModule;
-    address resolutionModule;
-    address finalityModule;
-    bytes requestModuleData;
-    bytes responseModuleData;
-    bytes disputeModuleData;
-    bytes resolutionModuleData;
-    bytes finalityModuleData;
-  }
 
   /*///////////////////////////////////////////////////////////////
                             VARIABLES
@@ -111,6 +93,8 @@ interface IEBORequestCreator {
     external
     view
     returns (
+      uint96 _nonce,
+      address _requester,
       address _requestModule,
       address _responseModule,
       address _disputeModule,
@@ -122,24 +106,6 @@ interface IEBORequestCreator {
       bytes memory _resolutionModuleData,
       bytes memory _finalityModuleData
     );
-
-  /**
-   * @notice The arbitrator of the contract
-   * @return _arbitrator The arbitrator
-   */
-  function arbitrator() external view returns (address _arbitrator);
-
-  /**
-   * @notice The pending arbitrator of the contract
-   * @return _pendingArbitrator The pending owner
-   */
-  function pendingArbitrator() external view returns (address _pendingArbitrator);
-
-  /**
-   * @notice The reward paid for each chain updated
-   * @return _reward The reward
-   */
-  function reward() external view returns (uint256 _reward);
 
   /**
    * @notice The request id per chain and epoch
@@ -155,17 +121,6 @@ interface IEBORequestCreator {
   /*///////////////////////////////////////////////////////////////
                             LOGIC
   //////////////////////////////////////////////////////////////*/
-
-  /**
-   * @notice Set the pending arbitrator
-   * @param _pendingArbitrator The address of the pending arbitrator
-   */
-  function setPendingArbitrator(address _pendingArbitrator) external;
-
-  /**
-   * @notice Accept the pending arbitrator
-   */
-  function acceptPendingArbitrator() external;
 
   /**
    * @notice Create requests
@@ -187,14 +142,37 @@ interface IEBORequestCreator {
   function removeChain(string calldata _chainId) external;
 
   /**
-   * @notice Set the reward paid for each chain updated
-   * @param _reward The reward to set
+   * @notice Set the request data module
+   * @param _requestModule The request module
+   * @param _requestModuleData The request module data
    */
-  function setReward(uint256 _reward) external;
+  function setRequestModuleData(address _requestModule, bytes calldata _requestModuleData) external;
 
   /**
-   * @notice Set the request data
-   * @param _requestData The request data to set
+   * @notice Set the response data module
+   * @param _responseModule The response module
+   * @param _responseModuleData The response module data
    */
-  function setRequestData(RequestData calldata _requestData) external;
+  function setResponseModuleData(address _responseModule, bytes calldata _responseModuleData) external;
+
+  /**
+   * @notice Set the dispute data module
+   * @param _disputeModule The dispute module
+   * @param _disputeModuleData The dispute module data
+   */
+  function setDisputeModuleData(address _disputeModule, bytes calldata _disputeModuleData) external;
+
+  /**
+   * @notice Set the resolution data module
+   * @param _resolutionModule The resolution module
+   * @param _resolutionModuleData The resolution module data
+   */
+  function setResolutionModuleData(address _resolutionModule, bytes calldata _resolutionModuleData) external;
+
+  /**
+   * @notice Set the finality data module
+   * @param _finalityModule The finality module
+   * @param _finalityModuleData The finality module data
+   */
+  function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external;
 }
