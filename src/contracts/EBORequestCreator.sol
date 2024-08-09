@@ -3,11 +3,13 @@ pragma solidity 0.8.26;
 
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import {Arbitrable} from 'contracts/Arbitrable.sol';
-import {IEBORequestCreator, IOracle} from 'interfaces/IEBORequestCreator.sol';
+import {IEBORequestCreator, IERC20, IOracle} from 'interfaces/IEBORequestCreator.sol';
 
 contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   using EnumerableSet for EnumerableSet.Bytes32Set;
+  using SafeERC20 for IERC20;
 
   /// @inheritdoc IEBORequestCreator
   IOracle public oracle;
@@ -127,6 +129,14 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
     requestData.finalityModuleData = _finalityModuleData;
 
     emit FinalityModuleDataSet(_finalityModule, _finalityModuleData);
+  }
+
+  /// @inheritdoc IEBORequestCreator
+  function dustCollector(IERC20 _token, address _to) external onlyCouncil {
+    uint256 _amount = _token.balanceOf(address(this));
+    _token.safeTransfer(_to, _amount);
+
+    emit DustCollected(_token, _to, _amount);
   }
 
   /**

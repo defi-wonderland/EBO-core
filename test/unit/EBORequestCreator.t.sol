@@ -3,7 +3,7 @@ pragma solidity 0.8.26;
 
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import {EBORequestCreator, IEBORequestCreator, IOracle} from 'contracts/EBORequestCreator.sol';
+import {EBORequestCreator, IEBORequestCreator, IERC20, IOracle, SafeERC20} from 'contracts/EBORequestCreator.sol';
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 
 import {Test} from 'forge-std/Test.sol';
@@ -34,6 +34,7 @@ abstract contract EBORequestCreator_Unit_BaseTest is Test {
   event DisputeModuleDataSet(address indexed _disputeModule, bytes _disputeModuleData);
   event ResolutionModuleDataSet(address indexed _resolutionModule, bytes _resolutionModuleData);
   event FinalityModuleDataSet(address indexed _finalityModule, bytes _finalityModuleData);
+  event DustCollected(IERC20 indexed _token, address indexed _to, uint256 _amount);
 
   /// Contracts
   EBORequestCreatorForTest public eboRequestCreator;
@@ -340,5 +341,34 @@ contract EBORequestCreator_Unit_SetFinalityModuleData is EBORequestCreator_Unit_
     emit FinalityModuleDataSet(_finalityModule, _finalityModuleData);
 
     eboRequestCreator.setFinalityModuleData(_finalityModule, _finalityModuleData);
+  }
+}
+
+contract EBORequestCreator_Unit_DustCollector is EBORequestCreator_Unit_BaseTest {
+  /**
+   * @notice Test the revert if the caller is not the council
+   */
+  function test_revertIfNotCouncil(IERC20 _token, address _to) external {
+    vm.expectRevert(abi.encodeWithSelector(IArbitrable.Arbitrable_OnlyCouncil.selector));
+    eboRequestCreator.dustCollector(_token, _to);
+  }
+
+  /**
+   * @notice Test the emit dust collected
+   */
+  function test_emitDustCollected(IERC20 _token, address _to, uint256 _amount) external {
+    vm.expectEmit();
+    emit DustCollected(_token, _to, _amount);
+
+    vm.mockCall(
+      address(_token),
+      abi.encodeWithSelector(IERC20.balanceOf.selector, address(eboRequestCreator)),
+      abi.encode(_amount)
+    );
+
+    vm.mockCall(address(_token), abi.encodeWithSelector(IERC20.transfer.selector, _to, _amount), abi.encode(true));
+
+    vm.prank(council);
+    eboRequestCreator.dustCollector(_token, _to);
   }
 }

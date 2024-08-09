@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 
 interface IEBORequestCreator {
   /*///////////////////////////////////////////////////////////////
@@ -62,6 +63,14 @@ interface IEBORequestCreator {
    * @param _finalityModuleData The finality module data
    */
   event FinalityModuleDataSet(address indexed _finalityModule, bytes _finalityModuleData);
+
+  /**
+   * @notice Emitted when the dust is collected
+   * @param _token The token collected
+   * @param _to The address to send the dust
+   * @param _amount The amount collected
+   */
+  event DustCollected(IERC20 indexed _token, address indexed _to, uint256 _amount);
 
   /*///////////////////////////////////////////////////////////////
                             ERRORS
@@ -175,4 +184,11 @@ interface IEBORequestCreator {
    * @param _finalityModuleData The finality module data
    */
   function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external;
+
+  /**
+   * @notice Collect the dust
+   * @param _token The token to collect
+   * @param _to The address to send the dust
+   */
+  function dustCollector(IERC20 _token, address _to) external;
 }
