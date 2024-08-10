@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {Module} from '@defi-wonderland/prophet-core-contracts/solidity/contracts/Module.sol';
-
-import {IModule} from '@defi-wonderland/prophet-core-contracts/solidity/interfaces/IModule.sol';
-import {IOracle} from '@defi-wonderland/prophet-core-contracts/solidity/interfaces/IOracle.sol';
+import {Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.sol';
+import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
+import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 
 import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
 

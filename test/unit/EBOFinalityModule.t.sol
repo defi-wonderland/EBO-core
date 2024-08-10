@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {IModule} from '@defi-wonderland/prophet-core-contracts/solidity/interfaces/IModule.sol';
-import {IOracle} from '@defi-wonderland/prophet-core-contracts/solidity/interfaces/IOracle.sol';
-import {IValidator} from '@defi-wonderland/prophet-core-contracts/solidity/interfaces/IValidator.sol';
+import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
+import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IValidator} from '@defi-wonderland/prophet-core/solidity/interfaces/IValidator.sol';
+import {ValidatorLib} from '@defi-wonderland/prophet-core/solidity/libraries/ValidatorLib.sol';
 
 import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
 
@@ -40,11 +41,9 @@ contract EBOFinalityModule_Unit_BaseTest is Test {
     _id = keccak256(abi.encode(_response));
   }
 
-  function _getDynamicArray(uint256[FUZZED_ARRAY_LENGTH] calldata _staticArray)
-    internal
-    pure
-    returns (uint256[] memory _dynamicArray)
-  {
+  function _getDynamicArray(
+    uint256[FUZZED_ARRAY_LENGTH] calldata _staticArray
+  ) internal pure returns (uint256[] memory _dynamicArray) {
     _dynamicArray = new uint256[](FUZZED_ARRAY_LENGTH);
     for (uint256 _i; _i < FUZZED_ARRAY_LENGTH; ++_i) {
       _dynamicArray[_i] = _staticArray[_i];
@@ -121,7 +120,7 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
     vm.assume(_requestId != _getId(_params.request));
     _params.response.requestId = _requestId;
 
-    vm.expectRevert(IValidator.Validator_InvalidResponseBody.selector);
+    vm.expectRevert(ValidatorLib.ValidatorLib_InvalidResponseBody.selector);
     eboFinalityModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
   }
 
