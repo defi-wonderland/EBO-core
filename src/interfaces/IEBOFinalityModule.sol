@@ -4,12 +4,14 @@ pragma solidity ^0.8.19;
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 import {IFinalityModule} from '@defi-wonderland/prophet-core/solidity/interfaces/modules/finality/IFinalityModule.sol';
 
+import {IArbitrable} from 'interfaces/IArbitrable.sol';
+
 /**
  * @title EBOFinalityModule
  * @notice Module allowing users to index data into the subgraph
  * as a result of a request being finalized
  */
-interface IEBOFinalityModule is IFinalityModule {
+interface IEBOFinalityModule is IFinalityModule, IArbitrable {
   /*///////////////////////////////////////////////////////////////
                               EVENTS
   //////////////////////////////////////////////////////////////*/
@@ -30,14 +32,15 @@ interface IEBOFinalityModule is IFinalityModule {
    */
   event AmendEpoch(uint256 _epoch, uint256 _chainId, uint256 _blockNumber);
 
+  /**
+   * @notice Emitted when the EBORequestCreator is set
+   * @param _eboRequestCreator The address of the EBORequestCreator
+   */
+  event SetEBORequestCreator(address _eboRequestCreator);
+
   /*///////////////////////////////////////////////////////////////
                               ERRORS
   //////////////////////////////////////////////////////////////*/
-
-  /**
-   * @notice Thrown when the caller is not The Graph's Arbitrator
-   */
-  error EBOFinalityModule_OnlyArbitrator();
 
   /**
    * @notice Thrown when the requester is not the EBORequestCreator
@@ -59,19 +62,13 @@ interface IEBOFinalityModule is IFinalityModule {
    */
   function eboRequestCreator() external view returns (address _eboRequestCreator);
 
-  /**
-   * @notice Returns the address of The Graph's Arbitrator
-   * @return _arbitrator The address of The Graph's Arbitrator
-   */
-  function arbitrator() external view returns (address _arbitrator);
-
   /*///////////////////////////////////////////////////////////////
                               LOGIC
   //////////////////////////////////////////////////////////////*/
 
   /**
    * @notice Finalizes the request by publishing the response
-   * @dev Callable only by the oracle
+   * @dev Callable only by the Oracle
    * @param _request The request being finalized
    * @param _response The final response
    * @param _finalizer The address that initiated the finalization
@@ -97,11 +94,4 @@ interface IEBOFinalityModule is IFinalityModule {
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
   function setEBORequestCreator(address _eboRequestCreator) external;
-
-  /**
-   * @notice Sets the address of The Graph's Arbitrator
-   * @dev Callable only by The Graph's Arbitrator
-   * @param _arbitrator The address of The Graph's Arbitrator
-   */
-  function setArbitrator(address _arbitrator) external;
 }

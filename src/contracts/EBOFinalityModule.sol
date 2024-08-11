@@ -5,6 +5,7 @@ import {Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.so
 import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 
+import {Arbitrable} from 'contracts/Arbitrable.sol';
 import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
 
 /**
@@ -12,28 +13,24 @@ import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
  * @notice Module allowing users to index data into the subgraph
  * as a result of a request being finalized
  */
-contract EBOFinalityModule is Module, IEBOFinalityModule {
+contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
   /// @inheritdoc IEBOFinalityModule
   address public eboRequestCreator;
-  /// @inheritdoc IEBOFinalityModule
-  address public arbitrator;
-
-  /**
-   * @notice Checks that the caller is The Graph's Arbitrator
-   */
-  modifier onlyArbitrator() {
-    if (msg.sender != arbitrator) revert EBOFinalityModule_OnlyArbitrator();
-    _;
-  }
 
   /**
    * @notice Constructor
-   * @param _oracle The address of the oracle
+   * @param _oracle The address of the Oracle
+   * @param _eboRequestCreator The address of the EBORequestCreator
    * @param _arbitrator The address of The Graph's Arbitrator
+   * @param _council The address of The Graph's Council
    */
-  constructor(IOracle _oracle, address _eboRequestCreator, address _arbitrator) Module(_oracle) {
-    eboRequestCreator = _eboRequestCreator;
-    arbitrator = _arbitrator;
+  constructor(
+    IOracle _oracle,
+    address _eboRequestCreator,
+    address _arbitrator,
+    address _council
+  ) Module(_oracle) Arbitrable(_arbitrator, _council) {
+    _setEBORequestCreator(_eboRequestCreator);
   }
 
   /// @inheritdoc IEBOFinalityModule
@@ -70,16 +67,20 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
 
   /// @inheritdoc IEBOFinalityModule
   function setEBORequestCreator(address _eboRequestCreator) external onlyArbitrator {
-    eboRequestCreator = _eboRequestCreator;
-  }
-
-  /// @inheritdoc IEBOFinalityModule
-  function setArbitrator(address _arbitrator) external onlyArbitrator {
-    arbitrator = _arbitrator;
+    _setEBORequestCreator(_eboRequestCreator);
   }
 
   /// @inheritdoc IModule
   function moduleName() external pure returns (string memory _moduleName) {
     _moduleName = 'EBOFinalityModule';
+  }
+
+  /**
+   * @notice Sets the address of the EBORequestCreator
+   * @param _eboRequestCreator The address of the EBORequestCreator
+   */
+  function _setEBORequestCreator(address _eboRequestCreator) private {
+    eboRequestCreator = _eboRequestCreator;
+    emit SetEBORequestCreator(_eboRequestCreator);
   }
 }
