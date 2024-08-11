@@ -22,7 +22,7 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
    * @param _chainId The chain ID
    * @param _blockNumber The block number for the epoch-chainId pair
    */
-  event NewEpoch(uint256 _epoch, uint256 _chainId, uint256 _blockNumber);
+  event NewEpoch(uint256 _epoch, uint256 indexed _chainId, uint256 _blockNumber);
 
   /**
    * @notice Emitted when a block number is amended
@@ -30,7 +30,7 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
    * @param _chainId The chain ID to amend
    * @param _blockNumber The amended block number
    */
-  event AmendEpoch(uint256 _epoch, uint256 _chainId, uint256 _blockNumber);
+  event AmendEpoch(uint256 _epoch, uint256 indexed _chainId, uint256 _blockNumber);
 
   /**
    * @notice Emitted when the EBORequestCreator is set
