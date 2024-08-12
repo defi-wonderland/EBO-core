@@ -205,7 +205,7 @@
   resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-modules-contracts/-/prophet-modules-contracts-0.0.0-1197c328.tgz#f58aa52a5a33fb39a9404bdf5e16ab75fcdde85f"
   integrity sha512-78IRF5dSoHvVIzS9/NSqkuQrzPLrVKzRnBvOeSWt/vzoKy3Pm6rkcT5qzWZynIXbFNyMXGTa8HKYBWKFNlaE9A==
   dependencies:
-    "@defi-wonderland/prophet-core-contracts" "0.0.0-d01bc1a0"
+    "@defi-wonderland/prophet-core" "0.0.0-2e39539b"
     "@openzeppelin/contracts" "4.9.5"
     solmate "https://github.com/transmissions11/solmate.git#bfc9c25865a274a7827fea5abf6e4fb64fc64e6c"
 
