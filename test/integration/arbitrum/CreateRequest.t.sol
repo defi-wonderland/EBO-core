@@ -8,13 +8,20 @@ contract Integration_CreateRequest is IntegrationBase {
     string[] memory _chainIds = new string[](1);
     _chainIds[0] = 'chainId1';
 
-    // TODO: Replace with the implementation
-    vm.mockCall(address(_epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(1));
+    // Should revert if the epoch is invalid
+    vm.expectRevert(IEBORequestCreator.EBORequestCreator_InvalidEpoch.selector);
+    vm.prank(_user);
+    _eboRequestCreator.createRequests(1, _chainIds);
+
+    // New epoch
+    vm.roll(242_000_000);
+    // Get the current epoch
+    uint256 _currentEpoch = _epochManager.currentEpoch();
 
     // Create a request without approving the chain id
     vm.expectRevert(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector);
     vm.prank(_user);
-    _eboRequestCreator.createRequests(1, _chainIds);
+    _eboRequestCreator.createRequests(_currentEpoch, _chainIds);
 
     // Create a request with an approved chain id
     vm.prank(_arbitrator);
@@ -25,8 +32,8 @@ contract Integration_CreateRequest is IntegrationBase {
     vm.mockCall(address(_oracle), abi.encodeWithSelector(IOracle.createRequest.selector), abi.encode(_requestId));
 
     vm.prank(_user);
-    _eboRequestCreator.createRequests(1, _chainIds);
-    assertEq(_eboRequestCreator.requestIdPerChainAndEpoch('chainId1', 1), _requestId);
+    _eboRequestCreator.createRequests(_currentEpoch, _chainIds);
+    assertEq(_eboRequestCreator.requestIdPerChainAndEpoch('chainId1', _currentEpoch), _requestId);
 
     // Remove the chain id
     vm.prank(_arbitrator);
@@ -35,6 +42,6 @@ contract Integration_CreateRequest is IntegrationBase {
     // Create a request without approving the chain id
     vm.expectRevert(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector);
     vm.prank(_user);
-    _eboRequestCreator.createRequests(1, _chainIds);
+    _eboRequestCreator.createRequests(_currentEpoch, _chainIds);
   }
 }

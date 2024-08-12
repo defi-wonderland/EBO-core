@@ -87,7 +87,7 @@ interface IEBORequestCreator {
   /**
    * @notice Thrown when the epoch is not valid
    */
-  error EBORequestCreator_EpochNotValid();
+  error EBORequestCreator_InvalidEpoch();
 
   /*///////////////////////////////////////////////////////////////
                             VARIABLES

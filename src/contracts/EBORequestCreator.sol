@@ -43,7 +43,7 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
 
   /// @inheritdoc IEBORequestCreator
   function createRequests(uint256 _epoch, string[] calldata _chainIds) external {
-    if (_epoch > epochManager.currentEpoch() || startEpoch > _epoch) revert EBORequestCreator_EpochNotValid();
+    if (_epoch > epochManager.currentEpoch() || startEpoch > _epoch) revert EBORequestCreator_InvalidEpoch();
 
     bytes32 _encodedChainId;
 

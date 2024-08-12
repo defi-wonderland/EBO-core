@@ -126,7 +126,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
       address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(_epoch - 1)
     );
 
-    vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_EpochNotValid.selector));
+    vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_InvalidEpoch.selector));
 
     eboRequestCreator.createRequests(_epoch - 1, new string[](1));
   }
@@ -139,7 +139,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
 
     vm.mockCall(address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(_epoch));
 
-    vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_EpochNotValid.selector));
+    vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_InvalidEpoch.selector));
 
     eboRequestCreator.createRequests(_epoch + 1, new string[](1));
   }
