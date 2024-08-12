@@ -33,28 +33,16 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
 
     IOracle.Request memory _requestData = requestData;
 
+    _requestData.nonce = uint96(0);
+    _requestData.requester = address(this);
+
     for (uint256 _i; _i < _chainIds.length; _i++) {
       _encodedChainId = _encodeChainId(_chainIds[_i]);
       if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
 
       if (requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] == bytes32(0)) {
-        // TODO: COMPLETE THE REQUEST CREATION WITH THE PROPER MODULES
-        IOracle.Request memory _request = IOracle.Request({
-          nonce: uint96(0),
-          requester: address(this),
-          requestModule: _requestData.requestModule,
-          responseModule: _requestData.responseModule,
-          disputeModule: _requestData.disputeModule,
-          resolutionModule: _requestData.resolutionModule,
-          finalityModule: _requestData.finalityModule,
-          requestModuleData: _requestData.requestModuleData,
-          responseModuleData: _requestData.responseModuleData,
-          disputeModuleData: _requestData.disputeModuleData,
-          resolutionModuleData: _requestData.resolutionModuleData,
-          finalityModuleData: _requestData.finalityModuleData
-        });
-
-        bytes32 _requestId = oracle.createRequest(_request, bytes32(0));
+        // TODO: CREATE REQUEST DATA
+        bytes32 _requestId = oracle.createRequest(_requestData, bytes32(0));
 
         requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] = _requestId;
 
@@ -66,10 +54,9 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   /// @inheritdoc IEBORequestCreator
   function addChain(string calldata _chainId) external onlyArbitrator {
     bytes32 _encodedChainId = _encodeChainId(_chainId);
-    if (_chainIdsAllowed.contains(_encodedChainId)) {
+    if (!_chainIdsAllowed.add(_encodedChainId)) {
       revert EBORequestCreator_ChainAlreadyAdded();
     }
-    _chainIdsAllowed.add(_encodedChainId);
 
     emit ChainAdded(_chainId);
   }
@@ -77,10 +64,9 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   /// @inheritdoc IEBORequestCreator
   function removeChain(string calldata _chainId) external onlyArbitrator {
     bytes32 _encodedChainId = _encodeChainId(_chainId);
-    if (!_chainIdsAllowed.contains(_encodedChainId)) {
+    if (!_chainIdsAllowed.remove(_encodedChainId)) {
       revert EBORequestCreator_ChainNotAdded();
     }
-    _chainIdsAllowed.remove(_encodedChainId);
 
     emit ChainRemoved(_chainId);
   }

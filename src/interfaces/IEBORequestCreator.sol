@@ -68,7 +68,7 @@ interface IEBORequestCreator {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice hrown when the chain is already added
+   * @notice Thrown when the chain is already added
    */
   error EBORequestCreator_ChainAlreadyAdded();
 
