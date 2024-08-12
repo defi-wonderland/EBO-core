@@ -72,12 +72,38 @@ abstract contract EBORequestCreator_Unit_BaseTest is Test {
 
 contract EBORequestCreator_Unit_Constructor is EBORequestCreator_Unit_BaseTest {
   /**
-   * @notice Test the constructor
+   * @notice Test arbitrator set in the constructor
    */
-  function test_constructor() external view {
+  function test_arbitratorSet() external view {
     assertEq(eboRequestCreator.arbitrator(), arbitrator);
+  }
+
+  /**
+   * @notice Test council set in the constructor
+   */
+  function test_councilSet() external view {
     assertEq(eboRequestCreator.council(), council);
+  }
+
+  /**
+   * @notice Test oracle set in the constructor
+   */
+  function test_oracleSet() external view {
     assertEq(address(eboRequestCreator.oracle()), address(oracle));
+  }
+
+  /**
+   * @notice Test epoch manager set in the constructor
+   */
+  function test_epochManagerSet() external view {
+    assertEq(address(eboRequestCreator.epochManager()), address(epochManager));
+  }
+
+  /**
+   * @notice Test start epoch set in the constructor
+   */
+  function test_startEpochSet() external view {
+    assertEq(eboRequestCreator.startEpoch(), 0);
   }
 }
 
