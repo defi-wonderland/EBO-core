@@ -106,16 +106,10 @@ yarn coverage
 
 Configure the `.env` variables.
 
-### Sepolia
+### Arbitrum
 
 ```bash
-yarn deploy:sepolia
-```
-
-### Mainnet
-
-```bash
-yarn deploy:mainnet
+yarn deploy:arbitrum
 ```
 
 The deployments are stored in ./broadcast
