@@ -3,6 +3,8 @@ pragma solidity ^0.8.19;
 
 import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IAccountingExtension} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IAccountingExtension.sol';
 
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
@@ -19,11 +21,8 @@ contract EBORequestModule_Unit_BaseTest is Test {
   address public arbitrator;
   address public council;
 
-  uint256 public constant FUZZED_ARRAY_LENGTH = 32;
-
   event RequestCreated(bytes32 _requestId, bytes _data, address _requester);
   event SetEBORequestCreator(address _eboRequestCreator);
-  // TODO: event RequestFinalized(bytes32 indexed _requestId, IOracle.Response _response, address _finalizer);
   event SetArbitrator(address _arbitrator);
   event SetCouncil(address _council);
 
@@ -163,16 +162,41 @@ contract EBORequestModule_Unit_SetEBORequestCreator is EBORequestModule_Unit_Bas
 }
 
 contract EBORequestModule_Unit_ValidateParameters is EBORequestModule_Unit_BaseTest {
-  function test_returnInvalidParams(IEBORequestModule.RequestParameters memory _params) public view {
+  function test_returnInvalidEpochParam(IEBORequestModule.RequestParameters memory _params) public view {
+    _params.epoch = 0;
+
+    bytes memory _encodedParams = abi.encode(_params);
+
+    assertFalse(eboRequestModule.validateParameters(_encodedParams));
+  }
+
+  function test_returnInvalidChainIdParam(IEBORequestModule.RequestParameters memory _params) public view {
+    vm.assume(_params.epoch != 0);
+    _params.chainId = 0;
+
+    bytes memory _encodedParams = abi.encode(_params);
+
+    assertFalse(eboRequestModule.validateParameters(_encodedParams));
+  }
+
+  function test_returnInvalidAccountingExtensionParam(IEBORequestModule.RequestParameters memory _params) public view {
+    vm.assume(_params.epoch != 0);
+    vm.assume(_params.chainId != 0);
+    _params.accountingExtension = IAccountingExtension(address(0));
+
     bytes memory _encodedParams = abi.encode(_params);
 
     assertFalse(eboRequestModule.validateParameters(_encodedParams));
   }
 
   function test_returnValidParams(IEBORequestModule.RequestParameters memory _params) public view {
+    vm.assume(_params.epoch != 0);
+    vm.assume(_params.chainId != 0);
+    vm.assume(address(_params.accountingExtension) != address(0));
+
     bytes memory _encodedParams = abi.encode(_params);
 
-    // TODO: assertTrue(eboRequestModule.validateParameters(_encodedParams));
+    assertTrue(eboRequestModule.validateParameters(_encodedParams));
   }
 }
 

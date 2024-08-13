@@ -39,8 +39,13 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
 
     RequestParameters memory _params = decodeRequestData(_data);
 
+    // TODO: Bond for the rewards
+
     emit RequestCreated(_requestId, _data, _requester);
   }
+
+  // TODO: finalizeRequest()
+  // TODO: string chainId
 
   /// @inheritdoc IEBORequestModule
   function setEBORequestCreator(address _eboRequestCreator) external onlyArbitrator {
@@ -50,9 +55,9 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
   /// @inheritdoc IModule
   function validateParameters(
     bytes calldata _encodedParameters
-  ) external view override(IModule, Module) returns (bool _valid) {
+  ) external pure override(IModule, Module) returns (bool _valid) {
     RequestParameters memory _params = decodeRequestData(_encodedParameters);
-    // TODO: _valid = true;
+    _valid = _params.epoch != 0 && _params.chainId != 0 && address(_params.accountingExtension) != address(0);
   }
 
   /// @inheritdoc IModule

@@ -2,6 +2,8 @@
 pragma solidity ^0.8.19;
 
 import {IRequestModule} from '@defi-wonderland/prophet-core/solidity/interfaces/modules/request/IRequestModule.sol';
+import {IAccountingExtension} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IAccountingExtension.sol';
 
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 
@@ -17,10 +19,16 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
 
   /**
    * @notice Parameters of the request as stored in the module
+   * @param epoch The epoch for which the data is requested
+   * @param chainId The chain ID for which the data is requested
+   * @param accountingExtension The address of the AccountingExtension
+   * @param paymentAmount The amount of payment for the request
    */
   struct RequestParameters {
     uint256 epoch;
     uint256 chainId;
+    IAccountingExtension accountingExtension;
+    uint256 paymentAmount;
   }
 
   /*///////////////////////////////////////////////////////////////
