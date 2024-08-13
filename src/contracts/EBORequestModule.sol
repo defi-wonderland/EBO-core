@@ -10,8 +10,7 @@ import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
 /**
  * @title EBORequestModule
- * @notice Module allowing users to fetch epoch block data from the oracle
- * as a result of a request being created
+ * @notice Module allowing users to create a request for RPC data for a specific epoch
  */
 contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
   /// @inheritdoc IEBORequestModule

@@ -23,12 +23,12 @@ contract EBOFinalityModule_Unit_BaseTest is Test {
 
   uint256 public constant FUZZED_ARRAY_LENGTH = 32;
 
-  event NewEpoch(uint256 _epoch, uint256 indexed _chainId, uint256 _blockNumber);
-  event AmendEpoch(uint256 _epoch, uint256 indexed _chainId, uint256 _blockNumber);
-  event SetEBORequestCreator(address _eboRequestCreator);
+  event NewEpoch(uint256 indexed _epoch, uint256 indexed _chainId, uint256 _blockNumber);
+  event AmendEpoch(uint256 indexed _epoch, uint256 indexed _chainId, uint256 _blockNumber);
+  event SetEBORequestCreator(address indexed _eboRequestCreator);
   event RequestFinalized(bytes32 indexed _requestId, IOracle.Response _response, address _finalizer);
-  event SetArbitrator(address _arbitrator);
-  event SetCouncil(address _council);
+  event SetArbitrator(address indexed _arbitrator);
+  event SetCouncil(address indexed _council);
 
   function setUp() public {
     oracle = IOracle(makeAddr('Oracle'));

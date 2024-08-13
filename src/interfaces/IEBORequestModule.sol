@@ -10,8 +10,7 @@ import {IArbitrable} from 'interfaces/IArbitrable.sol';
 
 /**
  * @title EBORequestModule
- * @notice Module allowing users to fetch epoch block data from the oracle
- * as a result of a request being created
+ * @notice Module allowing users to create a request for RPC data for a specific epoch
  */
 interface IEBORequestModule is IRequestModule, IArbitrable {
   /*///////////////////////////////////////////////////////////////
@@ -40,7 +39,7 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
    * @notice Emitted when the EBORequestCreator is set
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  event SetEBORequestCreator(address _eboRequestCreator);
+  event SetEBORequestCreator(address indexed _eboRequestCreator);
 
   /*///////////////////////////////////////////////////////////////
                               ERRORS
@@ -66,7 +65,7 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Creates a request for RPC data for a specific epoch
+   * @notice Executes pre-request logic, bonding the requester's funds
    * @dev Callable only by the Oracle
    * @param _requestId The id of the request
    * @param _data The data of the request
@@ -75,7 +74,7 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
   function createRequest(bytes32 _requestId, bytes calldata _data, address _requester) external;
 
   /**
-   * @notice Finalizes the request
+   * @notice Finalizes the request by paying the proposer for the response or releasing the requester's bond if no response was submitted
    * @dev Callable only by the Oracle
    * @param _request The request being finalized
    * @param _response The final response

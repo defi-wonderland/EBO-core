@@ -29,9 +29,9 @@ contract Arbitrable_Unit_BaseTest is Test {
   address public council;
   address public pendingCouncil;
 
-  event SetArbitrator(address _arbitrator);
-  event SetCouncil(address _council);
-  event SetPendingCouncil(address _pendingCouncil);
+  event SetArbitrator(address indexed _arbitrator);
+  event SetCouncil(address indexed _council);
+  event SetPendingCouncil(address indexed _pendingCouncil);
 
   function setUp() public {
     arbitrator = makeAddr('Arbitrator');

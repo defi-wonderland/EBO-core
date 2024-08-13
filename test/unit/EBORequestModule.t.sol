@@ -23,10 +23,10 @@ contract EBORequestModule_Unit_BaseTest is Test {
   address public arbitrator;
   address public council;
 
-  event SetEBORequestCreator(address _eboRequestCreator);
+  event SetEBORequestCreator(address indexed _eboRequestCreator);
   event RequestFinalized(bytes32 indexed _requestId, IOracle.Response _response, address _finalizer);
-  event SetArbitrator(address _arbitrator);
-  event SetCouncil(address _council);
+  event SetArbitrator(address indexed _arbitrator);
+  event SetCouncil(address indexed _council);
 
   function setUp() public {
     oracle = IOracle(makeAddr('Oracle'));
