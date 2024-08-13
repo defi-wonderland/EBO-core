@@ -60,7 +60,6 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
 
     emit RequestFinalized(_response.requestId, _response, _finalizer);
   }
-  // TODO: string chainId
 
   /// @inheritdoc IEBORequestModule
   function setEBORequestCreator(address _eboRequestCreator) external onlyArbitrator {
@@ -72,7 +71,8 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
     bytes calldata _encodedParameters
   ) external pure override(IModule, Module) returns (bool _valid) {
     RequestParameters memory _params = decodeRequestData(_encodedParameters);
-    _valid = _params.epoch != 0 && _params.chainId != 0 && address(_params.accountingExtension) != address(0);
+    _valid =
+      _params.epoch != 0 && bytes(_params.chainId).length != 0 && address(_params.accountingExtension) != address(0);
   }
 
   /// @inheritdoc IModule

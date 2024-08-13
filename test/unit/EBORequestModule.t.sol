@@ -248,7 +248,7 @@ contract EBORequestModule_Unit_ValidateParameters is EBORequestModule_Unit_BaseT
 
   function test_returnInvalidChainIdParam(IEBORequestModule.RequestParameters memory _params) public view {
     vm.assume(_params.epoch != 0);
-    _params.chainId = 0;
+    _params.chainId = '';
 
     bytes memory _encodedParams = abi.encode(_params);
 
@@ -257,7 +257,7 @@ contract EBORequestModule_Unit_ValidateParameters is EBORequestModule_Unit_BaseT
 
   function test_returnInvalidAccountingExtensionParam(IEBORequestModule.RequestParameters memory _params) public view {
     vm.assume(_params.epoch != 0);
-    vm.assume(_params.chainId != 0);
+    vm.assume(bytes(_params.chainId).length != 0);
     _params.accountingExtension = IAccountingExtension(address(0));
 
     bytes memory _encodedParams = abi.encode(_params);
@@ -267,7 +267,7 @@ contract EBORequestModule_Unit_ValidateParameters is EBORequestModule_Unit_BaseT
 
   function test_returnValidParams(IEBORequestModule.RequestParameters memory _params) public view {
     vm.assume(_params.epoch != 0);
-    vm.assume(_params.chainId != 0);
+    vm.assume(bytes(_params.chainId).length != 0);
     vm.assume(address(_params.accountingExtension) != address(0));
 
     bytes memory _encodedParams = abi.encode(_params);

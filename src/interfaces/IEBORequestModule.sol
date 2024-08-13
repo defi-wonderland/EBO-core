@@ -26,7 +26,7 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
    */
   struct RequestParameters {
     uint256 epoch;
-    uint256 chainId;
+    string chainId;
     IAccountingExtension accountingExtension;
     uint256 paymentAmount;
   }

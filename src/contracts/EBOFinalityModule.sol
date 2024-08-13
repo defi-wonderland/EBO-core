@@ -54,7 +54,7 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
   /// @inheritdoc IEBOFinalityModule
   function amendEpoch(
     uint256 _epoch,
-    uint256[] calldata _chainIds,
+    string[] calldata _chainIds,
     uint256[] calldata _blockNumbers
   ) external onlyArbitrator {
     uint256 _length = _chainIds.length;

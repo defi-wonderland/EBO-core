@@ -23,8 +23,8 @@ contract EBOFinalityModule_Unit_BaseTest is Test {
 
   uint256 public constant FUZZED_ARRAY_LENGTH = 32;
 
-  event NewEpoch(uint256 indexed _epoch, uint256 indexed _chainId, uint256 _blockNumber);
-  event AmendEpoch(uint256 indexed _epoch, uint256 indexed _chainId, uint256 _blockNumber);
+  event NewEpoch(uint256 indexed _epoch, string indexed _chainId, uint256 _blockNumber);
+  event AmendEpoch(uint256 indexed _epoch, string indexed _chainId, uint256 _blockNumber);
   event SetEBORequestCreator(address indexed _eboRequestCreator);
   event RequestFinalized(bytes32 indexed _requestId, IOracle.Response _response, address _finalizer);
   event SetArbitrator(address indexed _arbitrator);
@@ -45,6 +45,15 @@ contract EBOFinalityModule_Unit_BaseTest is Test {
 
   function _getId(IOracle.Response memory _response) internal pure returns (bytes32 _id) {
     _id = keccak256(abi.encode(_response));
+  }
+
+  function _getDynamicArray(
+    string[FUZZED_ARRAY_LENGTH] calldata _staticArray
+  ) internal pure returns (string[] memory _dynamicArray) {
+    _dynamicArray = new string[](FUZZED_ARRAY_LENGTH);
+    for (uint256 _i; _i < FUZZED_ARRAY_LENGTH; ++_i) {
+      _dynamicArray[_i] = _staticArray[_i];
+    }
   }
 
   function _getDynamicArray(
@@ -198,7 +207,7 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
 contract EBOFinalityModule_Unit_AmendEpoch is EBOFinalityModule_Unit_BaseTest {
   struct AmendEpochParams {
     uint256 epoch;
-    uint256[FUZZED_ARRAY_LENGTH] chainIds;
+    string[FUZZED_ARRAY_LENGTH] chainIds;
     uint256[FUZZED_ARRAY_LENGTH] blockNumbers;
   }
 
@@ -208,7 +217,7 @@ contract EBOFinalityModule_Unit_AmendEpoch is EBOFinalityModule_Unit_BaseTest {
   }
 
   function test_revertOnlyArbitrator(AmendEpochParams calldata _params) public happyPath {
-    uint256[] memory _chainIds = _getDynamicArray(_params.chainIds);
+    string[] memory _chainIds = _getDynamicArray(_params.chainIds);
     uint256[] memory _blockNumbers = _getDynamicArray(_params.blockNumbers);
 
     vm.stopPrank();
@@ -218,7 +227,7 @@ contract EBOFinalityModule_Unit_AmendEpoch is EBOFinalityModule_Unit_BaseTest {
 
   function test_revertLengthMismatch(
     AmendEpochParams calldata _params,
-    uint256[] calldata _chainIds,
+    string[] calldata _chainIds,
     uint256[] calldata _blockNumbers
   ) public happyPath {
     vm.assume(_chainIds.length != _blockNumbers.length);
@@ -228,7 +237,7 @@ contract EBOFinalityModule_Unit_AmendEpoch is EBOFinalityModule_Unit_BaseTest {
   }
 
   function test_emitAmendEpoch(AmendEpochParams calldata _params) public happyPath {
-    uint256[] memory _chainIds = _getDynamicArray(_params.chainIds);
+    string[] memory _chainIds = _getDynamicArray(_params.chainIds);
     uint256[] memory _blockNumbers = _getDynamicArray(_params.blockNumbers);
 
     for (uint256 _i; _i < _chainIds.length; ++_i) {
