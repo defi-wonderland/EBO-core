@@ -40,8 +40,6 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
     RequestParameters memory _params = decodeRequestData(_data);
 
     // TODO: Bond for the rewards
-
-    emit RequestCreated(_requestId, _data, _requester);
   }
 
   // TODO: finalizeRequest()

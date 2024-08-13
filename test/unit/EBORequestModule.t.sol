@@ -21,7 +21,6 @@ contract EBORequestModule_Unit_BaseTest is Test {
   address public arbitrator;
   address public council;
 
-  event RequestCreated(bytes32 _requestId, bytes _data, address _requester);
   event SetEBORequestCreator(address _eboRequestCreator);
   event SetArbitrator(address _arbitrator);
   event SetCouncil(address _council);
@@ -124,14 +123,6 @@ contract EBORequestModule_Unit_CreateRequest is EBORequestModule_Unit_BaseTest {
     bytes memory _encodedParams = abi.encode(_params.requestData);
 
     vm.expectRevert(IEBORequestModule.EBORequestModule_InvalidRequester.selector);
-    eboRequestModule.createRequest(_params.requestId, _encodedParams, _params.requester);
-  }
-
-  function test_emitRequestCreated(CreateRequestParams memory _params) public happyPath(_params) {
-    bytes memory _encodedParams = abi.encode(_params.requestData);
-
-    vm.expectEmit();
-    emit RequestCreated(_params.requestId, _encodedParams, _params.requester);
     eboRequestModule.createRequest(_params.requestId, _encodedParams, _params.requester);
   }
 }

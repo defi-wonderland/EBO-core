@@ -36,14 +36,6 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Emitted when a request is created
-   * @param _requestId The id of the request
-   * @param _data The data of the request
-   * @param _requester The address of the requester
-   */
-  event RequestCreated(bytes32 _requestId, bytes _data, address _requester);
-
-  /**
    * @notice Emitted when the EBORequestCreator is set
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
