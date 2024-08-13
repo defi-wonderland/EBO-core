@@ -42,7 +42,25 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
     // TODO: Bond for the rewards
   }
 
-  // TODO: finalizeRequest()
+  /// @inheritdoc IEBORequestModule
+  function finalizeRequest(
+    IOracle.Request calldata _request,
+    IOracle.Response calldata _response,
+    address _finalizer
+  ) external override(Module, IEBORequestModule) onlyOracle {
+    if (_request.requester != eboRequestCreator) revert EBORequestModule_InvalidRequester();
+
+    // TODO: Redeclare the `Request` struct
+    // RequestParameters memory _params = decodeRequestData(_request.requestModuleData);
+
+    if (_response.requestId != 0) {
+      _validateResponse(_request, _response);
+
+      // TODO: Bond for the rewards
+    }
+
+    emit RequestFinalized(_response.requestId, _response, _finalizer);
+  }
   // TODO: string chainId
 
   /// @inheritdoc IEBORequestModule

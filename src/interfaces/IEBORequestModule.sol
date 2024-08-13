@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 import {IRequestModule} from '@defi-wonderland/prophet-core/solidity/interfaces/modules/request/IRequestModule.sol';
 import {IAccountingExtension} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IAccountingExtension.sol';
@@ -72,6 +73,19 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
    * @param _requester The address of the requester
    */
   function createRequest(bytes32 _requestId, bytes calldata _data, address _requester) external;
+
+  /**
+   * @notice Finalizes the request
+   * @dev Callable only by the Oracle
+   * @param _request The request being finalized
+   * @param _response The final response
+   * @param _finalizer The address that initiated the finalization
+   */
+  function finalizeRequest(
+    IOracle.Request calldata _request,
+    IOracle.Response calldata _response,
+    address _finalizer
+  ) external;
 
   /**
    * @notice Sets the address of the EBORequestCreator

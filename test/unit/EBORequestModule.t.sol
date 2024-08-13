@@ -3,6 +3,8 @@ pragma solidity ^0.8.19;
 
 import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IValidator} from '@defi-wonderland/prophet-core/solidity/interfaces/IValidator.sol';
+import {ValidatorLib} from '@defi-wonderland/prophet-core/solidity/libraries/ValidatorLib.sol';
 import {IAccountingExtension} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IAccountingExtension.sol';
 
@@ -22,6 +24,7 @@ contract EBORequestModule_Unit_BaseTest is Test {
   address public council;
 
   event SetEBORequestCreator(address _eboRequestCreator);
+  event RequestFinalized(bytes32 indexed _requestId, IOracle.Response _response, address _finalizer);
   event SetArbitrator(address _arbitrator);
   event SetCouncil(address _council);
 
@@ -32,6 +35,14 @@ contract EBORequestModule_Unit_BaseTest is Test {
     council = makeAddr('Council');
 
     eboRequestModule = new EBORequestModule(oracle, eboRequestCreator, arbitrator, council);
+  }
+
+  function _getId(IOracle.Request memory _request) internal pure returns (bytes32 _id) {
+    _id = keccak256(abi.encode(_request));
+  }
+
+  function _getId(IOracle.Response memory _response) internal pure returns (bytes32 _id) {
+    _id = keccak256(abi.encode(_response));
   }
 }
 
@@ -124,6 +135,80 @@ contract EBORequestModule_Unit_CreateRequest is EBORequestModule_Unit_BaseTest {
 
     vm.expectRevert(IEBORequestModule.EBORequestModule_InvalidRequester.selector);
     eboRequestModule.createRequest(_params.requestId, _encodedParams, _params.requester);
+  }
+}
+
+contract EBORequestModule_Unit_FinalizeRequest is EBORequestModule_Unit_BaseTest {
+  struct FinalizeRequestParams {
+    IOracle.Request request;
+    IOracle.Response response;
+    address finalizer;
+    uint128 responseCreatedAt;
+    bool finalizeWithResponse;
+  }
+
+  modifier happyPath(FinalizeRequestParams memory _params) {
+    _params.request.requester = eboRequestCreator;
+
+    if (_params.finalizeWithResponse) {
+      _params.response.requestId = _getId(_params.request);
+
+      vm.assume(_params.responseCreatedAt != 0);
+      vm.mockCall(
+        address(oracle),
+        abi.encodeCall(IOracle.responseCreatedAt, (_getId(_params.response))),
+        abi.encode(_params.responseCreatedAt)
+      );
+    } else {
+      _params.response.requestId = 0;
+    }
+
+    vm.startPrank(address(oracle));
+    _;
+  }
+
+  function test_revertOnlyOracle(FinalizeRequestParams memory _params) public happyPath(_params) {
+    vm.stopPrank();
+    vm.expectRevert(IModule.Module_OnlyOracle.selector);
+    eboRequestModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
+  }
+
+  function test_revertInvalidRequester(
+    FinalizeRequestParams memory _params,
+    address _requester
+  ) public happyPath(_params) {
+    vm.assume(_requester != eboRequestCreator);
+    _params.request.requester = _requester;
+
+    vm.expectRevert(IEBORequestModule.EBORequestModule_InvalidRequester.selector);
+    eboRequestModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
+  }
+
+  function test_revertInvalidResponseBody(
+    FinalizeRequestParams memory _params,
+    bytes32 _requestId
+  ) public happyPath(_params) {
+    vm.assume(_params.finalizeWithResponse);
+    vm.assume(_requestId != 0);
+    vm.assume(_requestId != _getId(_params.request));
+    _params.response.requestId = _requestId;
+
+    vm.expectRevert(ValidatorLib.ValidatorLib_InvalidResponseBody.selector);
+    eboRequestModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
+  }
+
+  function test_revertInvalidResponse(FinalizeRequestParams memory _params) public happyPath(_params) {
+    vm.assume(_params.finalizeWithResponse);
+    vm.mockCall(address(oracle), abi.encodeCall(IOracle.responseCreatedAt, (_getId(_params.response))), abi.encode(0));
+
+    vm.expectRevert(IValidator.Validator_InvalidResponse.selector);
+    eboRequestModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
+  }
+
+  function test_emitRequestFinalized(FinalizeRequestParams memory _params) public happyPath(_params) {
+    vm.expectEmit();
+    emit RequestFinalized(_params.response.requestId, _params.response, _params.finalizer);
+    eboRequestModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
   }
 }
 
