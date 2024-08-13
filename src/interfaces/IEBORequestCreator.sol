@@ -75,7 +75,7 @@ interface IEBORequestCreator {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice hrown when the chain is already added
+   * @notice Thrown when the chain is already added
    */
   error EBORequestCreator_ChainAlreadyAdded();
 
@@ -96,17 +96,17 @@ interface IEBORequestCreator {
   /**
    * @notice The oracle contract
    */
-  function oracle() external view returns (IOracle _oracle);
+  function ORACLE() external view returns (IOracle _ORACLE);
+
+  /**
+   * @notice The first valid epoch to create requests
+   */
+  function START_EPOCH() external view returns (uint256 _START_EPOCH);
 
   /**
    * @notice The epoch manager contract
    */
   function epochManager() external view returns (IEpochManager _epochManager);
-
-  /**
-   * @notice The first valid epoch to create requests
-   */
-  function startEpoch() external view returns (uint256 _startEpoch);
 
   /**
    * @notice The request data

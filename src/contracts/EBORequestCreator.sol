@@ -10,16 +10,16 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   /// @inheritdoc IEBORequestCreator
-  IOracle public oracle;
+  IOracle public immutable ORACLE;
+
+  /// @inheritdoc IEBORequestCreator
+  uint256 public immutable START_EPOCH;
 
   /// @inheritdoc IEBORequestCreator
   IEpochManager public epochManager;
 
   /// @inheritdoc IEBORequestCreator
   IOracle.Request public requestData;
-
-  /// @inheritdoc IEBORequestCreator
-  uint256 public startEpoch;
 
   /// @inheritdoc IEBORequestCreator
   mapping(string _chainId => mapping(uint256 _epoch => bytes32 _requestId)) public requestIdPerChainAndEpoch;
@@ -35,15 +35,15 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
     address _arbitrator,
     address _council
   ) Arbitrable(_arbitrator, _council) {
-    oracle = _oracle;
+    ORACLE = _oracle;
     epochManager = _epochManager;
 
-    startEpoch = epochManager.currentEpoch();
+    START_EPOCH = epochManager.currentEpoch();
   }
 
   /// @inheritdoc IEBORequestCreator
   function createRequests(uint256 _epoch, string[] calldata _chainIds) external {
-    if (_epoch > epochManager.currentEpoch() || startEpoch > _epoch) revert EBORequestCreator_InvalidEpoch();
+    if (_epoch > epochManager.currentEpoch() || START_EPOCH > _epoch) revert EBORequestCreator_InvalidEpoch();
 
     bytes32 _encodedChainId;
 
@@ -58,7 +58,7 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
 
       if (requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] == bytes32(0)) {
         // TODO: CREATE REQUEST DATA
-        bytes32 _requestId = oracle.createRequest(_requestData, bytes32(0));
+        bytes32 _requestId = ORACLE.createRequest(_requestData, bytes32(0));
 
         requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] = _requestId;
 

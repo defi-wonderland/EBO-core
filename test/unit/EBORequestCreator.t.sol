@@ -6,7 +6,7 @@ import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet
 import {EBORequestCreator, IEBORequestCreator, IEpochManager, IOracle} from 'contracts/EBORequestCreator.sol';
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 
-import {Test} from 'forge-std/Test.sol';
+import {StdStorage, Test, stdStorage} from 'forge-std/Test.sol';
 import 'forge-std/console.sol';
 
 contract EBORequestCreatorForTest is EBORequestCreator {
@@ -25,10 +25,6 @@ contract EBORequestCreatorForTest is EBORequestCreator {
 
   function setRequestIdPerChainAndEpochForTest(string calldata _chainId, uint256 _epoch, bytes32 _requestId) external {
     requestIdPerChainAndEpoch[_chainId][_epoch] = _requestId;
-  }
-
-  function setStartEpochForTest(uint256 _startEpoch) external {
-    startEpoch = _startEpoch;
   }
 }
 
@@ -89,7 +85,7 @@ contract EBORequestCreator_Unit_Constructor is EBORequestCreator_Unit_BaseTest {
    * @notice Test oracle set in the constructor
    */
   function test_oracleSet() external view {
-    assertEq(address(eboRequestCreator.oracle()), address(oracle));
+    assertEq(address(eboRequestCreator.ORACLE()), address(oracle));
   }
 
   /**
@@ -102,12 +98,18 @@ contract EBORequestCreator_Unit_Constructor is EBORequestCreator_Unit_BaseTest {
   /**
    * @notice Test start epoch set in the constructor
    */
-  function test_startEpochSet() external view {
-    assertEq(eboRequestCreator.startEpoch(), 0);
+  function test_startEpochSet(uint256 _startEpoch) external {
+    vm.clearMockedCalls();
+    vm.mockCall(
+      address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(_startEpoch)
+    );
+    assertEq(eboRequestCreator.START_EPOCH(), _startEpoch);
   }
 }
 
 contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest {
+  using stdStorage for StdStorage;
+
   string[] internal _cleanChainIds;
 
   modifier happyPath(uint256 _epoch, string[] memory _chainId) {
@@ -115,9 +117,6 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     vm.assume(_chainId.length > 0 && _chainId.length < 30);
 
     vm.mockCall(address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(_epoch));
-
-    eboRequestCreator.setStartEpochForTest(_epoch);
-
     bool _added;
     for (uint256 _i; _i < _chainId.length; _i++) {
       _added = eboRequestCreator.setChainIdForTest(_chainId[_i]);
@@ -135,7 +134,6 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
    */
   function test_revertIfChainNotAdded(uint256 _epoch) external {
     vm.mockCall(address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(_epoch));
-    eboRequestCreator.setStartEpochForTest(_epoch);
 
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector));
     eboRequestCreator.createRequests(_epoch, new string[](1));
@@ -147,7 +145,10 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
   function test_revertIfEpochBeforeStart(uint256 _epoch) external {
     vm.assume(_epoch > 0);
 
-    eboRequestCreator.setStartEpochForTest(_epoch);
+    vm.store(address(eboRequestCreator), bytes32(uint256(1)), bytes32(uint256(_epoch)));
+
+    console.log(eboRequestCreator.START_EPOCH());
+
     vm.mockCall(
       address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(_epoch - 1)
     );
