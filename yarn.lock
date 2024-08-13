@@ -190,22 +190,17 @@
     solc-typed-ast "18.1.2"
     yargs "17.7.2"
 
-"@defi-wonderland/prophet-core-contracts@0.0.0-438de1c5":
-  version "0.0.0-438de1c5"
-  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core-contracts/-/prophet-core-contracts-0.0.0-438de1c5.tgz#2b0238636c89eb71b07d57e12abfdea57c53b03b"
-  integrity sha512-UqdNRr2eH5DNSQ7qUriZbvR9LoXLXDMKTOjcjTTc8Gbq1aVcBhwFu4mSdrnhpQkXHjKtmsO0IfGcRHIGLvnXSQ==
+"@defi-wonderland/prophet-core@0.0.0-2e39539b":
+  version "0.0.0-2e39539b"
+  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core/-/prophet-core-0.0.0-2e39539b.tgz#dbf01ed05a9af302841123c77e84bc0b3b4a6176"
+  integrity sha512-EdYpDEO1XeO08uQikhOQ6NzG0LWYxANFk272j4vCyLSJ8kRyJNMv69JJCLcq5kV0B9IzXybmqjreemkZ05z3kQ==
 
-"@defi-wonderland/prophet-core-contracts@0.0.0-d01bc1a0":
-  version "0.0.0-d01bc1a0"
-  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core-contracts/-/prophet-core-contracts-0.0.0-d01bc1a0.tgz#ee4e8d970289a26966f6565b2f691d68d7b4232a"
-  integrity sha512-n4Dl1QgQAZafOtV7ef/fSoew2qlxWSdS389Z6PdIn7LxrHrzzRJi+nmJ1DJazMvMuhk/0dZbMhnaXMBi05E1zQ==
-
-"@defi-wonderland/prophet-modules-contracts@0.0.0-1197c328":
-  version "0.0.0-1197c328"
-  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-modules-contracts/-/prophet-modules-contracts-0.0.0-1197c328.tgz#f58aa52a5a33fb39a9404bdf5e16ab75fcdde85f"
-  integrity sha512-78IRF5dSoHvVIzS9/NSqkuQrzPLrVKzRnBvOeSWt/vzoKy3Pm6rkcT5qzWZynIXbFNyMXGTa8HKYBWKFNlaE9A==
+"@defi-wonderland/prophet-modules@0.0.0-e52f8cce":
+  version "0.0.0-e52f8cce"
+  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-modules/-/prophet-modules-0.0.0-e52f8cce.tgz#5b0cee1c75d1127267ccee29cdcdb2b3a2bfe5dd"
+  integrity sha512-zNx602Z/GuisTqi120JLgoWcs3wiMKDYvnXJ/6xdYUCNNBQKk2GyCmS6M5Hu1vTbSfDlNRrugy1cDOkG5sSGdg==
   dependencies:
-    "@defi-wonderland/prophet-core-contracts" "0.0.0-d01bc1a0"
+    "@defi-wonderland/prophet-core" "0.0.0-2e39539b"
     "@openzeppelin/contracts" "4.9.5"
     solmate "https://github.com/transmissions11/solmate.git#bfc9c25865a274a7827fea5abf6e4fb64fc64e6c"
 
