@@ -23,8 +23,17 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
    */
   EnumerableSet.Bytes32Set internal _chainIdsAllowed;
 
-  constructor(IOracle _oracle, address _arbitrator, address _council) Arbitrable(_arbitrator, _council) {
+  constructor(
+    IOracle _oracle,
+    address _arbitrator,
+    address _council,
+    IOracle.Request memory _requestData
+  ) Arbitrable(_arbitrator, _council) {
     oracle = _oracle;
+
+    if (_requestData.nonce != 0) revert EBORequestCreator_InvalidNonce();
+    _requestData.requester = address(this);
+    requestData = _requestData;
   }
 
   /// @inheritdoc IEBORequestCreator
@@ -32,9 +41,6 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
     bytes32 _encodedChainId;
 
     IOracle.Request memory _requestData = requestData;
-
-    _requestData.nonce = uint96(0);
-    _requestData.requester = address(this);
 
     for (uint256 _i; _i < _chainIds.length; _i++) {
       _encodedChainId = _encodeChainId(_chainIds[_i]);

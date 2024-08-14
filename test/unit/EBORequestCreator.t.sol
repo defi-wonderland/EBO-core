@@ -12,7 +12,12 @@ import 'forge-std/console.sol';
 contract EBORequestCreatorForTest is EBORequestCreator {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
-  constructor(IOracle _oracle, address _arbitrator, address _council) EBORequestCreator(_oracle, _arbitrator, _council) {}
+  constructor(
+    IOracle _oracle,
+    address _arbitrator,
+    address _council,
+    IOracle.Request memory _requestData
+  ) EBORequestCreator(_oracle, _arbitrator, _council, _requestData) {}
 
   function setChainIdForTest(string calldata _chainId) external returns (bool _added) {
     _added = _chainIdsAllowed.add(_encodeChainId(_chainId));
@@ -43,12 +48,17 @@ abstract contract EBORequestCreator_Unit_BaseTest is Test {
   address public arbitrator;
   address public council;
 
+  /// Variables
+  IOracle.Request requestData;
+
   function setUp() external {
     council = makeAddr('Council');
     arbitrator = makeAddr('Arbitrator');
     oracle = IOracle(makeAddr('Oracle'));
 
-    eboRequestCreator = new EBORequestCreatorForTest(oracle, arbitrator, council);
+    requestData.nonce = 0;
+
+    eboRequestCreator = new EBORequestCreatorForTest(oracle, arbitrator, council, requestData);
   }
 
   function _revertIfNotArbitrator() internal {

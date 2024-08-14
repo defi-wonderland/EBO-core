@@ -68,6 +68,10 @@ interface IEBORequestCreator {
   //////////////////////////////////////////////////////////////*/
 
   /**
+   * @notice Thrown when the nonce is not zero
+   */
+  error EBORequestCreator_InvalidNonce();
+  /**
    * @notice Thrown when the chain is already added
    */
   error EBORequestCreator_ChainAlreadyAdded();
