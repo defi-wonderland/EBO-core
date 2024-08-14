@@ -53,8 +53,6 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
     // RequestParameters memory _params = decodeRequestData(_request.requestModuleData);
 
     if (_response.requestId != 0) {
-      _validateResponse(_request, _response);
-
       // TODO: Bond for the rewards
     }
 

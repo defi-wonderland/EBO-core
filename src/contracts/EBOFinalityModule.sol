@@ -42,8 +42,6 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
     if (_request.requester != eboRequestCreator) revert EBOFinalityModule_InvalidRequester();
 
     if (_response.requestId != 0) {
-      _validateResponse(_request, _response);
-
       // TODO: Redeclare the `Response` struct
       // emit NewEpoch(_response.epoch, _response.chainId, _response.block);
     }

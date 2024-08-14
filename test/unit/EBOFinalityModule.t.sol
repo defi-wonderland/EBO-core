@@ -3,8 +3,6 @@ pragma solidity ^0.8.19;
 
 import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
-import {IValidator} from '@defi-wonderland/prophet-core/solidity/interfaces/IValidator.sol';
-import {ValidatorLib} from '@defi-wonderland/prophet-core/solidity/libraries/ValidatorLib.sol';
 
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
@@ -164,27 +162,6 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
     _params.request.requester = _requester;
 
     vm.expectRevert(IEBOFinalityModule.EBOFinalityModule_InvalidRequester.selector);
-    eboFinalityModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
-  }
-
-  function test_revertInvalidResponseBody(
-    FinalizeRequestParams memory _params,
-    bytes32 _requestId
-  ) public happyPath(_params) {
-    vm.assume(_params.finalizeWithResponse);
-    vm.assume(_requestId != 0);
-    vm.assume(_requestId != _getId(_params.request));
-    _params.response.requestId = _requestId;
-
-    vm.expectRevert(ValidatorLib.ValidatorLib_InvalidResponseBody.selector);
-    eboFinalityModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
-  }
-
-  function test_revertInvalidResponse(FinalizeRequestParams memory _params) public happyPath(_params) {
-    vm.assume(_params.finalizeWithResponse);
-    vm.mockCall(address(oracle), abi.encodeCall(IOracle.responseCreatedAt, (_getId(_params.response))), abi.encode(0));
-
-    vm.expectRevert(IValidator.Validator_InvalidResponse.selector);
     eboFinalityModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
   }
 
