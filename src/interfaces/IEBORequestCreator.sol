@@ -75,6 +75,10 @@ interface IEBORequestCreator {
   //////////////////////////////////////////////////////////////*/
 
   /**
+   * @notice Thrown when the nonce is not zero
+   */
+  error EBORequestCreator_InvalidNonce();
+  /**
    * @notice Thrown when the chain is already added
    */
   error EBORequestCreator_ChainAlreadyAdded();
@@ -95,21 +99,36 @@ interface IEBORequestCreator {
 
   /**
    * @notice The oracle contract
+   * @return _ORACLE The oracle contract
    */
   function ORACLE() external view returns (IOracle _ORACLE);
 
   /**
    * @notice The first valid epoch to create requests
+   * @return _START_EPOCH The start epoch
    */
   function START_EPOCH() external view returns (uint256 _START_EPOCH);
 
   /**
    * @notice The epoch manager contract
+   * @return _epochManager The epoch manager contract
    */
   function epochManager() external view returns (IEpochManager _epochManager);
 
   /**
    * @notice The request data
+   * @return _nonce The nonce
+   * @return _requester The requester address
+   * @return _requestModule The request module address
+   * @return _responseModule The response module address
+   * @return _disputeModule The dispute module address
+   * @return _resolutionModule The resolution module address
+   * @return _finalityModule The finality module address
+   * @return _requestModuleData The request module data
+   * @return _responseModuleData The response module data
+   * @return _disputeModuleData The dispute module data
+   * @return _resolutionModuleData The resolution module data
+   * @return _finalityModuleData The finality module data
    */
   function requestData()
     external

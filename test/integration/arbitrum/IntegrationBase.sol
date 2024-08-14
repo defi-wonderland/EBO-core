@@ -15,6 +15,8 @@ contract IntegrationBase is Test {
   address internal _owner = makeAddr('owner');
   address internal _user = makeAddr('user');
 
+  IOracle.Request _requestData;
+
   IEBORequestCreator internal _eboRequestCreator;
   IOracle internal _oracle;
   IEpochManager internal _epochManager;
@@ -26,7 +28,9 @@ contract IntegrationBase is Test {
     _oracle = new Oracle();
 
     _epochManager = IEpochManager(_EPOCH_MANAGER);
-    _eboRequestCreator = new EBORequestCreator(_oracle, _epochManager, _arbitrator, _council);
+
+    _requestData.nonce = 0;
+    _eboRequestCreator = new EBORequestCreator(_oracle, _epochManager, _arbitrator, _council, _requestData);
 
     vm.stopPrank();
   }
