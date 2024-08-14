@@ -68,12 +68,42 @@ abstract contract EBORequestCreator_Unit_BaseTest is Test {
 
 contract EBORequestCreator_Unit_Constructor is EBORequestCreator_Unit_BaseTest {
   /**
-   * @notice Test the constructor
+   * @notice Test arbitrator set in the constructor
    */
-  function test_constructor() external view {
+  function test_arbitratorSet() external view {
     assertEq(eboRequestCreator.arbitrator(), arbitrator);
+  }
+
+  /**
+   * @notice Test council set in the constructor
+   */
+  function test_councilSet() external view {
     assertEq(eboRequestCreator.council(), council);
+  }
+
+  /**
+   * @notice Test oracle set in the constructor
+   */
+  function test_oracleSet() external view {
     assertEq(address(eboRequestCreator.oracle()), address(oracle));
+  }
+
+  /**
+   * @notice Test request data set in the constructor
+   */
+  function test_requestDataSet() external view {
+    assertEq(requestData.nonce, 0);
+  }
+
+  /**
+   * @notice Test reverts if nonce is not zero
+   */
+  function test_revertIfNonceIsInvalid(uint96 _nonce, IOracle.Request memory _requestData) external {
+    vm.assume(_nonce > 0);
+
+    _requestData.nonce = _nonce;
+    vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_InvalidNonce.selector));
+    EBORequestCreator _newEboRequestCreator = new EBORequestCreator(oracle, arbitrator, council, _requestData);
   }
 }
 
