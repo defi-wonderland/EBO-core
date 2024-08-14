@@ -11,6 +11,7 @@ import 'forge-std/console.sol';
 
 contract EBORequestCreatorForTest is EBORequestCreator {
   using EnumerableSet for EnumerableSet.Bytes32Set;
+  using stdStorage for StdStorage;
 
   constructor(
     IOracle _oracle,
@@ -144,10 +145,6 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
    */
   function test_revertIfEpochBeforeStart(uint256 _epoch) external {
     vm.assume(_epoch > 0);
-
-    vm.store(address(eboRequestCreator), bytes32(uint256(1)), bytes32(uint256(_epoch)));
-
-    console.log(eboRequestCreator.START_EPOCH());
 
     vm.mockCall(
       address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(_epoch - 1)
