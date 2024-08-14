@@ -103,7 +103,7 @@ contract EBORequestCreator_Unit_Constructor is EBORequestCreator_Unit_BaseTest {
 
     _requestData.nonce = _nonce;
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_InvalidNonce.selector));
-    EBORequestCreator _newEboRequestCreator = new EBORequestCreator(oracle, arbitrator, council, _requestData);
+    new EBORequestCreator(oracle, arbitrator, council, _requestData);
   }
 }
 
