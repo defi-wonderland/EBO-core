@@ -154,6 +154,8 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     _chainIds[0] = _chainId;
 
     eboRequestCreator.createRequests(_epoch, _chainIds);
+
+    assertEq(eboRequestCreator.requestIdPerChainAndEpoch(_chainId, _epoch), _requestId);
   }
 
   /**
@@ -186,6 +188,8 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     _chainIds[0] = _chainId;
 
     eboRequestCreator.createRequests(_epoch, _chainIds);
+
+    assertEq(eboRequestCreator.requestIdPerChainAndEpoch(_chainId, _epoch), _requestId);
   }
 
   /**
@@ -231,6 +235,9 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
 
     string[] memory _chainIds = new string[](1);
     _chainIds[0] = _chainId;
+
+    vm.expectEmit();
+    emit RequestCreated(_requestId, _epoch, _chainId);
 
     eboRequestCreator.createRequests(_epoch, _chainIds);
   }
