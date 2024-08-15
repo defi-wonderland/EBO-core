@@ -87,11 +87,24 @@ interface IEBORequestCreator {
 
   /**
    * @notice The oracle contract
+   * @return _oracle The oracle contract
    */
   function oracle() external view returns (IOracle _oracle);
 
   /**
    * @notice The request data
+   * @return _nonce The nonce
+   * @return _requester The requester address
+   * @return _requestModule The request module address
+   * @return _responseModule The response module address
+   * @return _disputeModule The dispute module address
+   * @return _resolutionModule The resolution module address
+   * @return _finalityModule The finality module address
+   * @return _requestModuleData The request module data
+   * @return _responseModuleData The response module data
+   * @return _disputeModuleData The dispute module data
+   * @return _resolutionModuleData The resolution module data
+   * @return _finalityModuleData The finality module data
    */
   function requestData()
     external
