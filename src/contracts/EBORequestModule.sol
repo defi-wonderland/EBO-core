@@ -6,16 +6,15 @@ import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 
 import {Arbitrable} from 'contracts/Arbitrable.sol';
-import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
 import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
+import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
 /**
- * @title EBOFinalityModule
- * @notice Module allowing users to index data into the subgraph
- * as a result of a request being finalized
+ * @title EBORequestModule
+ * @notice Module allowing users to create a request for RPC data for a specific epoch
  */
-contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
-  /// @inheritdoc IEBOFinalityModule
+contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
+  /// @inheritdoc IEBORequestModule
   IEBORequestCreator public eboRequestCreator;
 
   /**
@@ -34,44 +33,55 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
     _setEBORequestCreator(_eboRequestCreator);
   }
 
-  /// @inheritdoc IEBOFinalityModule
+  /// @inheritdoc IEBORequestModule
+  function createRequest(bytes32 _requestId, bytes calldata _data, address _requester) external onlyOracle {
+    if (_requester != address(eboRequestCreator)) revert EBORequestModule_InvalidRequester();
+
+    RequestParameters memory _params = decodeRequestData(_data);
+
+    // TODO: Bond for the rewards
+  }
+
+  /// @inheritdoc IEBORequestModule
   function finalizeRequest(
     IOracle.Request calldata _request,
     IOracle.Response calldata _response,
     address _finalizer
-  ) external override(Module, IEBOFinalityModule) onlyOracle {
-    if (_request.requester != address(eboRequestCreator)) revert EBOFinalityModule_InvalidRequester();
+  ) external override(Module, IEBORequestModule) onlyOracle {
+    if (_request.requester != address(eboRequestCreator)) revert EBORequestModule_InvalidRequester();
+
+    // TODO: Redeclare the `Request` struct
+    // RequestParameters memory _params = decodeRequestData(_request.requestModuleData);
 
     if (_response.requestId != 0) {
-      // TODO: Redeclare the `Response` struct
-      // emit NewEpoch(_response.epoch, _response.chainId, _response.block);
+      // TODO: Bond for the rewards
     }
 
     emit RequestFinalized(_response.requestId, _response, _finalizer);
   }
 
-  /// @inheritdoc IEBOFinalityModule
-  function amendEpoch(
-    uint256 _epoch,
-    string[] calldata _chainIds,
-    uint256[] calldata _blockNumbers
-  ) external onlyArbitrator {
-    uint256 _length = _chainIds.length;
-    if (_length != _blockNumbers.length) revert EBOFinalityModule_LengthMismatch();
-
-    for (uint256 _i; _i < _length; ++_i) {
-      emit AmendEpoch(_epoch, _chainIds[_i], _blockNumbers[_i]);
-    }
-  }
-
-  /// @inheritdoc IEBOFinalityModule
+  /// @inheritdoc IEBORequestModule
   function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external onlyArbitrator {
     _setEBORequestCreator(_eboRequestCreator);
   }
 
   /// @inheritdoc IModule
+  function validateParameters(
+    bytes calldata _encodedParameters
+  ) external pure override(IModule, Module) returns (bool _valid) {
+    RequestParameters memory _params = decodeRequestData(_encodedParameters);
+    _valid =
+      _params.epoch != 0 && bytes(_params.chainId).length != 0 && address(_params.accountingExtension) != address(0);
+  }
+
+  /// @inheritdoc IModule
   function moduleName() external pure returns (string memory _moduleName) {
-    _moduleName = 'EBOFinalityModule';
+    _moduleName = 'EBORequestModule';
+  }
+
+  /// @inheritdoc IEBORequestModule
+  function decodeRequestData(bytes calldata _data) public pure returns (RequestParameters memory _params) {
+    _params = abi.decode(_data, (RequestParameters));
   }
 
   /**

@@ -2,36 +2,39 @@
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
-import {IFinalityModule} from '@defi-wonderland/prophet-core/solidity/interfaces/modules/finality/IFinalityModule.sol';
+import {IRequestModule} from '@defi-wonderland/prophet-core/solidity/interfaces/modules/request/IRequestModule.sol';
+import {IAccountingExtension} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IAccountingExtension.sol';
 
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
 
 /**
- * @title EBOFinalityModule
- * @notice Module allowing users to index data into the subgraph
- * as a result of a request being finalized
+ * @title EBORequestModule
+ * @notice Module allowing users to create a request for RPC data for a specific epoch
  */
-interface IEBOFinalityModule is IFinalityModule, IArbitrable {
+interface IEBORequestModule is IRequestModule, IArbitrable {
   /*///////////////////////////////////////////////////////////////
-                              EVENTS
+                              STRUCTS
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Emitted when the block number has been resolved for a particular epoch-chainId pair
-   * @param _epoch The new epoch
-   * @param _chainId The chain ID
-   * @param _blockNumber The block number for the epoch-chainId pair
+   * @notice Parameters of the request as stored in the module
+   * @param epoch The epoch for which the data is requested
+   * @param chainId The chain ID for which the data is requested
+   * @param accountingExtension The address of the AccountingExtension
+   * @param paymentAmount The amount of payment for the request
    */
-  event NewEpoch(uint256 indexed _epoch, string indexed _chainId, uint256 _blockNumber);
+  struct RequestParameters {
+    uint256 epoch;
+    string chainId;
+    IAccountingExtension accountingExtension;
+    uint256 paymentAmount;
+  }
 
-  /**
-   * @notice Emitted when a block number is amended
-   * @param _epoch The epoch to amend
-   * @param _chainId The chain ID to amend
-   * @param _blockNumber The amended block number
-   */
-  event AmendEpoch(uint256 indexed _epoch, string indexed _chainId, uint256 _blockNumber);
+  /*///////////////////////////////////////////////////////////////
+                              EVENTS
+  //////////////////////////////////////////////////////////////*/
 
   /**
    * @notice Emitted when the EBORequestCreator is set
@@ -46,12 +49,7 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
   /**
    * @notice Thrown when the requester is not the EBORequestCreator
    */
-  error EBOFinalityModule_InvalidRequester();
-
-  /**
-   * @notice Thrown when the lengths of chain IDs and block numbers do not match
-   */
-  error EBOFinalityModule_LengthMismatch();
+  error EBORequestModule_InvalidRequester();
 
   /*///////////////////////////////////////////////////////////////
                               VARIABLES
@@ -68,7 +66,16 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Finalizes the request by publishing the response
+   * @notice Executes pre-request logic, bonding the requester's funds
+   * @dev Callable only by the Oracle
+   * @param _requestId The id of the request
+   * @param _data The data of the request
+   * @param _requester The address of the requester
+   */
+  function createRequest(bytes32 _requestId, bytes calldata _data, address _requester) external;
+
+  /**
+   * @notice Finalizes the request by paying the proposer for the response or releasing the requester's bond if no response was submitted
    * @dev Callable only by the Oracle
    * @param _request The request being finalized
    * @param _response The final response
@@ -81,18 +88,16 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
   ) external;
 
   /**
-   * @notice Allows to amend data in case of an error or an emergency
-   * @dev Callable only by The Graph's Arbitrator
-   * @param _epoch The epoch to amend
-   * @param _chainIds The chain IDs to amend
-   * @param _blockNumbers The amended block numbers
-   */
-  function amendEpoch(uint256 _epoch, string[] calldata _chainIds, uint256[] calldata _blockNumbers) external;
-
-  /**
    * @notice Sets the address of the EBORequestCreator
    * @dev Callable only by The Graph's Arbitrator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
   function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
+
+  /**
+   * @notice Determines how to decode the inputted request data
+   * @param _data The encoded request parameters
+   * @return _params The struct containing the parameters for the request
+   */
+  function decodeRequestData(bytes calldata _data) external pure returns (RequestParameters memory _params);
 }
