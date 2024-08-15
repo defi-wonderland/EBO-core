@@ -1,10 +1,10 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
-
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.26;
 /**
  * @title Arbitrable
  * @notice Makes a contract subject to arbitration by The Graph
  */
+
 interface IArbitrable {
   /*///////////////////////////////////////////////////////////////
                               EVENTS
