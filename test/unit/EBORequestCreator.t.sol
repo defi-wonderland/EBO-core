@@ -117,6 +117,13 @@ contract EBORequestCreator_Unit_Constructor is EBORequestCreator_Unit_BaseTest {
     assertEq(requestData.nonce, 0);
   }
 
+  function test_emitEpochManagerSet() external {
+    vm.expectEmit();
+    emit EpochManagerSet(epochManager);
+
+    new EBORequestCreatorForTest(oracle, epochManager, arbitrator, council, requestData);
+  }
+
   /**
    * @notice Test reverts if nonce is not zero
    */

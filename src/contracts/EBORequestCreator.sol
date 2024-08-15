@@ -36,10 +36,11 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
     address _council,
     IOracle.Request memory _requestData
   ) Arbitrable(_arbitrator, _council) {
-    ORACLE = _oracle;
-    epochManager = _epochManager;
-
     if (_requestData.nonce != 0) revert EBORequestCreator_InvalidNonce();
+
+    ORACLE = _oracle;
+    _setEpochManager(_epochManager);
+
     _requestData.requester = address(this);
     requestData = _requestData;
 
@@ -135,6 +136,14 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
 
   /// @inheritdoc IEBORequestCreator
   function setEpochManager(IEpochManager _epochManager) external onlyArbitrator {
+    _setEpochManager(_epochManager);
+  }
+
+  /**
+   * @notice Set the epoch manager
+   * @param _epochManager The epoch manager
+   */
+  function _setEpochManager(IEpochManager _epochManager) internal {
     epochManager = _epochManager;
 
     emit EpochManagerSet(_epochManager);
