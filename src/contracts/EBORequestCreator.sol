@@ -39,6 +39,7 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   /// @inheritdoc IEBORequestCreator
   function createRequests(uint256 _epoch, string[] calldata _chainIds) external {
     bytes32 _encodedChainId;
+    bytes32 _requestId;
 
     IOracle.Request memory _requestData = requestData;
 
@@ -46,9 +47,14 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
       _encodedChainId = _encodeChainId(_chainIds[_i]);
       if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
 
-      if (requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] == bytes32(0)) {
+      _requestId = requestIdPerChainAndEpoch[_chainIds[_i]][_epoch];
+
+      if (
+        _requestId == bytes32(0)
+          || (block.number > oracle.finalizedAt(_requestId) && oracle.finalizedResponseId(_requestId) == bytes32(0))
+      ) {
         // TODO: CREATE REQUEST DATA
-        bytes32 _requestId = oracle.createRequest(_requestData, bytes32(0));
+        _requestId = oracle.createRequest(_requestData, bytes32(0));
 
         requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] = _requestId;
 
