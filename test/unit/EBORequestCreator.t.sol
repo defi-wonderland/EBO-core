@@ -135,7 +135,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
   }
 
   /**
-   * @notice Test if the request id skip because the block number is less than the finalized at
+   * @notice Test if the request id skip because the request id didnt finalize
    */
   function test_expectNotEmitRequestIdExistsBlockNumber(
     uint256 _epoch,
@@ -146,9 +146,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     eboRequestCreator.setChainIdForTest(_chainId);
     eboRequestCreator.setRequestIdPerChainAndEpochForTest(_chainId, _epoch, _requestId);
 
-    vm.mockCall(
-      address(oracle), abi.encodeWithSelector(IOracle.finalizedAt.selector, _requestId), abi.encode(block.number)
-    );
+    vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.finalizedAt.selector, _requestId), abi.encode(0));
 
     vm.expectCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), 0);
 
@@ -164,14 +162,16 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
   function test_expectNotEmitRequestIdHasResponse(
     uint256 _epoch,
     string calldata _chainId,
-    bytes32 _requestId
+    bytes32 _requestId,
+    uint96 _finalizedAt
   ) external happyPath(_epoch, new string[](1)) {
+    vm.assume(_finalizedAt > 0);
     vm.assume(_requestId != bytes32(0));
     eboRequestCreator.setChainIdForTest(_chainId);
     eboRequestCreator.setRequestIdPerChainAndEpochForTest(_chainId, _epoch, _requestId);
 
     vm.mockCall(
-      address(oracle), abi.encodeWithSelector(IOracle.finalizedAt.selector, _requestId), abi.encode(block.number - 1)
+      address(oracle), abi.encodeWithSelector(IOracle.finalizedAt.selector, _requestId), abi.encode(_finalizedAt)
     );
 
     vm.mockCall(
@@ -211,19 +211,23 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
   function test_emitCreateRequestWithNoResponse(
     uint256 _epoch,
     string calldata _chainId,
-    bytes32 _requestId
+    bytes32 _requestId,
+    uint96 _finalizedAt
   ) external happyPath(_epoch, new string[](1)) {
+    vm.assume(_finalizedAt > 0);
     vm.assume(_requestId != bytes32(0));
     eboRequestCreator.setChainIdForTest(_chainId);
     eboRequestCreator.setRequestIdPerChainAndEpochForTest(_chainId, _epoch, _requestId);
 
     vm.mockCall(
-      address(oracle), abi.encodeWithSelector(IOracle.finalizedAt.selector, _requestId), abi.encode(block.number)
+      address(oracle), abi.encodeWithSelector(IOracle.finalizedAt.selector, _requestId), abi.encode(_finalizedAt)
     );
 
     vm.mockCall(
       address(oracle), abi.encodeWithSelector(IOracle.finalizedResponseId.selector, _requestId), abi.encode(bytes32(0))
     );
+
+    vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), abi.encode(_requestId));
 
     string[] memory _chainIds = new string[](1);
     _chainIds[0] = _chainId;

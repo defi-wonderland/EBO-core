@@ -51,7 +51,7 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
 
       if (
         _requestId == bytes32(0)
-          || (block.number > oracle.finalizedAt(_requestId) && oracle.finalizedResponseId(_requestId) == bytes32(0))
+          || (oracle.finalizedAt(_requestId) > 0 && oracle.finalizedResponseId(_requestId) == bytes32(0))
       ) {
         // TODO: CREATE REQUEST DATA
         _requestId = oracle.createRequest(_requestData, bytes32(0));
