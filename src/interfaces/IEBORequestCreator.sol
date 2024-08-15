@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
 interface IEBORequestCreator {
   /*///////////////////////////////////////////////////////////////
@@ -63,6 +64,12 @@ interface IEBORequestCreator {
    */
   event FinalityModuleDataSet(address indexed _finalityModule, bytes _finalityModuleData);
 
+  /**
+   * @notice Emitted when the epoch manager is set
+   * @param _epochManager The epoch manager
+   */
+  event EpochManagerSet(IEpochManager indexed _epochManager);
+
   /*///////////////////////////////////////////////////////////////
                             ERRORS
   //////////////////////////////////////////////////////////////*/
@@ -81,15 +88,32 @@ interface IEBORequestCreator {
    */
   error EBORequestCreator_ChainNotAdded();
 
+  /**
+   * @notice Thrown when the epoch is not valid
+   */
+  error EBORequestCreator_InvalidEpoch();
+
   /*///////////////////////////////////////////////////////////////
                             VARIABLES
   //////////////////////////////////////////////////////////////*/
 
   /**
    * @notice The oracle contract
-   * @return _oracle The oracle contract
+   * @return _ORACLE The oracle contract
    */
-  function oracle() external view returns (IOracle _oracle);
+  function ORACLE() external view returns (IOracle _ORACLE);
+
+  /**
+   * @notice The first valid epoch to create requests
+   * @return _START_EPOCH The start epoch
+   */
+  function START_EPOCH() external view returns (uint256 _START_EPOCH);
+
+  /**
+   * @notice The epoch manager contract
+   * @return _epochManager The epoch manager contract
+   */
+  function epochManager() external view returns (IEpochManager _epochManager);
 
   /**
    * @notice The request data
@@ -192,4 +216,10 @@ interface IEBORequestCreator {
    * @param _finalityModuleData The finality module data
    */
   function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external;
+
+  /**
+   * @notice Set the epoch manager
+   * @param _epochManager The epoch manager
+   */
+  function setEpochManager(IEpochManager _epochManager) external;
 }

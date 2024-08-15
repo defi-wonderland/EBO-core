@@ -4,13 +4,19 @@ pragma solidity 0.8.26;
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import {Arbitrable} from 'contracts/Arbitrable.sol';
-import {IEBORequestCreator, IOracle} from 'interfaces/IEBORequestCreator.sol';
+import {IEBORequestCreator, IEpochManager, IOracle} from 'interfaces/IEBORequestCreator.sol';
 
 contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   /// @inheritdoc IEBORequestCreator
-  IOracle public oracle;
+  IOracle public immutable ORACLE;
+
+  /// @inheritdoc IEBORequestCreator
+  uint256 public immutable START_EPOCH;
+
+  /// @inheritdoc IEBORequestCreator
+  IEpochManager public epochManager;
 
   /// @inheritdoc IEBORequestCreator
   IOracle.Request public requestData;
@@ -25,19 +31,26 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
 
   constructor(
     IOracle _oracle,
+    IEpochManager _epochManager,
     address _arbitrator,
     address _council,
     IOracle.Request memory _requestData
   ) Arbitrable(_arbitrator, _council) {
-    oracle = _oracle;
-
     if (_requestData.nonce != 0) revert EBORequestCreator_InvalidNonce();
+
+    ORACLE = _oracle;
+    _setEpochManager(_epochManager);
+
     _requestData.requester = address(this);
     requestData = _requestData;
+
+    START_EPOCH = epochManager.currentEpoch();
   }
 
   /// @inheritdoc IEBORequestCreator
   function createRequests(uint256 _epoch, string[] calldata _chainIds) external {
+    if (_epoch > epochManager.currentEpoch() || START_EPOCH > _epoch) revert EBORequestCreator_InvalidEpoch();
+
     bytes32 _encodedChainId;
     bytes32 _requestId;
 
@@ -51,10 +64,10 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
 
       if (
         _requestId == bytes32(0)
-          || (oracle.finalizedAt(_requestId) > 0 && oracle.finalizedResponseId(_requestId) == bytes32(0))
+          || (ORACLE.finalizedAt(_requestId) > 0 && ORACLE.finalizedResponseId(_requestId) == bytes32(0))
       ) {
         // TODO: CREATE REQUEST DATA
-        _requestId = oracle.createRequest(_requestData, bytes32(0));
+        _requestId = ORACLE.createRequest(_requestData, bytes32(0));
 
         requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] = _requestId;
 
@@ -125,6 +138,21 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
     requestData.finalityModuleData = _finalityModuleData;
 
     emit FinalityModuleDataSet(_finalityModule, _finalityModuleData);
+  }
+
+  /// @inheritdoc IEBORequestCreator
+  function setEpochManager(IEpochManager _epochManager) external onlyArbitrator {
+    _setEpochManager(_epochManager);
+  }
+
+  /**
+   * @notice Set the epoch manager
+   * @param _epochManager The epoch manager
+   */
+  function _setEpochManager(IEpochManager _epochManager) internal {
+    epochManager = _epochManager;
+
+    emit EpochManagerSet(_epochManager);
   }
 
   /**
