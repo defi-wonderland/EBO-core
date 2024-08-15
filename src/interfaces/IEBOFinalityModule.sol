@@ -5,6 +5,7 @@ import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle
 import {IFinalityModule} from '@defi-wonderland/prophet-core/solidity/interfaces/modules/finality/IFinalityModule.sol';
 
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
+import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
 
 /**
  * @title EBOFinalityModule
@@ -36,7 +37,7 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
    * @notice Emitted when the EBORequestCreator is set
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  event SetEBORequestCreator(address indexed _eboRequestCreator);
+  event SetEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
 
   /*///////////////////////////////////////////////////////////////
                               ERRORS
@@ -60,7 +61,7 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
    * @notice Returns the address of the EBORequestCreator
    * @return _eboRequestCreator The address of the EBORequestCreator
    */
-  function eboRequestCreator() external view returns (address _eboRequestCreator);
+  function eboRequestCreator() external view returns (IEBORequestCreator _eboRequestCreator);
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC
@@ -93,5 +94,5 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
    * @dev Callable only by The Graph's Arbitrator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function setEBORequestCreator(address _eboRequestCreator) external;
+  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
 }

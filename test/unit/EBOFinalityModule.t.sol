@@ -6,6 +6,7 @@ import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle
 
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
+import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
 
 import {EBOFinalityModule} from 'contracts/EBOFinalityModule.sol';
 
@@ -15,7 +16,7 @@ contract EBOFinalityModule_Unit_BaseTest is Test {
   EBOFinalityModule public eboFinalityModule;
 
   IOracle public oracle;
-  address public eboRequestCreator;
+  IEBORequestCreator public eboRequestCreator;
   address public arbitrator;
   address public council;
 
@@ -23,14 +24,14 @@ contract EBOFinalityModule_Unit_BaseTest is Test {
 
   event NewEpoch(uint256 indexed _epoch, string indexed _chainId, uint256 _blockNumber);
   event AmendEpoch(uint256 indexed _epoch, string indexed _chainId, uint256 _blockNumber);
-  event SetEBORequestCreator(address indexed _eboRequestCreator);
+  event SetEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
   event RequestFinalized(bytes32 indexed _requestId, IOracle.Response _response, address _finalizer);
   event SetArbitrator(address indexed _arbitrator);
   event SetCouncil(address indexed _council);
 
   function setUp() public {
     oracle = IOracle(makeAddr('Oracle'));
-    eboRequestCreator = makeAddr('EBORequestCreator');
+    eboRequestCreator = IEBORequestCreator(makeAddr('EBORequestCreator'));
     arbitrator = makeAddr('Arbitrator');
     council = makeAddr('Council');
 
@@ -67,7 +68,7 @@ contract EBOFinalityModule_Unit_BaseTest is Test {
 contract EBOFinalityModule_Unit_Constructor is EBOFinalityModule_Unit_BaseTest {
   struct ConstructorParams {
     IOracle oracle;
-    address eboRequestCreator;
+    IEBORequestCreator eboRequestCreator;
     address arbitrator;
     address council;
   }
@@ -109,7 +110,7 @@ contract EBOFinalityModule_Unit_Constructor is EBOFinalityModule_Unit_BaseTest {
     eboFinalityModule =
       new EBOFinalityModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
 
-    assertEq(eboFinalityModule.eboRequestCreator(), _params.eboRequestCreator);
+    assertEq(address(eboFinalityModule.eboRequestCreator()), address(_params.eboRequestCreator));
   }
 
   function test_emitSetEBORequestCreator(ConstructorParams calldata _params) public {
@@ -129,7 +130,7 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
   }
 
   modifier happyPath(FinalizeRequestParams memory _params) {
-    _params.request.requester = eboRequestCreator;
+    _params.request.requester = address(eboRequestCreator);
 
     if (_params.finalizeWithResponse) {
       _params.response.requestId = _getId(_params.request);
@@ -150,6 +151,7 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
 
   function test_revertOnlyOracle(FinalizeRequestParams memory _params) public happyPath(_params) {
     vm.stopPrank();
+
     vm.expectRevert(IModule.Module_OnlyOracle.selector);
     eboFinalityModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
   }
@@ -158,7 +160,7 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
     FinalizeRequestParams memory _params,
     address _requester
   ) public happyPath(_params) {
-    vm.assume(_requester != eboRequestCreator);
+    vm.assume(_requester != address(eboRequestCreator));
     _params.request.requester = _requester;
 
     vm.expectRevert(IEBOFinalityModule.EBOFinalityModule_InvalidRequester.selector);
@@ -194,10 +196,11 @@ contract EBOFinalityModule_Unit_AmendEpoch is EBOFinalityModule_Unit_BaseTest {
   }
 
   function test_revertOnlyArbitrator(AmendEpochParams calldata _params) public happyPath {
+    vm.stopPrank();
+
     string[] memory _chainIds = _getDynamicArray(_params.chainIds);
     uint256[] memory _blockNumbers = _getDynamicArray(_params.blockNumbers);
 
-    vm.stopPrank();
     vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
     eboFinalityModule.amendEpoch(_params.epoch, _chainIds, _blockNumbers);
   }
@@ -231,19 +234,20 @@ contract EBOFinalityModule_Unit_SetEBORequestCreator is EBOFinalityModule_Unit_B
     _;
   }
 
-  function test_revertOnlyArbitrator(address _eboRequestCreator) public happyPath {
+  function test_revertOnlyArbitrator(IEBORequestCreator _eboRequestCreator) public happyPath {
     vm.stopPrank();
+
     vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
     eboFinalityModule.setEBORequestCreator(_eboRequestCreator);
   }
 
-  function test_setEBORequestCreator(address _eboRequestCreator) public happyPath {
+  function test_setEBORequestCreator(IEBORequestCreator _eboRequestCreator) public happyPath {
     eboFinalityModule.setEBORequestCreator(_eboRequestCreator);
 
-    assertEq(eboFinalityModule.eboRequestCreator(), _eboRequestCreator);
+    assertEq(address(eboFinalityModule.eboRequestCreator()), address(_eboRequestCreator));
   }
 
-  function test_emitSetEBORequestCreator(address _eboRequestCreator) public happyPath {
+  function test_emitSetEBORequestCreator(IEBORequestCreator _eboRequestCreator) public happyPath {
     vm.expectEmit();
     emit SetEBORequestCreator(_eboRequestCreator);
     eboFinalityModule.setEBORequestCreator(_eboRequestCreator);

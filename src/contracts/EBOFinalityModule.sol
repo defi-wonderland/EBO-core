@@ -7,6 +7,7 @@ import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle
 
 import {Arbitrable} from 'contracts/Arbitrable.sol';
 import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
+import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
 
 /**
  * @title EBOFinalityModule
@@ -15,7 +16,7 @@ import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
  */
 contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
   /// @inheritdoc IEBOFinalityModule
-  address public eboRequestCreator;
+  IEBORequestCreator public eboRequestCreator;
 
   /**
    * @notice Constructor
@@ -26,7 +27,7 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
    */
   constructor(
     IOracle _oracle,
-    address _eboRequestCreator,
+    IEBORequestCreator _eboRequestCreator,
     address _arbitrator,
     address _council
   ) Module(_oracle) Arbitrable(_arbitrator, _council) {
@@ -39,7 +40,7 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
     IOracle.Response calldata _response,
     address _finalizer
   ) external override(Module, IEBOFinalityModule) onlyOracle {
-    if (_request.requester != eboRequestCreator) revert EBOFinalityModule_InvalidRequester();
+    if (_request.requester != address(eboRequestCreator)) revert EBOFinalityModule_InvalidRequester();
 
     if (_response.requestId != 0) {
       // TODO: Redeclare the `Response` struct
@@ -64,7 +65,7 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
   }
 
   /// @inheritdoc IEBOFinalityModule
-  function setEBORequestCreator(address _eboRequestCreator) external onlyArbitrator {
+  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external onlyArbitrator {
     _setEBORequestCreator(_eboRequestCreator);
   }
 
@@ -77,7 +78,7 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
    * @notice Sets the address of the EBORequestCreator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function _setEBORequestCreator(address _eboRequestCreator) private {
+  function _setEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
     eboRequestCreator = _eboRequestCreator;
     emit SetEBORequestCreator(_eboRequestCreator);
   }

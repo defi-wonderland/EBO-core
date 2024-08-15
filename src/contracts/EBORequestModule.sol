@@ -6,6 +6,7 @@ import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 
 import {Arbitrable} from 'contracts/Arbitrable.sol';
+import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
 /**
@@ -14,7 +15,7 @@ import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
  */
 contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
   /// @inheritdoc IEBORequestModule
-  address public eboRequestCreator;
+  IEBORequestCreator public eboRequestCreator;
 
   /**
    * @notice Constructor
@@ -25,7 +26,7 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
    */
   constructor(
     IOracle _oracle,
-    address _eboRequestCreator,
+    IEBORequestCreator _eboRequestCreator,
     address _arbitrator,
     address _council
   ) Module(_oracle) Arbitrable(_arbitrator, _council) {
@@ -34,7 +35,7 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
 
   /// @inheritdoc IEBORequestModule
   function createRequest(bytes32 _requestId, bytes calldata _data, address _requester) external onlyOracle {
-    if (_requester != eboRequestCreator) revert EBORequestModule_InvalidRequester();
+    if (_requester != address(eboRequestCreator)) revert EBORequestModule_InvalidRequester();
 
     RequestParameters memory _params = decodeRequestData(_data);
 
@@ -47,7 +48,7 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
     IOracle.Response calldata _response,
     address _finalizer
   ) external override(Module, IEBORequestModule) onlyOracle {
-    if (_request.requester != eboRequestCreator) revert EBORequestModule_InvalidRequester();
+    if (_request.requester != address(eboRequestCreator)) revert EBORequestModule_InvalidRequester();
 
     // TODO: Redeclare the `Request` struct
     // RequestParameters memory _params = decodeRequestData(_request.requestModuleData);
@@ -60,7 +61,7 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
   }
 
   /// @inheritdoc IEBORequestModule
-  function setEBORequestCreator(address _eboRequestCreator) external onlyArbitrator {
+  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external onlyArbitrator {
     _setEBORequestCreator(_eboRequestCreator);
   }
 
@@ -87,7 +88,7 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
    * @notice Sets the address of the EBORequestCreator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function _setEBORequestCreator(address _eboRequestCreator) private {
+  function _setEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
     eboRequestCreator = _eboRequestCreator;
     emit SetEBORequestCreator(_eboRequestCreator);
   }

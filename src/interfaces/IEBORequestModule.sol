@@ -7,6 +7,7 @@ import {IAccountingExtension} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IAccountingExtension.sol';
 
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
+import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
 
 /**
  * @title EBORequestModule
@@ -39,7 +40,7 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
    * @notice Emitted when the EBORequestCreator is set
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  event SetEBORequestCreator(address indexed _eboRequestCreator);
+  event SetEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
 
   /*///////////////////////////////////////////////////////////////
                               ERRORS
@@ -58,7 +59,7 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
    * @notice Returns the address of the EBORequestCreator
    * @return _eboRequestCreator The address of the EBORequestCreator
    */
-  function eboRequestCreator() external view returns (address _eboRequestCreator);
+  function eboRequestCreator() external view returns (IEBORequestCreator _eboRequestCreator);
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC
@@ -91,7 +92,7 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
    * @dev Callable only by The Graph's Arbitrator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function setEBORequestCreator(address _eboRequestCreator) external;
+  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
 
   /**
    * @notice Determines how to decode the inputted request data
