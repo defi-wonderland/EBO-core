@@ -4,7 +4,9 @@ pragma solidity 0.8.26;
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import {Arbitrable} from 'contracts/Arbitrable.sol';
+
 import {IEBORequestCreator, IEpochManager, IOracle} from 'interfaces/IEBORequestCreator.sol';
+import {IAccountingExtension, IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
 contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -67,6 +69,10 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
           || (ORACLE.finalizedAt(_requestId) > 0 && ORACLE.finalizedResponseId(_requestId) == bytes32(0))
       ) {
         // TODO: CREATE REQUEST DATA
+        _requestData.requestModuleData = abi.encode(
+          IEBORequestModule.RequestParameters(_epoch, _chainIds[_i], IAccountingExtension(address(0)), uint256(0))
+        );
+
         _requestId = ORACLE.createRequest(_requestData, bytes32(0));
 
         requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] = _requestId;
