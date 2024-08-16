@@ -68,7 +68,7 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
   /**
    * @notice Executes pre-request logic, bonding the requester's funds
    * @dev Callable only by the Oracle
-   * @param _requestId The id of the request
+   * @param _requestId The ID of the request
    * @param _data The data of the request
    * @param _requester The address of the requester
    */
