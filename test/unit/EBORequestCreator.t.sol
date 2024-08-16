@@ -192,10 +192,10 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
 
     eboRequestCreator.createRequests(_epoch + 1, new string[](1));
   }
+
   /**
    * @notice Test if the request id exists skip the request creation
    */
-
   function test_expectNotEmitRequestIdExists(
     uint256 _epoch,
     string calldata _chainId,
@@ -205,17 +205,85 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     eboRequestCreator.setChainIdForTest(_chainId);
     eboRequestCreator.setRequestIdPerChainAndEpochForTest(_chainId, _epoch, _requestId);
 
+    vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.finalizedAt.selector, _requestId), abi.encode(0));
+
     vm.expectCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), 0);
 
     string[] memory _chainIds = new string[](1);
     _chainIds[0] = _chainId;
 
     eboRequestCreator.createRequests(_epoch, _chainIds);
+
+    assertEq(eboRequestCreator.requestIdPerChainAndEpoch(_chainId, _epoch), _requestId);
   }
+
+  /**
+   * @notice Test if the request id skip the request creation because the response id is already finalized
+   */
+  function test_expectNotEmitRequestIdHasResponse(
+    uint256 _epoch,
+    string calldata _chainId,
+    bytes32 _requestId,
+    uint96 _finalizedAt
+  ) external happyPath(_epoch, new string[](1)) {
+    vm.assume(_finalizedAt > 0);
+    vm.assume(_requestId != bytes32(0));
+    eboRequestCreator.setChainIdForTest(_chainId);
+    eboRequestCreator.setRequestIdPerChainAndEpochForTest(_chainId, _epoch, _requestId);
+
+    vm.mockCall(
+      address(oracle), abi.encodeWithSelector(IOracle.finalizedAt.selector, _requestId), abi.encode(_finalizedAt)
+    );
+
+    vm.mockCall(
+      address(oracle),
+      abi.encodeWithSelector(IOracle.finalizedResponseId.selector, _requestId),
+      abi.encode(bytes32(keccak256('response')))
+    );
+
+    vm.expectCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), 0);
+
+    string[] memory _chainIds = new string[](1);
+    _chainIds[0] = _chainId;
+
+    eboRequestCreator.createRequests(_epoch, _chainIds);
+
+    assertEq(eboRequestCreator.requestIdPerChainAndEpoch(_chainId, _epoch), _requestId);
+  }
+
+  /**
+   * @notice Test if the request id skip because the request didn't finalize
+   */
+  function test_expectNotEmitRequestIdExistsBlockNumber(
+    uint256 _epoch,
+    string calldata _chainId,
+    bytes32 _requestId,
+    uint96 _finalizedAt
+  ) external happyPath(_epoch, new string[](1)) {
+    vm.assume(_finalizedAt == 0);
+    vm.assume(_requestId != bytes32(0));
+    eboRequestCreator.setChainIdForTest(_chainId);
+    eboRequestCreator.setRequestIdPerChainAndEpochForTest(_chainId, _epoch, _requestId);
+
+    vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.finalizedAt.selector, _requestId), abi.encode(0));
+
+    vm.mockCall(
+      address(oracle), abi.encodeWithSelector(IOracle.finalizedResponseId.selector, _requestId), abi.encode(bytes32(0))
+    );
+
+    vm.expectCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), 0);
+
+    string[] memory _chainIds = new string[](1);
+    _chainIds[0] = _chainId;
+
+    eboRequestCreator.createRequests(_epoch, _chainIds);
+
+    assertEq(eboRequestCreator.requestIdPerChainAndEpoch(_chainId, _epoch), _requestId);
+  }
+
   /**
    * @notice Test the create requests
    */
-
   function test_emitCreateRequest(
     uint256 _epoch,
     string[] calldata _chainIds,
@@ -228,6 +296,39 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     }
 
     eboRequestCreator.createRequests(_epoch, _cleanChainIds);
+  }
+
+  /**
+   * @notice Test the create requests because finalize with no response
+   */
+  function test_emitCreateRequestWithNoResponse(
+    uint256 _epoch,
+    string calldata _chainId,
+    bytes32 _requestId,
+    uint96 _finalizedAt
+  ) external happyPath(_epoch, new string[](1)) {
+    vm.assume(_finalizedAt > 0);
+    vm.assume(_requestId != bytes32(0));
+    eboRequestCreator.setChainIdForTest(_chainId);
+    eboRequestCreator.setRequestIdPerChainAndEpochForTest(_chainId, _epoch, _requestId);
+
+    vm.mockCall(
+      address(oracle), abi.encodeWithSelector(IOracle.finalizedAt.selector, _requestId), abi.encode(_finalizedAt)
+    );
+
+    vm.mockCall(
+      address(oracle), abi.encodeWithSelector(IOracle.finalizedResponseId.selector, _requestId), abi.encode(bytes32(0))
+    );
+
+    vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), abi.encode(_requestId));
+
+    string[] memory _chainIds = new string[](1);
+    _chainIds[0] = _chainId;
+
+    vm.expectEmit();
+    emit RequestCreated(_requestId, _epoch, _chainId);
+
+    eboRequestCreator.createRequests(_epoch, _chainIds);
   }
 }
 
