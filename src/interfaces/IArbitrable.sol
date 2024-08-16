@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
+
 /**
  * @title Arbitrable
  * @notice Makes a contract subject to arbitration by The Graph
  */
-
 interface IArbitrable {
   /*///////////////////////////////////////////////////////////////
                               EVENTS
@@ -14,19 +14,19 @@ interface IArbitrable {
    * @notice Emitted when The Graph's Arbitrator is set
    * @param _arbitrator The address of The Graph's Arbitrator
    */
-  event SetArbitrator(address _arbitrator);
+  event SetArbitrator(address indexed _arbitrator);
 
   /**
    * @notice Emitted when The Graph's Council is set
    * @param _council The address of The Graph's Council
    */
-  event SetCouncil(address _council);
+  event SetCouncil(address indexed _council);
 
   /**
    * @notice Emitted when the pending The Graph's Council is set
    * @param _pendingCouncil The address of the pending The Graph's Council
    */
-  event SetPendingCouncil(address _pendingCouncil);
+  event SetPendingCouncil(address indexed _pendingCouncil);
 
   /*///////////////////////////////////////////////////////////////
                               ERRORS

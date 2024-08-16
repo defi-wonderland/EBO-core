@@ -1,5 +1,5 @@
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.26;
 
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 
@@ -29,9 +29,9 @@ contract Arbitrable_Unit_BaseTest is Test {
   address public council;
   address public pendingCouncil;
 
-  event SetArbitrator(address _arbitrator);
-  event SetCouncil(address _council);
-  event SetPendingCouncil(address _pendingCouncil);
+  event SetArbitrator(address indexed _arbitrator);
+  event SetCouncil(address indexed _council);
+  event SetPendingCouncil(address indexed _pendingCouncil);
 
   function setUp() public {
     arbitrator = makeAddr('Arbitrator');
@@ -80,6 +80,7 @@ contract Arbitrable_Unit_SetArbitrator is Arbitrable_Unit_BaseTest {
 
   function test_revertOnlyCouncil(address _arbitrator) public happyPath {
     vm.stopPrank();
+
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
     arbitrable.setArbitrator(_arbitrator);
   }
@@ -105,6 +106,7 @@ contract Arbitrable_Unit_SetPendingCouncil is Arbitrable_Unit_BaseTest {
 
   function test_revertOnlyCouncil(address _pendingCouncil) public happyPath {
     vm.stopPrank();
+
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
     arbitrable.setPendingCouncil(_pendingCouncil);
   }
@@ -132,6 +134,7 @@ contract Arbitrable_Unit_ConfirmCouncil is Arbitrable_Unit_BaseTest {
 
   function test_revertOnlyPendingCouncil() public happyPath {
     vm.stopPrank();
+
     vm.expectRevert(IArbitrable.Arbitrable_OnlyPendingCouncil.selector);
     arbitrable.confirmCouncil();
   }
@@ -163,6 +166,7 @@ contract Arbitrable_Unit_OnlyArbitrator is Arbitrable_Unit_BaseTest {
 
   function test_revertOnlyArbitrator() public {
     vm.stopPrank();
+
     vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
     arbitrable.mockOnlyArbitrator();
   }
@@ -180,6 +184,7 @@ contract Arbitrable_Unit_OnlyCouncil is Arbitrable_Unit_BaseTest {
 
   function test_revertOnlyCouncil() public {
     vm.stopPrank();
+
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
     arbitrable.mockOnlyCouncil();
   }
@@ -199,6 +204,7 @@ contract Arbitrable_Unit_OnlyPendingCouncil is Arbitrable_Unit_BaseTest {
 
   function test_revertOnlyPendingCouncil() public {
     vm.stopPrank();
+
     vm.expectRevert(IArbitrable.Arbitrable_OnlyPendingCouncil.selector);
     arbitrable.mockOnlyPendingCouncil();
   }
