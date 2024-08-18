@@ -32,9 +32,6 @@ contract IntegrationBase is Test {
     vm.createSelectFork(vm.rpcUrl('arbitrum'), _FORK_BLOCK);
     vm.startPrank(_owner);
 
-    // Create data
-    _requestParams.accountingExtension = _accountingExtension;
-    _requestData.requestModuleData = abi.encode(_accountingExtension);
     // Deploy Oracle
     _oracle = new Oracle();
 
@@ -49,5 +46,11 @@ contract IntegrationBase is Test {
     _eboRequestModule = new EBORequestModule(_oracle, _eboRequestCreator, _arbitrator, _council);
 
     vm.stopPrank();
+
+    // Create data
+    _requestParams.accountingExtension = _accountingExtension;
+
+    vm.prank(_arbitrator);
+    _eboRequestCreator.setRequestModuleData(address(_eboRequestModule), _requestParams);
   }
 }
