@@ -6,7 +6,7 @@ import {Test} from 'forge-std/Test.sol';
 
 import {Oracle} from '@defi-wonderland/prophet-core/solidity/contracts/Oracle.sol';
 import {EBORequestCreator, IEBORequestCreator, IEpochManager, IOracle} from 'contracts/EBORequestCreator.sol';
-import {EBORequestModule, IEBORequestModule} from 'contracts/EBORequestModule.sol';
+import {EBORequestModule, IAccountingExtension, IEBORequestModule} from 'contracts/EBORequestModule.sol';
 
 contract IntegrationBase is Test {
   uint256 internal constant _FORK_BLOCK = 240_000_000;
@@ -16,9 +16,11 @@ contract IntegrationBase is Test {
   address internal _council = makeAddr('council');
   address internal _owner = makeAddr('owner');
   address internal _user = makeAddr('user');
+  IAccountingExtension internal _accountingExtension = IAccountingExtension(makeAddr('accountingExtension'));
 
   // Data
-  IOracle.Request _requestData;
+  IOracle.Request internal _requestData;
+  IEBORequestModule.RequestParameters internal _requestParams;
 
   // Contracts
   IEBORequestCreator internal _eboRequestCreator;
@@ -30,6 +32,9 @@ contract IntegrationBase is Test {
     vm.createSelectFork(vm.rpcUrl('arbitrum'), _FORK_BLOCK);
     vm.startPrank(_owner);
 
+    // Create data
+    _requestParams.accountingExtension = _accountingExtension;
+    _requestData.requestModuleData = abi.encode(_accountingExtension);
     // Deploy Oracle
     _oracle = new Oracle();
 
@@ -44,8 +49,5 @@ contract IntegrationBase is Test {
     _eboRequestModule = new EBORequestModule(_oracle, _eboRequestCreator, _arbitrator, _council);
 
     vm.stopPrank();
-
-    vm.prank(_arbitrator);
-    _eboRequestCreator.setRequestModuleData(address(_eboRequestModule), bytes(''));
   }
 }

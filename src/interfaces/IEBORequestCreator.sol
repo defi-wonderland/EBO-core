@@ -2,6 +2,8 @@
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+
+import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
 interface IEBORequestCreator {
@@ -187,7 +189,10 @@ interface IEBORequestCreator {
    * @param _requestModule The request module
    * @param _requestModuleData The request module data
    */
-  function setRequestModuleData(address _requestModule, bytes calldata _requestModuleData) external;
+  function setRequestModuleData(
+    address _requestModule,
+    IEBORequestModule.RequestParameters calldata _requestModuleData
+  ) external;
 
   /**
    * @notice Set the response data module

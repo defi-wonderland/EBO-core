@@ -5,8 +5,7 @@ import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet
 
 import {Arbitrable} from 'contracts/Arbitrable.sol';
 
-import {IEBORequestCreator, IEpochManager, IOracle} from 'interfaces/IEBORequestCreator.sol';
-import {IAccountingExtension, IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
+import {IEBORequestCreator, IEBORequestModule, IEpochManager, IOracle} from 'interfaces/IEBORequestCreator.sol';
 
 contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -68,10 +67,14 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
         _requestId == bytes32(0)
           || (ORACLE.finalizedAt(_requestId) > 0 && ORACLE.finalizedResponseId(_requestId) == bytes32(0))
       ) {
-        // TODO: CREATE REQUEST DATA
-        _requestData.requestModuleData = abi.encode(
-          IEBORequestModule.RequestParameters(_epoch, _chainIds[_i], IAccountingExtension(address(0)), uint256(0))
-        );
+        IEBORequestModule.RequestParameters memory _requestModuleData =
+          IEBORequestModule(_requestData.requestModule).decodeRequestData(_requestData.requestModuleData);
+
+        _requestModuleData.chainId = _chainIds[_i];
+        _requestModuleData.epoch = _epoch;
+        //TODO: REWARDS
+
+        _requestData.requestModuleData = abi.encode(_requestModuleData);
 
         _requestId = ORACLE.createRequest(_requestData, bytes32(0));
 
@@ -103,11 +106,17 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function setRequestModuleData(address _requestModule, bytes calldata _requestModuleData) external onlyArbitrator {
+  function setRequestModuleData(
+    address _requestModule,
+    IEBORequestModule.RequestParameters calldata _requestModuleData
+  ) external onlyArbitrator {
+    // NOTE: SHOULD WE CREATE IN STORAGE THAT STRUCT TO AVOID ENCODE AND DECODE SEVERAL TIMES?
     requestData.requestModule = _requestModule;
-    requestData.requestModuleData = _requestModuleData;
 
-    emit RequestModuleDataSet(_requestModule, _requestModuleData);
+    bytes memory _encodedRequestModuleData = abi.encode(_requestModuleData);
+    requestData.requestModuleData = _encodedRequestModuleData;
+
+    emit RequestModuleDataSet(_requestModule, _encodedRequestModuleData);
   }
 
   /// @inheritdoc IEBORequestCreator

@@ -3,7 +3,13 @@ pragma solidity 0.8.26;
 
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import {EBORequestCreator, IEBORequestCreator, IEpochManager, IOracle} from 'contracts/EBORequestCreator.sol';
+import {
+  EBORequestCreator,
+  IEBORequestCreator,
+  IEBORequestModule,
+  IEpochManager,
+  IOracle
+} from 'contracts/EBORequestCreator.sol';
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 
 import {Test} from 'forge-std/Test.sol';
@@ -27,6 +33,11 @@ contract EBORequestCreatorForTest is EBORequestCreator {
   function setRequestIdPerChainAndEpochForTest(string calldata _chainId, uint256 _epoch, bytes32 _requestId) external {
     requestIdPerChainAndEpoch[_chainId][_epoch] = _requestId;
   }
+
+  function setRequestModuleDataForTest(address _requestModule, bytes calldata _requestModuleData) external {
+    requestData.requestModule = _requestModule;
+    requestData.requestModuleData = _requestModuleData;
+  }
 }
 
 abstract contract EBORequestCreator_Unit_BaseTest is Test {
@@ -46,6 +57,7 @@ abstract contract EBORequestCreator_Unit_BaseTest is Test {
   EBORequestCreatorForTest public eboRequestCreator;
   IOracle public oracle;
   IEpochManager public epochManager;
+  IEBORequestModule public eboRequestModule;
 
   /// EOAs
   address public arbitrator;
@@ -60,6 +72,7 @@ abstract contract EBORequestCreator_Unit_BaseTest is Test {
     arbitrator = makeAddr('Arbitrator');
     oracle = IOracle(makeAddr('Oracle'));
     epochManager = IEpochManager(makeAddr('EpochManager'));
+    eboRequestModule = IEBORequestModule(makeAddr('EBORequestModule'));
 
     vm.mockCall(address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(100));
 
@@ -151,6 +164,16 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
         _cleanChainIds.push(_chainId[_i]);
       }
     }
+
+    eboRequestCreator.setRequestModuleDataForTest(address(eboRequestModule), '');
+
+    IEBORequestModule.RequestParameters memory _params;
+
+    vm.mockCall(
+      address(eboRequestModule),
+      abi.encodeWithSelector(IEBORequestModule.decodeRequestData.selector),
+      abi.encode(_params)
+    );
 
     vm.startPrank(arbitrator);
     _;
@@ -404,7 +427,7 @@ contract EBORequestCreator_Unit_RemoveChain is EBORequestCreator_Unit_BaseTest {
 }
 
 contract EBORequestCreator_Unit_SetRequestModuleData is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(address _requestModule, bytes calldata _requestModuleData) {
+  modifier happyPath(address _requestModule, IEBORequestModule.RequestParameters calldata _requestModuleData) {
     vm.startPrank(arbitrator);
     _;
   }
@@ -412,20 +435,38 @@ contract EBORequestCreator_Unit_SetRequestModuleData is EBORequestCreator_Unit_B
   /**
    * @notice Test the revert if the caller is not the arbitrator
    */
-  function test_revertIfNotArbitrator(address _requestModule, bytes calldata _requestModuleData) external {
+  function test_revertIfNotArbitrator(
+    address _requestModule,
+    IEBORequestModule.RequestParameters calldata _requestModuleData
+  ) external {
     _revertIfNotArbitrator();
     eboRequestCreator.setRequestModuleData(_requestModule, _requestModuleData);
   }
+
+  // NOTE: IF WE USE THIS TEST, WE HAVE TO CHANGE THE SETTINGS TO USE --VIA-IR BECAUSE WE HAVE TO CREATE A LOT OF VARIABLES
+  // /**
+  //  * @notice Test params are setted properly
+  //  */
+  // function test_requestModuleDataParams(
+  //   address _requestModule,
+  //   IEBORequestModule.RequestParameters calldata _requestModuleData
+  // ) external happyPath(_requestModule, _requestModuleData) {
+  //   eboRequestCreator.setRequestModuleData(_requestModule, _requestModuleData);
+
+  //   (,,,,,,, bytes memory _getRequestModuleData,,,,) = eboRequestCreator.requestData();
+  //   assertEq(abi.encode(_requestModuleData), _getRequestModuleData);
+  // }
 
   /**
    * @notice Test the emit request module data set
    */
   function test_emitRequestModuleDataSet(
     address _requestModule,
-    bytes calldata _requestModuleData
+    IEBORequestModule.RequestParameters calldata _requestModuleData
   ) external happyPath(_requestModule, _requestModuleData) {
     vm.expectEmit();
-    emit RequestModuleDataSet(_requestModule, _requestModuleData);
+
+    emit RequestModuleDataSet(_requestModule, abi.encode(_requestModuleData));
 
     eboRequestCreator.setRequestModuleData(_requestModule, _requestModuleData);
   }
