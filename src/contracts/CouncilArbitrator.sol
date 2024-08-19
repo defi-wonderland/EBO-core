@@ -52,9 +52,9 @@ contract CouncilArbitrator is Arbitrable, ICouncilArbitrator {
 
   /// @inheritdoc IArbitrator
   function resolve(
-    IOracle.Request memory _request,
-    IOracle.Response memory _response,
-    IOracle.Dispute memory _dispute
+    IOracle.Request calldata _request,
+    IOracle.Response calldata _response,
+    IOracle.Dispute calldata _dispute
   ) external onlyArbitratorModule returns (bytes memory /* _data */ ) {
     bytes32 _disputeId = _dispute._getId();
 
@@ -69,7 +69,7 @@ contract CouncilArbitrator is Arbitrable, ICouncilArbitrator {
 
     if (_resolutionData.dispute.disputer == address(0)) revert CouncilArbitrator_InvalidResolution();
     if (_status <= IOracle.DisputeStatus.Escalated) revert CouncilArbitrator_InvalidResolutionStatus();
-    if (getAnswer[_disputeId] > IOracle.DisputeStatus.Escalated) revert CouncilArbitrator_DisputeAlreadyResolved();
+    if (getAnswer[_disputeId] != IOracle.DisputeStatus.None) revert CouncilArbitrator_DisputeAlreadyResolved();
 
     getAnswer[_disputeId] = _status;
 

@@ -164,7 +164,7 @@ contract Arbitrable_Unit_OnlyArbitrator is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyArbitrator() public {
+  function test_revertOnlyArbitrator() public happyPath {
     vm.stopPrank();
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
@@ -182,7 +182,7 @@ contract Arbitrable_Unit_OnlyCouncil is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyCouncil() public {
+  function test_revertOnlyCouncil() public happyPath {
     vm.stopPrank();
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
@@ -202,7 +202,7 @@ contract Arbitrable_Unit_OnlyPendingCouncil is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyPendingCouncil() public {
+  function test_revertOnlyPendingCouncil() public happyPath {
     vm.stopPrank();
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyPendingCouncil.selector);
