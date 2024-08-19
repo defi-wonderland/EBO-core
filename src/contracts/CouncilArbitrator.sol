@@ -32,19 +32,17 @@ contract CouncilArbitrator is Arbitrable, ICouncilArbitrator {
 
   /**
    * @notice Constructor
-   * @param _oracle The address of the Oracle
    * @param _arbitratorModule The address of the Arbitrator Module
    * @param _arbitrator The address of The Graph's Arbitrator
    * @param _council The address of The Graph's Council
    */
   constructor(
-    IOracle _oracle,
     IArbitratorModule _arbitratorModule,
     address _arbitrator,
     address _council
   ) Arbitrable(_arbitrator, _council) {
-    ORACLE = _oracle;
-    ARBITRATOR_MODULE = _arbitratorModule; // TODO: IModule should be IValidator
+    ORACLE = _arbitratorModule.ORACLE();
+    ARBITRATOR_MODULE = _arbitratorModule;
   }
 
   /// @inheritdoc IArbitrator
