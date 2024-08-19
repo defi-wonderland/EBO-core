@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {ValidatorLib} from '@defi-wonderland/prophet-core/solidity/libraries/ValidatorLib.sol';
 import {IArbitrator} from '@defi-wonderland/prophet-modules/solidity/interfaces/IArbitrator.sol';
 import {IArbitratorModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
@@ -14,11 +15,15 @@ import {ICouncilArbitrator} from 'interfaces/ICouncilArbitrator.sol';
  * @notice Resolves disputes by arbitration by The Graph
  */
 contract CouncilArbitrator is Arbitrable, ICouncilArbitrator {
+  using ValidatorLib for IOracle.Dispute;
+
   /// @inheritdoc ICouncilArbitrator
   IOracle public immutable ORACLE;
   /// @inheritdoc ICouncilArbitrator
   IArbitratorModule public immutable ARBITRATOR_MODULE;
 
+  /// @inheritdoc ICouncilArbitrator
+  mapping(bytes32 _disputeId => ResolutionParameters _resolutionData) public resolutions;
   /// @inheritdoc IArbitrator
   mapping(bytes32 _disputeId => IOracle.DisputeStatus _status) public getAnswer;
 
@@ -51,18 +56,25 @@ contract CouncilArbitrator is Arbitrable, ICouncilArbitrator {
     IOracle.Response memory _response,
     IOracle.Dispute memory _dispute
   ) external onlyArbitratorModule returns (bytes memory /* _data */ ) {
-    // TODO: Emit event with params? Save params locally?
+    bytes32 _disputeId = _dispute._getId();
+
+    resolutions[_disputeId] = ResolutionParameters(_request, _response, _dispute);
+
+    emit ResolutionStarted(_disputeId, _request, _response, _dispute);
   }
 
   /// @inheritdoc ICouncilArbitrator
   function resolveDispute(bytes32 _disputeId, IOracle.DisputeStatus _status) external onlyArbitrator {
-    // TODO: Checks?
+    ResolutionParameters memory _resolutionData = resolutions[_disputeId];
+
+    if (_resolutionData.dispute.disputer == address(0)) revert CouncilArbitrator_InvalidResolution();
+    if (_status <= IOracle.DisputeStatus.Escalated) revert CouncilArbitrator_InvalidResolutionStatus();
+    if (getAnswer[_disputeId] > IOracle.DisputeStatus.Escalated) revert CouncilArbitrator_DisputeAlreadyResolved();
 
     getAnswer[_disputeId] = _status;
 
-    // TODO: Provide or fetch params?
-    // ORACLE.resolveDispute(_request, _response, _dispute);
-    // ORACLE.finalize(_request, _response);
+    ORACLE.resolveDispute(_resolutionData.request, _resolutionData.response, _resolutionData.dispute);
+    ORACLE.finalize(_resolutionData.request, _resolutionData.response);
 
     emit DisputeResolved(_disputeId, _status);
   }
