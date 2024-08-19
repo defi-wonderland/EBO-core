@@ -3,6 +3,7 @@ pragma solidity 0.8.26;
 
 import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {ValidatorLib} from '@defi-wonderland/prophet-core/solidity/libraries/ValidatorLib.sol';
 
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
@@ -36,14 +37,6 @@ contract EBOFinalityModule_Unit_BaseTest is Test {
     council = makeAddr('Council');
 
     eboFinalityModule = new EBOFinalityModule(oracle, eboRequestCreator, arbitrator, council);
-  }
-
-  function _getId(IOracle.Request memory _request) internal pure returns (bytes32 _id) {
-    _id = keccak256(abi.encode(_request));
-  }
-
-  function _getId(IOracle.Response memory _response) internal pure returns (bytes32 _id) {
-    _id = keccak256(abi.encode(_response));
   }
 
   function _getDynamicArray(
@@ -121,6 +114,9 @@ contract EBOFinalityModule_Unit_Constructor is EBOFinalityModule_Unit_BaseTest {
 }
 
 contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTest {
+  using ValidatorLib for IOracle.Request;
+  using ValidatorLib for IOracle.Response;
+
   struct FinalizeRequestParams {
     IOracle.Request request;
     IOracle.Response response;
@@ -133,13 +129,14 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
     _params.request.requester = address(eboRequestCreator);
 
     if (_params.finalizeWithResponse) {
-      _params.response.requestId = _getId(_params.request);
+      bytes32 _requestId = _params.request._getId();
+      bytes32 _responseId = _params.response._getId();
+
+      _params.response.requestId = _requestId;
 
       vm.assume(_params.responseCreatedAt != 0);
       vm.mockCall(
-        address(oracle),
-        abi.encodeCall(IOracle.responseCreatedAt, (_getId(_params.response))),
-        abi.encode(_params.responseCreatedAt)
+        address(oracle), abi.encodeCall(IOracle.responseCreatedAt, (_responseId)), abi.encode(_params.responseCreatedAt)
       );
     } else {
       _params.response.requestId = 0;

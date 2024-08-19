@@ -34,7 +34,7 @@
     "package.json": "sort-package-json"
   },
   "dependencies": {
-    "@defi-wonderland/prophet-core": "0.0.0-2e39539b",
+    "@defi-wonderland/prophet-core": "0.0.0-0954a47f",
     "@defi-wonderland/prophet-modules": "0.0.0-e52f8cce"
   },
   "devDependencies": {
