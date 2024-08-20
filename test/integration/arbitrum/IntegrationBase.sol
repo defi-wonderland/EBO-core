@@ -40,7 +40,18 @@ contract IntegrationBase is Test {
     // Deploy EpochManager
     _epochManager = IEpochManager(_EPOCH_MANAGER);
 
+    // Get nonce of the deployment EBORequestModule
+    uint256 _nonce = vm.getNonce(_owner) + 1;
+
+    address _preComputedEboRequestModule = vm.computeCreateAddress(_owner, _nonce);
+
+    // Create data
+    _requestParams.accountingExtension = _accountingExtension;
+
     _requestData.nonce = 0;
+    _requestData.requestModule = _preComputedEboRequestModule;
+    _requestData.requestModuleData = abi.encode(_requestParams);
+
     // Deploy EBORequestCreator
     _eboRequestCreator = new EBORequestCreator(_oracle, _epochManager, _arbitrator, _council, _requestData);
 
@@ -48,11 +59,5 @@ contract IntegrationBase is Test {
     _eboRequestModule = new EBORequestModule(_oracle, _eboRequestCreator, _arbitrator, _council);
 
     vm.stopPrank();
-
-    // Create data
-    _requestParams.accountingExtension = _accountingExtension;
-
-    vm.prank(_arbitrator);
-    _eboRequestCreator.setRequestModuleData(address(_eboRequestModule), _requestParams);
   }
 }
