@@ -27,13 +27,25 @@ contract Integration_CreateRequest is IntegrationBase {
     vm.prank(_arbitrator);
     _eboRequestCreator.addChain('chainId1');
 
-    bytes32 _requestId = keccak256('requestId');
-    // TODO: Remove the mock when the Oracle contract is implemented
-    vm.mockCall(address(_oracle), abi.encodeWithSelector(IOracle.createRequest.selector), abi.encode(_requestId));
+    // Check that oracle is creating the request with the correct chain id and epoch
+    IEBORequestModule.RequestParameters memory _requestModuleData;
+    _requestModuleData.accountingExtension = _accountingExtension;
+    _requestModuleData.chainId = 'chainId1';
+    _requestModuleData.epoch = _currentEpoch;
+
+    _requestData.requestModuleData = abi.encode(_requestModuleData);
+    _requestData.requestModule = address(_eboRequestModule);
+    _requestData.requester = address(_eboRequestCreator);
+
+    // Expect the oracle to create the request
+    vm.expectCall(address(_oracle), abi.encodeWithSelector(IOracle.createRequest.selector, _requestData, bytes32(0)));
 
     vm.prank(_user);
     _eboRequestCreator.createRequests(_currentEpoch, _chainIds);
-    assertEq(_eboRequestCreator.requestIdPerChainAndEpoch('chainId1', _currentEpoch), _requestId);
+    bytes32 _requestId = _eboRequestCreator.requestIdPerChainAndEpoch('chainId1', _currentEpoch);
+
+    // Check that the request id is stored correctly
+    assertEq(_oracle.requestCreatedAt(_requestId), block.number);
 
     // Remove the chain id
     vm.prank(_arbitrator);

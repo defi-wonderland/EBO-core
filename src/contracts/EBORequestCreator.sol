@@ -4,7 +4,8 @@ pragma solidity 0.8.26;
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import {Arbitrable} from 'contracts/Arbitrable.sol';
-import {IEBORequestCreator, IEpochManager, IOracle} from 'interfaces/IEBORequestCreator.sol';
+
+import {IEBORequestCreator, IEBORequestModule, IEpochManager, IOracle} from 'interfaces/IEBORequestCreator.sol';
 
 contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -56,6 +57,9 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
 
     IOracle.Request memory _requestData = requestData;
 
+    IEBORequestModule.RequestParameters memory _requestModuleData =
+      IEBORequestModule(_requestData.requestModule).decodeRequestData(_requestData.requestModuleData);
+
     for (uint256 _i; _i < _chainIds.length; _i++) {
       _encodedChainId = _encodeChainId(_chainIds[_i]);
       if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
@@ -66,7 +70,12 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
         _requestId == bytes32(0)
           || (ORACLE.finalizedAt(_requestId) > 0 && ORACLE.finalizedResponseId(_requestId) == bytes32(0))
       ) {
-        // TODO: CREATE REQUEST DATA
+        _requestModuleData.chainId = _chainIds[_i];
+        _requestModuleData.epoch = _epoch;
+        //TODO: REWARDS
+
+        _requestData.requestModuleData = abi.encode(_requestModuleData);
+
         _requestId = ORACLE.createRequest(_requestData, bytes32(0));
 
         requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] = _requestId;
@@ -97,11 +106,16 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function setRequestModuleData(address _requestModule, bytes calldata _requestModuleData) external onlyArbitrator {
+  function setRequestModuleData(
+    address _requestModule,
+    IEBORequestModule.RequestParameters calldata _requestModuleData
+  ) external onlyArbitrator {
     requestData.requestModule = _requestModule;
-    requestData.requestModuleData = _requestModuleData;
 
-    emit RequestModuleDataSet(_requestModule, _requestModuleData);
+    bytes memory _encodedRequestModuleData = abi.encode(_requestModuleData);
+    requestData.requestModuleData = _encodedRequestModuleData;
+
+    emit RequestModuleDataSet(_requestModule, _encodedRequestModuleData);
   }
 
   /// @inheritdoc IEBORequestCreator
