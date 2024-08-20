@@ -7,7 +7,7 @@ import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle
 
 import {Arbitrable} from 'contracts/Arbitrable.sol';
 import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
-import {IAccountingExtension, IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
+import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
 /**
  * @title EBORequestModule

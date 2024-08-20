@@ -151,6 +151,7 @@ contract EBORequestCreator_Unit_Constructor is EBORequestCreator_Unit_BaseTest {
 
 contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest {
   string[] internal _cleanChainIds;
+  IEBORequestModule.RequestParameters internal _params;
 
   modifier happyPath(uint256 _epoch, string[] memory _chainId) {
     vm.assume(_epoch > startEpoch);
@@ -167,8 +168,6 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
 
     eboRequestCreator.setRequestModuleDataForTest(address(eboRequestModule), '');
 
-    IEBORequestModule.RequestParameters memory _params;
-
     vm.mockCall(
       address(eboRequestModule),
       abi.encodeWithSelector(IEBORequestModule.decodeRequestData.selector),
@@ -184,6 +183,15 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
    */
   function test_revertIfChainNotAdded(uint256 _epoch) external {
     vm.assume(_epoch > startEpoch);
+
+    eboRequestCreator.setRequestModuleDataForTest(address(eboRequestModule), '');
+
+    vm.mockCall(
+      address(eboRequestModule),
+      abi.encodeWithSelector(IEBORequestModule.decodeRequestData.selector),
+      abi.encode(_params)
+    );
+
     vm.mockCall(address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(_epoch));
 
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector));
@@ -443,7 +451,7 @@ contract EBORequestCreator_Unit_SetRequestModuleData is EBORequestCreator_Unit_B
     eboRequestCreator.setRequestModuleData(_requestModule, _requestModuleData);
   }
 
-  // NOTE: IF WE USE THIS TEST, WE HAVE TO CHANGE THE SETTINGS TO USE --VIA-IR BECAUSE WE HAVE TO CREATE A LOT OF VARIABLES
+  // TODO: IF WE USE THIS TEST, WE HAVE TO CHANGE THE SETTINGS TO USE --VIA-IR BECAUSE WE HAVE TO CREATE A LOT OF VARIABLES
   // /**
   //  * @notice Test params are setted properly
   //  */

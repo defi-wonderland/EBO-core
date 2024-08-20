@@ -57,6 +57,9 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
 
     IOracle.Request memory _requestData = requestData;
 
+    IEBORequestModule.RequestParameters memory _requestModuleData =
+      IEBORequestModule(_requestData.requestModule).decodeRequestData(_requestData.requestModuleData);
+
     for (uint256 _i; _i < _chainIds.length; _i++) {
       _encodedChainId = _encodeChainId(_chainIds[_i]);
       if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
@@ -67,9 +70,6 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
         _requestId == bytes32(0)
           || (ORACLE.finalizedAt(_requestId) > 0 && ORACLE.finalizedResponseId(_requestId) == bytes32(0))
       ) {
-        IEBORequestModule.RequestParameters memory _requestModuleData =
-          IEBORequestModule(_requestData.requestModule).decodeRequestData(_requestData.requestModuleData);
-
         _requestModuleData.chainId = _chainIds[_i];
         _requestModuleData.epoch = _epoch;
         //TODO: REWARDS
@@ -110,7 +110,6 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
     address _requestModule,
     IEBORequestModule.RequestParameters calldata _requestModuleData
   ) external onlyArbitrator {
-    // NOTE: SHOULD WE CREATE IN STORAGE THAT STRUCT TO AVOID ENCODE AND DECODE SEVERAL TIMES?
     requestData.requestModule = _requestModule;
 
     bytes memory _encodedRequestModuleData = abi.encode(_requestModuleData);

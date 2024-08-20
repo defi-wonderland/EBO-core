@@ -5,8 +5,10 @@ import {_EPOCH_MANAGER} from '../Constants.sol';
 import {Test} from 'forge-std/Test.sol';
 
 import {Oracle} from '@defi-wonderland/prophet-core/solidity/contracts/Oracle.sol';
+import {IAccountingExtension} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IAccountingExtension.sol';
 import {EBORequestCreator, IEBORequestCreator, IEpochManager, IOracle} from 'contracts/EBORequestCreator.sol';
-import {EBORequestModule, IAccountingExtension, IEBORequestModule} from 'contracts/EBORequestModule.sol';
+import {EBORequestModule, IEBORequestModule} from 'contracts/EBORequestModule.sol';
 
 contract IntegrationBase is Test {
   uint256 internal constant _FORK_BLOCK = 240_000_000;
