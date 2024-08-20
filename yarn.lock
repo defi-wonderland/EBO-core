@@ -190,6 +190,11 @@
     solc-typed-ast "18.1.2"
     yargs "17.7.2"
 
+"@defi-wonderland/prophet-core@0.0.0-0954a47f":
+  version "0.0.0-0954a47f"
+  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core/-/prophet-core-0.0.0-0954a47f.tgz#83124e103738a1d1d33b555ea774acbb90c0c153"
+  integrity sha512-MFJt7IQAkZys0wsJtFR4kt1x7zB1PMLr+jd40s14tLshlWm/7zrog8pfxUQ4EzYjVGkLKJm8jR8WcrEhCla39Q==
+
 "@defi-wonderland/prophet-core@0.0.0-2e39539b":
   version "0.0.0-2e39539b"
   resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core/-/prophet-core-0.0.0-2e39539b.tgz#dbf01ed05a9af302841123c77e84bc0b3b4a6176"
