@@ -83,6 +83,11 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   }
 
   /// @inheritdoc IHorizonAccountingExtension
+  function approvedModules(address _user) external view returns (address[] memory _approvedModules) {
+    _approvedModules = _approvals[_user].values();
+  }
+
+  /// @inheritdoc IHorizonAccountingExtension
   function approveModule(address _module) external {
     _approvals[msg.sender].add(_module);
   }
