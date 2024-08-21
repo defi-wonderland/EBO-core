@@ -15,9 +15,9 @@ contract HorizonAccountingExtensionForTest is HorizonAccountingExtension {
   constructor(
     IHorizonStaking _horizonStaking,
     IOracle _oracle,
-    uint256 _minThawingPeriod,
-    IERC20 _grt
-  ) HorizonAccountingExtension(_horizonStaking, _oracle, _minThawingPeriod, _grt) {}
+    IERC20 _grt,
+    uint256 _minThawingPeriod
+  ) HorizonAccountingExtension(_horizonStaking, _oracle, _grt, _minThawingPeriod) {}
 
   function setBondedTokens(address _user, uint256 _amount) public {
     totalBonded[_user] = _amount;

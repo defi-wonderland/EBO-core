@@ -1,58 +1,66 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
-
-import {IAccountingExtension} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IAccountingExtension.sol';
-import {IBondEscalationModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
-import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import {IHorizonAccountingExtension, IHorizonStaking} from 'interfaces/IHorizonAccountingExtension.sol';
+import {
+  IBondEscalationModule,
+  IERC20,
+  IHorizonAccountingExtension,
+  IHorizonStaking,
+  IOracle
+} from 'interfaces/IHorizonAccountingExtension.sol';
 
 import {Validator} from '@defi-wonderland/prophet-core/solidity/contracts/Validator.sol';
-import {AccountingExtension} from
-  '@defi-wonderland/prophet-modules/solidity/contracts/extensions/AccountingExtension.sol';
 
 contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   using EnumerableSet for EnumerableSet.AddressSet;
 
+  /// @inheritdoc IHorizonAccountingExtension
+  IHorizonStaking public immutable HORIZON_STAKING;
+
+  /// @inheritdoc IHorizonAccountingExtension
+  IERC20 public immutable GRT;
+
+  /// @inheritdoc IHorizonAccountingExtension
+  uint256 public immutable MIN_THAWING_PERIOD;
+
+  /// @inheritdoc IHorizonAccountingExtension
+  mapping(address _user => uint256 _bonded) public totalBonded;
+
+  /// @inheritdoc IHorizonAccountingExtension
   mapping(address _bonder => mapping(bytes32 _requestId => uint256 _amount)) public bondedAmountOf;
+
+  /// @inheritdoc IHorizonAccountingExtension
+  mapping(bytes32 _disputeId => uint256 _amount) public pledges;
+
+  /// @inheritdoc IHorizonAccountingExtension
+  mapping(bytes32 _disputeId => EscalationResult _result) public escalationResults;
+
+  /// @inheritdoc IHorizonAccountingExtension
+  mapping(bytes32 _requestId => mapping(address _pledger => bool _claimed)) public pledgerClaimed;
 
   /**
    * @notice Storing which modules have the users approved to bond their tokens.
    */
   mapping(address _bonder => EnumerableSet.AddressSet _modules) internal _approvals;
 
-  mapping(bytes32 _disputeId => uint256 _amount) public pledges;
-
-  mapping(bytes32 _disputeId => EscalationResult _result) public escalationResults;
-
-  mapping(bytes32 _requestId => mapping(address _pledger => bool _claimed)) public pledgerClaimed;
-
-  /// @inheritdoc IHorizonAccountingExtension
-  uint256 public immutable MIN_THAWING_PERIOD;
-
-  /// @inheritdoc IHorizonAccountingExtension
-  IHorizonStaking public immutable HORIZON_STAKING;
-
-  /// @inheritdoc IHorizonAccountingExtension
-  mapping(address _user => uint256 _bonded) public totalBonded;
-
-  IERC20 public immutable GRT;
-
+  /**
+   * @notice Constructor
+   * @param _horizonStaking The address of the Oracle
+   * @param _oracle The address of the Oracle
+   * @param _grt The address of the GRT token
+   * @param _minThawingPeriod The minimum thawing period for the staking
+   */
   constructor(
     IHorizonStaking _horizonStaking,
     IOracle _oracle,
-    uint256 _minThawingPeriod,
-    IERC20 _grt
+    IERC20 _grt,
+    uint256 _minThawingPeriod
   ) Validator(_oracle) {
     HORIZON_STAKING = _horizonStaking;
-    MIN_THAWING_PERIOD = _minThawingPeriod;
     GRT = _grt;
+    MIN_THAWING_PERIOD = _minThawingPeriod;
   }
 
   /**
@@ -74,11 +82,21 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     _;
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
+  function approveModule(address _module) external {
+    _approvals[msg.sender].add(_module);
+  }
+
+  /// @inheritdoc IHorizonAccountingExtension
+  function revokeModule(address _module) external {
+    _approvals[msg.sender].remove(_module);
+  }
+
+  /// @inheritdoc IHorizonAccountingExtension
   function pledge(
     address _pledger,
     IOracle.Request calldata _request,
     IOracle.Dispute calldata _dispute,
-    IERC20,
     uint256 _amount
   ) external {
     bytes32 _requestId = _getId(_request);
@@ -93,10 +111,10 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     emit Pledged({_pledger: _pledger, _requestId: _requestId, _disputeId: _disputeId, _amount: _amount});
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
   function onSettleBondEscalation(
     IOracle.Request calldata _request,
     IOracle.Dispute calldata _dispute,
-    IERC20,
     uint256 _amountPerPledger,
     uint256 _winningPledgersLength
   ) external {
@@ -131,6 +149,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     });
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
   function claimEscalationReward(bytes32 _disputeId, address _pledger) external {
     EscalationResult memory _result = escalationResults[_disputeId];
     if (_result.requestId == bytes32(0)) revert HorizonAccountingExtension_NoEscalationResult();
@@ -171,11 +190,11 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     });
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
   function releasePledge(
     IOracle.Request calldata _request,
     IOracle.Dispute calldata _dispute,
     address _pledger,
-    IERC20,
     uint256 _amount
   ) external {
     bytes32 _requestId = _getId(_request);
@@ -194,6 +213,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     emit PledgeReleased({_requestId: _requestId, _disputeId: _disputeId, _pledger: _pledger, _amount: _amount});
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
   function pay(
     bytes32 _requestId,
     address _payer,
@@ -216,6 +236,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     // emit Paid({_requestId: _requestId, _beneficiary: _receiver, _payer: _payer, _token: _token, _amount: _amount});
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
   function bond(
     address _bonder,
     bytes32 _requestId,
@@ -250,6 +271,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     emit Bonded(_requestId, _bonder, _amount);
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
   function release(
     address _bonder,
     bytes32 _requestId,
@@ -278,6 +300,11 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     // emit Released(_requestId, _bonder, _token, _amount);
   }
 
+  /**
+   * @notice Bonds the tokens of the user.
+   * @param _bonder The address of the user.
+   * @param _amount The amount of tokens to bond.
+   */
   function _bond(address _bonder, uint256 _amount) internal {
     IHorizonStaking.Provision memory _provisionData = HORIZON_STAKING.getProvision(_bonder, address(this));
 
@@ -291,20 +318,13 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     }
   }
 
+  /**
+   * @notice Unbonds the tokens of the user.
+   * @param _bonder The address of the user.
+   * @param _amount The amount of tokens to unbond.
+   */
   function _unbond(address _bonder, uint256 _amount) internal {
     if (_amount > totalBonded[_bonder]) revert HorizonAccountingExtension_InsufficientBondedTokens();
     totalBonded[_bonder] -= _amount;
-  }
-
-  function approveModule(address _module) external {
-    _approvals[msg.sender].add(_module);
-  }
-
-  function revokeModule(address _module) external {
-    _approvals[msg.sender].remove(_module);
-  }
-
-  function approvedModules(address _user) external view returns (address[] memory _approvedModules) {
-    _approvedModules = _approvals[_user].values();
   }
 }
