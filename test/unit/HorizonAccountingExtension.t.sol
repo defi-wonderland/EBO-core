@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import {Helpers} from 'test/utils/Helpers.sol';
 
+import {IBondEscalationModule} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
 import {
   HorizonAccountingExtension,
   IERC20,
@@ -31,6 +33,27 @@ contract HorizonAccountingExtensionForTest is HorizonAccountingExtension {
   function setBondedTokens(address _user, uint256 _amount) public {
     totalBonded[_user] = _amount;
   }
+
+  function setPledgedForTest(bytes32 _disputeId, uint256 _amount) public {
+    pledges[_disputeId] = _amount;
+  }
+
+  function setEscalationResultForTest(
+    bytes32 _disputeId,
+    bytes32 _requestId,
+    uint256 _amountPerPledger,
+    IBondEscalationModule _bondEscalationModule
+  ) public {
+    escalationResults[_disputeId] = EscalationResult({
+      requestId: _requestId,
+      amountPerPledger: _amountPerPledger,
+      bondEscalationModule: _bondEscalationModule
+    });
+  }
+
+  function setPledgerClaimedForTest(bytes32 _requestId, address _pledger, bool _claimed) public {
+    pledgerClaimed[_requestId][_pledger] = _claimed;
+  }
 }
 
 contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
@@ -39,6 +62,7 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
   IHorizonStaking public horizonStaking;
   IOracle public oracle;
   IERC20 public grt;
+  IBondEscalationModule public bondEscalationModule;
 
   /// Addresses
   address public user;
@@ -68,6 +92,7 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
     horizonStaking = IHorizonStaking(makeAddr('HorizonStaking'));
     oracle = IOracle(makeAddr('Oracle'));
     grt = IERC20(makeAddr('GRT'));
+    bondEscalationModule = IBondEscalationModule(makeAddr('BondEscalationModule'));
 
     user = makeAddr('User');
 
@@ -147,7 +172,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
   }
 
   function test_revertIfDisallowedModule(address _pledger, uint256 _amount) public {
-    (, IOracle.Dispute memory _dispute) = _getResponseAndDispute(oracle);
+    (, _dispute) = _getResponseAndDispute(oracle);
 
     // Mock and expect the call to oracle checking if the module is allowed
     _mockAndExpect(
@@ -162,10 +187,10 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
 
   function test_invalidThawingPeriod(address _pledger, uint256 _amount) public {
     vm.assume(_amount > 0);
-    IHorizonStaking.Provision memory _provisionData;
+    _provisionData;
 
-    (, IOracle.Dispute memory _dispute) = _getResponseAndDispute(oracle);
-    bytes32 _requestId = _getId(mockRequest);
+    (, _dispute) = _getResponseAndDispute(oracle);
+    _requestId = _getId(mockRequest);
 
     _mockAndExpect(
       address(oracle), abi.encodeCall(IOracle.allowedModule, (_requestId, address(this))), abi.encode(true)
@@ -187,11 +212,11 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
   function test_insufficientTokens(address _pledger, uint256 _amount) public {
     vm.assume(_amount > 0);
 
-    IHorizonStaking.Provision memory _provisionData;
+    _provisionData;
     _provisionData.thawingPeriod = 30 days;
 
-    (, IOracle.Dispute memory _dispute) = _getResponseAndDispute(oracle);
-    bytes32 _requestId = _getId(mockRequest);
+    (, _dispute) = _getResponseAndDispute(oracle);
+    _requestId = _getId(mockRequest);
 
     _mockAndExpect(
       address(oracle), abi.encodeCall(IOracle.allowedModule, (_requestId, address(this))), abi.encode(true)
@@ -221,12 +246,12 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
 
     horizonAccountingExtension.setBondedTokens(_pledger, _tokens);
 
-    IHorizonStaking.Provision memory _provisionData;
+    _provisionData;
     _provisionData.thawingPeriod = 30 days;
     _provisionData.tokens = _tokens;
 
-    (, IOracle.Dispute memory _dispute) = _getResponseAndDispute(oracle);
-    bytes32 _requestId = _getId(mockRequest);
+    (, _dispute) = _getResponseAndDispute(oracle);
+    _requestId = _getId(mockRequest);
 
     _mockAndExpect(
       address(oracle), abi.encodeCall(IOracle.allowedModule, (_requestId, address(this))), abi.encode(true)
@@ -269,140 +294,234 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
   }
 }
 
-// contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccountingExtension_Unit_BaseTest {
-//   function test_revertIfDisallowedModule(uint256 _numOfWinningPledgers, uint256 _amountPerPledger) public {
-//     (, IOracle.Dispute memory _dispute) = _getResponseAndDispute(oracle);
-//     bytes32 _requestId = _getId(mockRequest);
+contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccountingExtension_Unit_BaseTest {
+  IOracle.Dispute internal _dispute;
+  bytes32 internal _requestId;
+  bytes32 internal _disputeId;
 
-//     // Mock and expect the call to oracle checking if the module is allowed
-//     _mockAndExpect(
-//       address(oracle), abi.encodeCall(IOracle.allowedModule, (_requestId, address(this))), abi.encode(false)
-//     );
+  modifier happyPath(uint256 _amountPerPledger, uint256 _winningPledgersLength, uint256 _amount) {
+    vm.assume(_amountPerPledger > 0 && _amountPerPledger < type(uint128).max);
+    vm.assume(_winningPledgersLength > 0 && _winningPledgersLength < 1000);
 
-//     // Check: does it revert if the module is not allowed?
-//     vm.expectRevert(IAccountingExtension.AccountingExtension_UnauthorizedModule.selector);
+    _requestId = _getId(mockRequest);
+    _disputeId = _getId(mockDispute);
 
-//     bondEscalationAccounting.onSettleBondEscalation({
-//       _request: mockRequest,
-//       _dispute: _dispute,
-//       _token: token,
-//       _amountPerPledger: _amountPerPledger,
-//       _winningPledgersLength: _numOfWinningPledgers
-//     });
-//   }
+    // Mock and expect the call to oracle checking if the dispute exists
+    vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.disputeCreatedAt.selector, _disputeId), abi.encode(1));
 
-//   function test_revertIfAlreadySettled(uint256 _numOfWinningPledgers, uint256 _amountPerPledger) public {
-//     bytes32 _requestId = _getId(mockRequest);
-//     bytes32 _disputeId = _getId(mockDispute);
+    // Mock and expect the call to oracle checking if the module is allowed
+    _mockAndExpect(
+      address(oracle), abi.encodeCall(IOracle.allowedModule, (_requestId, address(this))), abi.encode(true)
+    );
 
-//     vm.assume(_amountPerPledger > 0);
-//     vm.assume(_numOfWinningPledgers > 0);
-//     vm.assume(_amountPerPledger < type(uint256).max / _numOfWinningPledgers);
+    _;
+  }
 
-//     // Mock and expect the call to oracle checking if the module is allowed
-//     _mockAndExpect(
-//       address(oracle), abi.encodeCall(IOracle.allowedModule, (_requestId, address(this))), abi.encode(true)
-//     );
+  function test_revertIfDisallowedModule(uint256 _amountPerPledger, uint256 _winningPledgersLength) public {
+    _requestId = _getId(mockRequest);
 
-//     // Mock and expect the call to oracle checking if the dispute exists
-//     _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_disputeId)), abi.encode(1));
+    vm.mockCall(
+      address(oracle), abi.encodeWithSelector(IOracle.disputeCreatedAt.selector, _getId(mockDispute)), abi.encode(1)
+    );
 
-//     bondEscalationAccounting.forTest_setEscalationResult(
-//       _disputeId, _requestId, token, _amountPerPledger, IBondEscalationModule(address(this))
-//     );
+    // Mock and expect the call to oracle checking if the module is allowed
+    _mockAndExpect(
+      address(oracle), abi.encodeCall(IOracle.allowedModule, (_requestId, address(this))), abi.encode(false)
+    );
 
-//     bondEscalationAccounting.forTest_setPledge(_disputeId, token, _amountPerPledger * _numOfWinningPledgers);
+    // Check: does it revert if the module is not allowed?
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedModule.selector);
 
-//     // Check: does it revert if the escalation is already settled?
-//     vm.expectRevert(IBondEscalationAccounting.BondEscalationAccounting_AlreadySettled.selector);
+    horizonAccountingExtension.onSettleBondEscalation(
+      mockRequest, mockDispute, _amountPerPledger, _winningPledgersLength
+    );
+  }
 
-//     bondEscalationAccounting.onSettleBondEscalation({
-//       _request: mockRequest,
-//       _dispute: mockDispute,
-//       _token: token,
-//       _amountPerPledger: _amountPerPledger,
-//       _winningPledgersLength: _numOfWinningPledgers
-//     });
-//   }
+  function test_revertIfInsufficientFunds(
+    uint256 _amountPerPledger,
+    uint256 _winningPledgersLength,
+    uint256 _amount
+  ) public happyPath(_amountPerPledger, _winningPledgersLength, _amount) {
+    vm.assume(_amountPerPledger > _amount);
 
-//   function test_revertIfInsufficientFunds(uint256 _amountPerPledger, uint256 _numOfWinningPledgers) public {
-//     (, IOracle.Dispute memory _dispute) = _getResponseAndDispute(oracle);
-//     bytes32 _requestId = _getId(mockRequest);
-//     bytes32 _disputeId = _getId(_dispute);
+    horizonAccountingExtension.setPledgedForTest(_disputeId, _amount);
 
-//     // Note, bounding to a max of 30 so that the tests doesn't take forever to run
-//     _numOfWinningPledgers = bound(_numOfWinningPledgers, 1, 30);
-//     _amountPerPledger = bound(_amountPerPledger, 1, type(uint256).max / _numOfWinningPledgers);
+    // Check: does it revert if the pledger does not have enough funds?
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientFunds.selector);
 
-//     // Mock and expect the call to oracle checking if the module is allowed
-//     _mockAndExpect(
-//       address(oracle), abi.encodeCall(IOracle.allowedModule, (_requestId, address(this))), abi.encode(true)
-//     );
+    horizonAccountingExtension.onSettleBondEscalation(
+      mockRequest, mockDispute, _amountPerPledger, _winningPledgersLength
+    );
+  }
 
-//     address[] memory _winningPledgers = _createWinningPledgersArray(_numOfWinningPledgers);
+  function test_revertIfAlreadySettled(
+    uint256 _amountPerPledger,
+    uint256 _winningPledgersLength,
+    uint256 _amount
+  ) public happyPath(_amountPerPledger, _winningPledgersLength, _amount) {
+    vm.assume(_amount > _amountPerPledger * _winningPledgersLength);
 
-//     uint256 _totalAmountToPay = _amountPerPledger * _winningPledgers.length;
-//     uint256 _insufficientPledges = _totalAmountToPay - 1;
+    horizonAccountingExtension.setEscalationResultForTest(
+      _disputeId, _requestId, _amountPerPledger, IBondEscalationModule(address(this))
+    );
 
-//     bondEscalationAccounting.forTest_setPledge(_disputeId, token, _insufficientPledges);
+    horizonAccountingExtension.setPledgedForTest(_disputeId, _amount);
 
-//     // Check: does it revert if the pledger does not have enough funds?
-//     vm.expectRevert(IBondEscalationAccounting.BondEscalationAccounting_InsufficientFunds.selector);
+    // Check: does it revert if the escalation is already settled?
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_AlreadySettled.selector);
 
-//     bondEscalationAccounting.onSettleBondEscalation({
-//       _request: mockRequest,
-//       _dispute: _dispute,
-//       _token: token,
-//       _amountPerPledger: _amountPerPledger,
-//       _winningPledgersLength: _numOfWinningPledgers
-//     });
-//   }
+    horizonAccountingExtension.onSettleBondEscalation(
+      mockRequest, mockDispute, _amountPerPledger, _winningPledgersLength
+    );
+  }
 
-//   function test_successfulCall(uint256 _numOfWinningPledgers, uint256 _amountPerPledger) public {
-//     (, IOracle.Dispute memory _dispute) = _getResponseAndDispute(oracle);
-//     bytes32 _requestId = _getId(mockRequest);
-//     bytes32 _disputeId = _getId(_dispute);
+  function test_successfulCall(
+    uint256 _amountPerPledger,
+    uint256 _winningPledgersLength,
+    uint256 _amount
+  ) public happyPath(_amountPerPledger, _winningPledgersLength, _amount) {
+    vm.assume(_amount > _amountPerPledger * _winningPledgersLength);
 
-//     // Note, bounding to a max of 30 so that the tests doesn't take forever to run
-//     _numOfWinningPledgers = bound(_numOfWinningPledgers, 1, 30);
-//     _amountPerPledger = bound(_amountPerPledger, 1, type(uint256).max / _numOfWinningPledgers);
+    horizonAccountingExtension.setPledgedForTest(_disputeId, _amount);
 
-//     // Mock and expect the call to oracle checking if the module is allowed
-//     _mockAndExpect(
-//       address(oracle), abi.encodeCall(IOracle.allowedModule, (_requestId, address(this))), abi.encode(true)
-//     );
+    vm.expectEmit();
+    emit BondEscalationSettled(_requestId, _disputeId, _amountPerPledger, _winningPledgersLength);
 
-//     address[] memory _winningPledgers = _createWinningPledgersArray(_numOfWinningPledgers);
-//     uint256 _totalAmountToPay = _amountPerPledger * _winningPledgers.length;
+    horizonAccountingExtension.onSettleBondEscalation({
+      _request: mockRequest,
+      _dispute: mockDispute,
+      _amountPerPledger: _amountPerPledger,
+      _winningPledgersLength: _winningPledgersLength
+    });
 
-//     bondEscalationAccounting.forTest_setPledge(_disputeId, token, _totalAmountToPay);
+    (bytes32 _requestIdSaved, uint256 _amountPerPledgerSaved, IBondEscalationModule _bondEscalationModule) =
+      horizonAccountingExtension.escalationResults(_disputeId);
 
-//     // Check: is the event emitted?
-//     vm.expectEmit(true, true, true, true, address(bondEscalationAccounting));
-//     emit BondEscalationSettled(_requestId, _disputeId, token, _amountPerPledger, _numOfWinningPledgers);
+    assertEq(_requestIdSaved, _requestId);
+    assertEq(_amountPerPledgerSaved, _amountPerPledger);
+    assertEq(address(_bondEscalationModule), address(this));
+  }
+}
 
-//     bondEscalationAccounting.onSettleBondEscalation({
-//       _request: mockRequest,
-//       _dispute: _dispute,
-//       _token: token,
-//       _amountPerPledger: _amountPerPledger,
-//       _winningPledgersLength: _numOfWinningPledgers
-//     });
+contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccountingExtension_Unit_BaseTest {
+  bytes32 internal _requestId;
+  bytes32 internal _disputeId;
 
-//     (
-//       bytes32 _requestIdSaved,
-//       IERC20 _token,
-//       uint256 _amountPerPledgerSaved,
-//       IBondEscalationModule _bondEscalationModule
-//     ) = bondEscalationAccounting.escalationResults(_disputeId);
+  modifier happyPath(uint256 _pledgesForDispute, uint256 _pledgesAgainstDispute, uint256 _amount) {
+    vm.assume(_pledgesForDispute > 0 && _pledgesForDispute < type(uint128).max);
+    vm.assume(_pledgesAgainstDispute > 0 && _pledgesAgainstDispute < type(uint128).max);
+    vm.assume(_amount > 0 && _amount < type(uint128).max);
 
-//     // Check: are the escalation results properly stored?
-//     assertEq(_requestIdSaved, _requestId);
-//     assertEq(address(_token), address(token));
-//     assertEq(_amountPerPledgerSaved, _amountPerPledger);
-//     assertEq(address(_bondEscalationModule), address(this));
-//   }
-// }
+    _requestId = _getId(mockRequest);
+    _disputeId = _getId(mockDispute);
+
+    horizonAccountingExtension.setEscalationResultForTest(_disputeId, _requestId, _amount, bondEscalationModule);
+    _;
+  }
+
+  function test_revertIfNoEscalationResult(address _pledger) public {
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NoEscalationResult.selector);
+    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledger);
+  }
+
+  function test_revertIfAlreadyClaimed(
+    address _pledger,
+    uint256 _pledgesForDispute,
+    uint256 _pledgesAgainstDispute,
+    uint256 _amount
+  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _amount) {
+    _requestId = _getId(mockRequest);
+    _disputeId = _getId(mockDispute);
+
+    horizonAccountingExtension.setPledgerClaimedForTest(_requestId, _pledger, true);
+
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_AlreadyClaimed.selector);
+    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledger);
+  }
+
+  function test_successfulCallNoResolution(
+    address _pledger,
+    uint256 _pledgesForDispute,
+    uint256 _pledgesAgainstDispute,
+    uint256 _amount
+  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _amount) {
+    // Mock and expect the call to oracle checking the dispute status
+    _mockAndExpect(
+      address(oracle),
+      abi.encodeWithSelector(IOracle.disputeStatus.selector, _disputeId),
+      abi.encode(IOracle.DisputeStatus.NoResolution)
+    );
+
+    _mockAndExpect(
+      address(bondEscalationModule),
+      abi.encodeWithSelector(IBondEscalationModule.pledgesForDispute.selector, _requestId, _pledger),
+      abi.encode(_pledgesForDispute)
+    );
+
+    _mockAndExpect(
+      address(bondEscalationModule),
+      abi.encodeWithSelector(IBondEscalationModule.pledgesAgainstDispute.selector, _requestId, _pledger),
+      abi.encode(_pledgesAgainstDispute)
+    );
+
+    vm.expectEmit();
+    emit EscalationRewardClaimed(
+      _requestId, _disputeId, _pledger, _amount * (_pledgesForDispute + _pledgesAgainstDispute)
+    );
+
+    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledger);
+  }
+
+  function test_successfulCallWonForDispute(
+    address _pledger,
+    uint256 _pledgesForDispute,
+    uint256 _pledgesAgainstDispute,
+    uint256 _amount
+  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _amount) {
+    // Mock and expect the call to oracle checking the dispute status
+    _mockAndExpect(
+      address(oracle),
+      abi.encodeWithSelector(IOracle.disputeStatus.selector, _disputeId),
+      abi.encode(IOracle.DisputeStatus.Won)
+    );
+
+    _mockAndExpect(
+      address(bondEscalationModule),
+      abi.encodeWithSelector(IBondEscalationModule.pledgesForDispute.selector, _requestId, _pledger),
+      abi.encode(_pledgesForDispute)
+    );
+
+    vm.expectEmit();
+    emit EscalationRewardClaimed(_requestId, _disputeId, _pledger, _amount * _pledgesForDispute);
+
+    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledger);
+  }
+
+  function test_successfulCallLostAgainstDispute(
+    address _pledger,
+    uint256 _pledgesForDispute,
+    uint256 _pledgesAgainstDispute,
+    uint256 _amount
+  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _amount) {
+    // Mock and expect the call to oracle checking the dispute status
+    _mockAndExpect(
+      address(oracle),
+      abi.encodeWithSelector(IOracle.disputeStatus.selector, _disputeId),
+      abi.encode(IOracle.DisputeStatus.Lost)
+    );
+
+    _mockAndExpect(
+      address(bondEscalationModule),
+      abi.encodeWithSelector(IBondEscalationModule.pledgesAgainstDispute.selector, _requestId, _pledger),
+      abi.encode(_pledgesAgainstDispute)
+    );
+
+    vm.expectEmit();
+    emit EscalationRewardClaimed(_requestId, _disputeId, _pledger, _amount * _pledgesAgainstDispute);
+
+    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledger);
+  }
+}
 
 // contract HorizonAccountingExtension_Unit_BondedAction is HorizonAccountingExtension_Unit_BaseTest {
 //   function test_invalidThawingPeriod(uint256 _bondedAmount) public {
