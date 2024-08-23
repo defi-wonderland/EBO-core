@@ -46,6 +46,11 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   mapping(address _bonder => EnumerableSet.AddressSet _modules) internal _approvals;
 
   /**
+   * @notice Storing the users that have pledged for a dispute.
+   */
+  mapping(bytes32 _disputeId => EnumerableSet.AddressSet _pledger) internal _pledgers;
+
+  /**
    * @notice Constructor
    * @param _horizonStaking The address of the Oracle
    * @param _oracle The address of the Oracle
@@ -113,6 +118,8 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
     _bond(_pledger, _amount);
 
+    _pledgers[_disputeId].add(_pledger);
+
     emit Pledged({_pledger: _pledger, _requestId: _requestId, _disputeId: _disputeId, _amount: _amount});
   }
 
@@ -136,10 +143,13 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       revert HorizonAccountingExtension_AlreadySettled();
     }
 
+    IBondEscalationModule _bondEscalationModule = IBondEscalationModule(msg.sender);
+
     escalationResults[_disputeId] = EscalationResult({
       requestId: _requestId,
       amountPerPledger: _amountPerPledger,
-      bondEscalationModule: IBondEscalationModule(msg.sender)
+      bondSize: _bondEscalationModule.decodeRequestData(_request.requestModuleData).bondSize,
+      bondEscalationModule: _bondEscalationModule
     });
 
     // TODO: The amount of money to be distributed needs to be slashed.
@@ -175,17 +185,20 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     }
 
     uint256 _claimAmount = _amountPerPledger * _numberOfPledges;
+    // TODO: We still need to try and slash some people in case there is not enough balance
+    // Unbond the pledged amount
+    uint256 _totalPledged = _result.bondSize * _numberOfPledges;
+    _unbond(_pledger, _totalPledged);
 
-    /////// TODO: In here we have to pay the user the amount
-    // We can send it to their wallet or provision it again
+    // Send the user the amount they won by participating in the dispute
+    GRT.transfer(_pledger, _claimAmount - _totalPledged);
 
-    // pledgerClaimed[_requestId][_pledger] = true;
-    // balanceOf[_pledger] += _claimAmount;
+    pledgerClaimed[_requestId][_pledger] = true;
+    // balanceOf[_pledger] += _claimAmount; // I don't think we actually need this
 
-    // unchecked {
-    //   pledges[_disputeId] -= _claimAmount;
-    // }
-    //////
+    unchecked {
+      pledges[_disputeId] -= _claimAmount;
+    }
 
     emit EscalationRewardClaimed({
       _requestId: _requestId,
@@ -303,6 +316,56 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     // _bond(_bonder, _amount);
 
     // emit Released(_requestId, _bonder, _token, _amount);
+  }
+
+  function slash(bytes32 _disputeId, uint256 _nUsers) external {
+    _slash(_disputeId, _nUsers);
+  }
+
+  function _calculateSlashAmount(bytes32 _disputeId, address _pledger) internal view returns (uint256 _slashAmount) {
+    EscalationResult memory _result = escalationResults[_disputeId];
+    if (_result.requestId == bytes32(0)) revert HorizonAccountingExtension_NoEscalationResult();
+    bytes32 _requestId = _result.requestId;
+    if (pledgerClaimed[_requestId][_pledger]) revert HorizonAccountingExtension_AlreadyClaimed();
+
+    IOracle.DisputeStatus _status = ORACLE.disputeStatus(_disputeId);
+    uint256 _numberOfPledges;
+
+    if (_status != IOracle.DisputeStatus.NoResolution) {
+      _numberOfPledges = !(_status == IOracle.DisputeStatus.Won)
+        ? _result.bondEscalationModule.pledgesForDispute(_requestId, _pledger)
+        : _result.bondEscalationModule.pledgesAgainstDispute(_requestId, _pledger);
+    }
+
+    _slashAmount = _result.amountPerPledger * _numberOfPledges;
+  }
+
+  function _slash(bytes32 _disputeId, uint256 _nUsers) internal {
+    EnumerableSet.AddressSet storage _users = _pledgers[_disputeId];
+
+    uint256 _slashedUsers;
+
+    while (_slashedUsers < _nUsers || _users.length() > 0) {
+      address _user = _users.at(0);
+
+      // Check if the user is actually slashable
+      uint256 _slashAmount = _calculateSlashAmount(_disputeId, _user);
+      if (_slashAmount > 0) {
+        // Slash the user
+        HORIZON_STAKING.slash(
+          _user,
+          _slashAmount,
+          _slashAmount, // TODO: How do we manage the max verifier cut?
+          // What if it's not 100%?
+          address(this)
+        );
+
+        _slashedUsers++;
+      }
+
+      // Remove the user from the list of users
+      _users.remove(_user);
+    }
   }
 
   /**

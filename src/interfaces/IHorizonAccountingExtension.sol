@@ -166,13 +166,15 @@ interface IHorizonAccountingExtension {
 
   /**
    * @notice Contains the data of the result of an escalation. Is used by users to claim their pledges
-   * @param requestId         The ID of the bond-escalated request
-   * @param amountPerPledger  The amount of token paid to each of the winning pledgers
+   * @param requestId            The ID of the bond-escalated request
+   * @param amountPerPledger     The amount of token paid to each of the winning pledgers
+   * @param bondSize             The size of the bond required for bond escalation
    * @param bondEscalationModule The address of the bond escalation module that was used
    */
   struct EscalationResult {
     bytes32 requestId;
     uint256 amountPerPledger;
+    uint256 bondSize;
     IBondEscalationModule bondEscalationModule;
   }
 
@@ -225,11 +227,18 @@ interface IHorizonAccountingExtension {
    * @param _disputeId The dispute Id
    * @return _requestId The request Id
    * @return _amountPerPledger The amount of token paid to each of the winning pledgers
+   * @return _bondSize The size of the bond required for bond escalation
    * @return _bondEscalationModule The address of the bond escalation module that was used
    */
-  function escalationResults(
-    bytes32 _disputeId
-  ) external view returns (bytes32 _requestId, uint256 _amountPerPledger, IBondEscalationModule _bondEscalationModule);
+  function escalationResults(bytes32 _disputeId)
+    external
+    view
+    returns (
+      bytes32 _requestId,
+      uint256 _amountPerPledger,
+      uint256 _bondSize,
+      IBondEscalationModule _bondEscalationModule
+    );
 
   /**
    * @notice The claim status of a user for a pledge

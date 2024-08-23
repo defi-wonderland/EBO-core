@@ -47,6 +47,7 @@ contract HorizonAccountingExtensionForTest is HorizonAccountingExtension {
     escalationResults[_disputeId] = EscalationResult({
       requestId: _requestId,
       amountPerPledger: _amountPerPledger,
+      bondSize: 0,
       bondEscalationModule: _bondEscalationModule
     });
   }
@@ -394,8 +395,12 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
       _winningPledgersLength: _winningPledgersLength
     });
 
-    (bytes32 _requestIdSaved, uint256 _amountPerPledgerSaved, IBondEscalationModule _bondEscalationModule) =
-      horizonAccountingExtension.escalationResults(_disputeId);
+    (
+      bytes32 _requestIdSaved,
+      uint256 _amountPerPledgerSaved,
+      uint256 bondSize,
+      IBondEscalationModule _bondEscalationModule
+    ) = horizonAccountingExtension.escalationResults(_disputeId);
 
     assertEq(_requestIdSaved, _requestId);
     assertEq(_amountPerPledgerSaved, _amountPerPledger);
