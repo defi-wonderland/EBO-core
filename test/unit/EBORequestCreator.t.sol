@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
+import {IBondedResponseModule} from
+  '@defi-wonderland/prophet-modules/solidity/contracts/modules/response/BondedResponseModule.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import {
@@ -46,8 +48,10 @@ abstract contract EBORequestCreator_Unit_BaseTest is Test {
   event RequestCreated(bytes32 indexed _requestId, uint256 indexed _epoch, string indexed _chainId);
   event ChainAdded(string indexed _chainId);
   event ChainRemoved(string indexed _chainId);
-  event RequestModuleDataSet(address indexed _requestModule, bytes _requestModuleData);
-  event ResponseModuleDataSet(address indexed _responseModule, bytes _responseModuleData);
+  event RequestModuleDataSet(address indexed _requestModule, IEBORequestModule.RequestParameters _requestModuleData);
+  event ResponseModuleDataSet(
+    address indexed _responseModule, IBondedResponseModule.RequestParameters _responseModuleData
+  );
   event DisputeModuleDataSet(address indexed _disputeModule, bytes _disputeModuleData);
   event ResolutionModuleDataSet(address indexed _resolutionModule, bytes _resolutionModuleData);
   event FinalityModuleDataSet(address indexed _finalityModule, bytes _finalityModuleData);
@@ -474,14 +478,14 @@ contract EBORequestCreator_Unit_SetRequestModuleData is EBORequestCreator_Unit_B
   ) external happyPath(_requestModule, _requestModuleData) {
     vm.expectEmit();
 
-    emit RequestModuleDataSet(_requestModule, abi.encode(_requestModuleData));
+    emit RequestModuleDataSet(_requestModule, _requestModuleData);
 
     eboRequestCreator.setRequestModuleData(_requestModule, _requestModuleData);
   }
 }
 
 contract EBORequestCreator_Unit_SetResponseModuleData is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(address _responseModule, bytes calldata _responseModuleData) {
+  modifier happyPath(address _responseModule, IBondedResponseModule.RequestParameters calldata _responseModuleData) {
     vm.startPrank(arbitrator);
     _;
   }
@@ -489,7 +493,10 @@ contract EBORequestCreator_Unit_SetResponseModuleData is EBORequestCreator_Unit_
   /**
    * @notice Test the revert if the caller is not the arbitrator
    */
-  function test_revertIfNotArbitrator(address _responseModule, bytes calldata _responseModuleData) external {
+  function test_revertIfNotArbitrator(
+    address _responseModule,
+    IBondedResponseModule.RequestParameters calldata _responseModuleData
+  ) external {
     _revertIfNotArbitrator();
     eboRequestCreator.setResponseModuleData(_responseModule, _responseModuleData);
   }
@@ -499,7 +506,7 @@ contract EBORequestCreator_Unit_SetResponseModuleData is EBORequestCreator_Unit_
    */
   function test_emitResponseModuleDataSet(
     address _responseModule,
-    bytes calldata _responseModuleData
+    IBondedResponseModule.RequestParameters calldata _responseModuleData
   ) external happyPath(_responseModule, _responseModuleData) {
     vm.expectEmit();
     emit ResponseModuleDataSet(_responseModule, _responseModuleData);

@@ -127,7 +127,7 @@ contract IntegrationBase is Test {
     _requestData.responseModuleData = abi.encode(_responseParams);
 
     vm.prank(_arbitrator);
-    _eboRequestCreator.setResponseModuleData(address(_bondedResponseModule), _requestData.responseModuleData);
+    _eboRequestCreator.setResponseModuleData(address(_bondedResponseModule), _responseParams);
   }
 
   function _approveModules() internal {
