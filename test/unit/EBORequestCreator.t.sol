@@ -2,7 +2,7 @@
 pragma solidity 0.8.26;
 
 import {IBondedResponseModule} from
-  '@defi-wonderland/prophet-modules/solidity/contracts/modules/response/BondedResponseModule.sol';
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import {

@@ -2,6 +2,7 @@
 pragma solidity 0.8.26;
 
 import {IOracle, Oracle} from '@defi-wonderland/prophet-core/solidity/contracts/Oracle.sol';
+import {ValidatorLib} from '@defi-wonderland/prophet-core/solidity/libraries/ValidatorLib.sol';
 import {
   BondEscalationAccounting,
   IBondEscalationAccounting
@@ -10,16 +11,20 @@ import {
   BondedResponseModule,
   IBondedResponseModule
 } from '@defi-wonderland/prophet-modules/solidity/contracts/modules/response/BondedResponseModule.sol';
+import {IERC20} from '@openzeppelin/contracts/interfaces/IERC20.sol';
 
 import {CouncilArbitrator, ICouncilArbitrator} from 'contracts/CouncilArbitrator.sol';
 import {EBORequestCreator, IEBORequestCreator, IEpochManager} from 'contracts/EBORequestCreator.sol';
 import {EBORequestModule, IEBORequestModule} from 'contracts/EBORequestModule.sol';
 
-import {_EPOCH_MANAGER} from '../Constants.sol';
+import {_EPOCH_MANAGER, _GRAPH_TOKEN} from '../Constants.sol';
 
 import 'forge-std/Test.sol';
 
 contract IntegrationBase is Test {
+  using ValidatorLib for IOracle.Request;
+  using ValidatorLib for IOracle.Response;
+
   uint256 internal constant _FORK_BLOCK = 240_000_000;
 
   // Oracle
@@ -37,6 +42,7 @@ contract IntegrationBase is Test {
   ICouncilArbitrator internal _councilArbitrator;
 
   // The Graph
+  IERC20 internal _graphToken;
   IEpochManager internal _epochManager;
   address internal _arbitrator = makeAddr('arbitrator');
   address internal _council = makeAddr('council');
@@ -50,6 +56,9 @@ contract IntegrationBase is Test {
   IOracle.Response internal _responseData;
   IEBORequestModule.RequestParameters internal _requestParams;
   IBondedResponseModule.RequestParameters internal _responseParams;
+  bytes32 internal _requestId;
+  bytes32 internal _responseId;
+  uint256 internal _bondSize;
   uint256 internal _currentEpoch;
   string internal _chainId = 'chainId1';
 
@@ -57,19 +66,15 @@ contract IntegrationBase is Test {
     vm.createSelectFork(vm.rpcUrl('arbitrum'), _FORK_BLOCK);
     vm.startPrank(_deployer);
 
-    // Deploy Oracle
-    _oracle = new Oracle();
-
-    // Deploy BondedResponseModule
-    _bondedResponseModule = new BondedResponseModule(_oracle);
-
-    // Deploy AccountingExtension
-    _accountingExtension = new BondEscalationAccounting(_oracle);
-
+    // Deploy GraphToken
+    _graphToken = IERC20(_GRAPH_TOKEN);
     // Deploy EpochManager
     _epochManager = IEpochManager(_EPOCH_MANAGER);
     // Get the current epoch
     _currentEpoch = _epochManager.currentEpoch();
+
+    // Deploy Oracle
+    _oracle = new Oracle();
 
     // Get nonce of the deployment EBORequestModule
     uint256 _nonce = vm.getNonce(_deployer) + 1;
@@ -82,26 +87,34 @@ contract IntegrationBase is Test {
     // Deploy EBORequestModule
     _eboRequestModule = new EBORequestModule(_oracle, _eboRequestCreator, _arbitrator, _council);
 
+    // Deploy BondedResponseModule
+    _bondedResponseModule = new BondedResponseModule(_oracle);
+
+    // Deploy AccountingExtension
+    _accountingExtension = new BondEscalationAccounting(_oracle);
+
     vm.stopPrank();
   }
 
-  function _createRequests() internal {
+  function _createRequest() internal {
     string[] memory _chainIds = _getChainIds();
 
     _requestParams.epoch = _currentEpoch;
     _requestParams.chainId = _chainId;
     _requestData.requestModuleData = abi.encode(_requestParams);
 
+    _requestId = _requestData._getId();
+
     vm.prank(_user);
     _eboRequestCreator.createRequests(_currentEpoch, _chainIds);
   }
 
   function _proposeResponse() internal {
-    bytes32 _requestId = _eboRequestCreator.requestIdPerChainAndEpoch(_chainId, _currentEpoch);
-
     _responseData.proposer = _user;
     _responseData.requestId = _requestId;
     _responseData.response = abi.encode(''); // TODO: Populate response
+
+    _responseId = _responseData._getId();
 
     vm.prank(_user);
     _oracle.proposeResponse(_requestData, _responseData);
@@ -123,7 +136,10 @@ contract IntegrationBase is Test {
     _requestData.responseModule = address(_bondedResponseModule);
 
     _responseParams.accountingExtension = _accountingExtension;
+    _responseParams.bondToken = _graphToken;
+    _responseParams.bondSize = _bondSize;
     _responseParams.deadline = block.timestamp + 1 days;
+    _responseParams.disputeWindow = block.number + 1 days;
     _requestData.responseModuleData = abi.encode(_responseParams);
 
     vm.prank(_arbitrator);

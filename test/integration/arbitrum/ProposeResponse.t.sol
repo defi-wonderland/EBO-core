@@ -16,10 +16,13 @@ contract Integration_ProposeResponse is IntegrationBase {
     _addChains();
 
     // Create the requests
-    _createRequests();
+    _createRequest();
   }
 
   function test_proposeResponse() public {
     _proposeResponse();
+
+    assertEq(_oracle.responseCreatedAt(_responseId), block.number);
+    assertEq(_accountingExtension.bondedAmountOf(_user, _graphToken, _requestId), _bondSize);
   }
 }

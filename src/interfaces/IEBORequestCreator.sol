@@ -3,7 +3,7 @@ pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 import {IBondedResponseModule} from
-  '@defi-wonderland/prophet-modules/solidity/contracts/modules/response/BondedResponseModule.sol';
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
