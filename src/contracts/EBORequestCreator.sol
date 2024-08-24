@@ -62,6 +62,9 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
     IEBORequestModule.RequestParameters memory _requestModuleData =
       IEBORequestModule(_requestData.requestModule).decodeRequestData(_requestData.requestModuleData);
 
+    // TODO: Increment nonce?
+    _requestModuleData.epoch = _epoch;
+
     for (uint256 _i; _i < _chainIds.length; _i++) {
       _encodedChainId = _encodeChainId(_chainIds[_i]);
       if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
@@ -73,7 +76,6 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
           || (ORACLE.finalizedAt(_requestId) > 0 && ORACLE.finalizedResponseId(_requestId) == bytes32(0))
       ) {
         _requestModuleData.chainId = _chainIds[_i];
-        _requestModuleData.epoch = _epoch;
         //TODO: REWARDS
 
         _requestData.requestModuleData = abi.encode(_requestModuleData);
