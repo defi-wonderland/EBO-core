@@ -12,7 +12,7 @@ contract Integration_ProposeResponse is IntegrationBase {
     _setResponseModuleData();
 
     // Approve modules and chain IDs
-    _approveModules();
+    _approveModules(_user);
     _addChains();
 
     // Create the requests
