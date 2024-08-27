@@ -207,7 +207,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
     if (!ORACLE.allowedModule(_requestId, msg.sender)) revert HorizonAccountingExtension_UnauthorizedModule();
 
-    if (pledges[_disputeId] < _amount) revert HorizonAccountingExtension_InsufficientFunds();
+    if (_amount > pledges[_disputeId]) revert HorizonAccountingExtension_InsufficientFunds();
 
     unchecked {
       pledges[_disputeId] -= _amount;
