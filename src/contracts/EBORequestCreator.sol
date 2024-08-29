@@ -62,7 +62,6 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
     IEBORequestModule.RequestParameters memory _requestModuleData =
       IEBORequestModule(_requestData.requestModule).decodeRequestData(_requestData.requestModuleData);
 
-    // TODO: Increment nonce?
     _requestModuleData.epoch = _epoch;
 
     for (uint256 _i; _i < _chainIds.length; _i++) {
