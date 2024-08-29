@@ -86,11 +86,6 @@ contract IntegrationBase is Test {
     // Deploy Oracle
     _oracle = new Oracle();
 
-    // Get nonce of the deployment EBORequestModule
-    uint256 _nonce = vm.getNonce(_deployer) + 1;
-    address _preComputedEboRequestModule = vm.computeCreateAddress(_deployer, _nonce);
-    // TODO: Fill requestData
-
     // Deploy EBORequestCreator
     _eboRequestCreator = new EBORequestCreator(_oracle, _epochManager, _arbitrator, _council, _requestData);
 
@@ -184,7 +179,7 @@ contract IntegrationBase is Test {
     _requestData.disputeModuleData = abi.encode(_disputeParams);
 
     vm.prank(_arbitrator);
-    _eboRequestCreator.setDisputeModuleData(address(_bondEscalationModule), abi.encode(_disputeParams));
+    _eboRequestCreator.setDisputeModuleData(address(_bondEscalationModule), _disputeParams);
   }
 
   function _approveModules(address _sender) internal {
