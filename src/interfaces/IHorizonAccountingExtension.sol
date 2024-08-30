@@ -239,16 +239,16 @@ interface IHorizonAccountingExtension {
    */
   function pledgerClaimed(bytes32 _requestId, address _pledger) external view returns (bool _claimed);
 
-  /*///////////////////////////////////////////////////////////////
-                              LOGIC
-  //////////////////////////////////////////////////////////////*/
-
   /**
    * @notice Returns the approved modules for bonding tokens
    * @param _user The address of the user
    * @return _approvedModules The approved modules for bonding tokens
    */
   function approvedModules(address _user) external view returns (address[] memory _approvedModules);
+
+  /*///////////////////////////////////////////////////////////////
+                              LOGIC
+  //////////////////////////////////////////////////////////////*/
 
   /**
    * @notice Allows a user to approve a module for bonding tokens

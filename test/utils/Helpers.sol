@@ -84,7 +84,7 @@ contract Helpers is Test {
   function _assumeFuzzable(address _address) internal view {
     assumeNotForgeAddress(_address);
     assumeNotZeroAddress(_address);
-    assumeNotPrecompile(_address, block.chainid); // using Optimism chaind id for precompiles filtering
+    assumeNotPrecompile(_address, block.chainid);
   }
 
   /**
