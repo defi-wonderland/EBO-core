@@ -42,11 +42,13 @@ contract HorizonAccountingExtensionForTest is HorizonAccountingExtension {
     bytes32 _disputeId,
     bytes32 _requestId,
     uint256 _amountPerPledger,
+    uint256 _bondSize,
     IBondEscalationModule _bondEscalationModule
   ) public {
     escalationResults[_disputeId] = EscalationResult({
       requestId: _requestId,
       amountPerPledger: _amountPerPledger,
+      bondSize: _bondSize,
       bondEscalationModule: _bondEscalationModule
     });
   }
@@ -382,7 +384,8 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
   function test_successfulCall(
     uint256 _amountPerPledger,
     uint256 _winningPledgersLength,
-    uint256 _amount
+    uint256 _amount,
+    uint256 _bondSize
   ) public happyPath(_amountPerPledger, _winningPledgersLength, _amount) {
     vm.assume(_amount > _amountPerPledger * _winningPledgersLength);
 
@@ -398,9 +401,10 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
       _winningPledgersLength: _winningPledgersLength
     });
 
-    (bytes32 _requestIdSaved, uint256 _amountPerPledgerSaved, IBondEscalationModule _bondEscalationModule) =
+    (bytes32 _requestIdSaved, uint256 _amountPerPledgerSaved, uint256 _savedBondSize, IBondEscalationModule _bondEscalationModule) =
       horizonAccountingExtension.escalationResults(_disputeId);
 
+    assertEq(_savedBondSize, _bondSize);
     assertEq(_requestIdSaved, _requestId);
     assertEq(_amountPerPledgerSaved, _amountPerPledger);
     assertEq(address(_bondEscalationModule), address(this));
@@ -798,10 +802,10 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
 
     horizonAccountingExtension.bond(_bonder, _requestId, _amount);
 
-    uint256 _bondedAmountOfAfter = horizonAccountingExtension.bondedAmountOf(_bonder, _requestId);
+    uint256 _bondedForRequestAfter = horizonAccountingExtension.bondedForRequest(_bonder, _requestId);
     uint256 _totalBondedAfter = horizonAccountingExtension.totalBonded(_bonder);
 
-    assertEq(_bondedAmountOfAfter, _amount);
+    assertEq(_bondedForRequestAfter, _amount);
     assertEq(_totalBondedAfter, _amount);
   }
 }
@@ -958,10 +962,10 @@ contract HorizonAccountingExtension_Unit_BondSender is HorizonAccountingExtensio
 
     horizonAccountingExtension.bond(_bonder, _requestId, _amount, _sender);
 
-    uint256 _bondedAmountOfAfter = horizonAccountingExtension.bondedAmountOf(_bonder, _requestId);
+    uint256 _bondedForRequestAfter = horizonAccountingExtension.bondedForRequest(_bonder, _requestId);
     uint256 _totalBondedAfter = horizonAccountingExtension.totalBonded(_bonder);
 
-    assertEq(_bondedAmountOfAfter, _amount);
+    assertEq(_bondedForRequestAfter, _amount);
     assertEq(_totalBondedAfter, _amount);
   }
 }
