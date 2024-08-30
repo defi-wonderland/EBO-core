@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import {Helpers} from 'test/utils/Helpers.sol';
 
+import {IBondEscalationAccounting} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IBondEscalationAccounting.sol';
 import {IBondEscalationModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
 import {
@@ -305,19 +307,38 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
   bytes32 internal _requestId;
   bytes32 internal _disputeId;
 
-  modifier happyPath(uint256 _amountPerPledger, uint256 _winningPledgersLength, uint256 _amount) {
+  modifier happyPath(uint256 _amountPerPledger, uint256 _winningPledgersLength, uint256 _amount, uint256 _bondSize) {
     vm.assume(_amountPerPledger > 0 && _amountPerPledger < type(uint128).max);
     vm.assume(_winningPledgersLength > 0 && _winningPledgersLength < 1000);
 
     _requestId = _getId(mockRequest);
     _disputeId = _getId(mockDispute);
 
+    // Mock the decodeRequestData for getting the bondSize
+    IBondEscalationModule.RequestParameters memory _requestParameters = IBondEscalationModule.RequestParameters({
+      accountingExtension: IBondEscalationAccounting(address(0)),
+      bondToken: IERC20(address(0)),
+      bondSize: _bondSize,
+      maxNumberOfEscalations: 0,
+      bondEscalationDeadline: 0,
+      tyingBuffer: 0,
+      disputeWindow: 0
+    });
+
+    vm.mockCall(
+      address(bondEscalationModule),
+      abi.encodeWithSelector(IBondEscalationModule.decodeRequestData.selector, mockRequest.requestModuleData),
+      abi.encode(_requestParameters)
+    );
+
     // Mock and expect the call to oracle checking if the dispute exists
     vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.disputeCreatedAt.selector, _disputeId), abi.encode(1));
 
     // Mock and expect the call to oracle checking if the module is allowed
     _mockAndExpect(
-      address(oracle), abi.encodeCall(IOracle.allowedModule, (_requestId, address(this))), abi.encode(true)
+      address(oracle),
+      abi.encodeCall(IOracle.allowedModule, (_requestId, address(bondEscalationModule))),
+      abi.encode(true)
     );
 
     _;
@@ -346,8 +367,9 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
   function test_revertIfInsufficientFunds(
     uint256 _amountPerPledger,
     uint256 _winningPledgersLength,
-    uint256 _amount
-  ) public happyPath(_amountPerPledger, _winningPledgersLength, _amount) {
+    uint256 _amount,
+    uint256 _bondSize
+  ) public happyPath(_amountPerPledger, _winningPledgersLength, _amount, _bondSize) {
     vm.assume(_amountPerPledger > _amount);
 
     horizonAccountingExtension.setPledgedForTest(_disputeId, _amount);
@@ -355,6 +377,7 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
     // Check: does it revert if the pledger does not have enough funds?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientFunds.selector);
 
+    vm.prank(address(bondEscalationModule));
     horizonAccountingExtension.onSettleBondEscalation(
       mockRequest, mockDispute, _amountPerPledger, _winningPledgersLength
     );
@@ -363,12 +386,13 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
   function test_revertIfAlreadySettled(
     uint256 _amountPerPledger,
     uint256 _winningPledgersLength,
-    uint256 _amount
-  ) public happyPath(_amountPerPledger, _winningPledgersLength, _amount) {
+    uint256 _amount,
+    uint256 _bondSize
+  ) public happyPath(_amountPerPledger, _winningPledgersLength, _amount, _bondSize) {
     vm.assume(_amount > _amountPerPledger * _winningPledgersLength);
 
     horizonAccountingExtension.setEscalationResultForTest(
-      _disputeId, _requestId, _amountPerPledger, IBondEscalationModule(address(this))
+      _disputeId, _requestId, _amountPerPledger, _bondSize, IBondEscalationModule(bondEscalationModule)
     );
 
     horizonAccountingExtension.setPledgedForTest(_disputeId, _amount);
@@ -376,6 +400,7 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
     // Check: does it revert if the escalation is already settled?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_AlreadySettled.selector);
 
+    vm.prank(address(bondEscalationModule));
     horizonAccountingExtension.onSettleBondEscalation(
       mockRequest, mockDispute, _amountPerPledger, _winningPledgersLength
     );
@@ -386,7 +411,7 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
     uint256 _winningPledgersLength,
     uint256 _amount,
     uint256 _bondSize
-  ) public happyPath(_amountPerPledger, _winningPledgersLength, _amount) {
+  ) public happyPath(_amountPerPledger, _winningPledgersLength, _amount, _bondSize) {
     vm.assume(_amount > _amountPerPledger * _winningPledgersLength);
 
     horizonAccountingExtension.setPledgedForTest(_disputeId, _amount);
@@ -394,6 +419,7 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
     vm.expectEmit();
     emit BondEscalationSettled(_requestId, _disputeId, _amountPerPledger, _winningPledgersLength);
 
+    vm.prank(address(bondEscalationModule));
     horizonAccountingExtension.onSettleBondEscalation({
       _request: mockRequest,
       _dispute: mockDispute,
@@ -401,13 +427,17 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
       _winningPledgersLength: _winningPledgersLength
     });
 
-    (bytes32 _requestIdSaved, uint256 _amountPerPledgerSaved, uint256 _savedBondSize, IBondEscalationModule _bondEscalationModule) =
-      horizonAccountingExtension.escalationResults(_disputeId);
+    (
+      bytes32 _requestIdSaved,
+      uint256 _amountPerPledgerSaved,
+      uint256 _savedBondSize,
+      IBondEscalationModule _savedBondEscalationModule
+    ) = horizonAccountingExtension.escalationResults(_disputeId);
 
     assertEq(_savedBondSize, _bondSize);
     assertEq(_requestIdSaved, _requestId);
     assertEq(_amountPerPledgerSaved, _amountPerPledger);
-    assertEq(address(_bondEscalationModule), address(this));
+    assertEq(address(_savedBondEscalationModule), address(bondEscalationModule));
   }
 }
 
@@ -415,7 +445,7 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
   bytes32 internal _requestId;
   bytes32 internal _disputeId;
 
-  modifier happyPath(uint256 _pledgesForDispute, uint256 _pledgesAgainstDispute, uint256 _amount) {
+  modifier happyPath(uint256 _pledgesForDispute, uint256 _pledgesAgainstDispute, uint256 _bondSize, uint256 _amount) {
     vm.assume(_pledgesForDispute > 0 && _pledgesForDispute < type(uint128).max);
     vm.assume(_pledgesAgainstDispute > 0 && _pledgesAgainstDispute < type(uint128).max);
     vm.assume(_amount > 0 && _amount < type(uint128).max);
@@ -423,7 +453,9 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     _requestId = _getId(mockRequest);
     _disputeId = _getId(mockDispute);
 
-    horizonAccountingExtension.setEscalationResultForTest(_disputeId, _requestId, _amount, bondEscalationModule);
+    horizonAccountingExtension.setEscalationResultForTest(
+      _disputeId, _requestId, _amount, _bondSize, bondEscalationModule
+    );
     _;
   }
 
@@ -436,8 +468,9 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     address _pledger,
     uint256 _pledgesForDispute,
     uint256 _pledgesAgainstDispute,
+    uint256 _bondSize,
     uint256 _amount
-  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _amount) {
+  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _bondSize, _amount) {
     _requestId = _getId(mockRequest);
     _disputeId = _getId(mockDispute);
 
@@ -451,8 +484,9 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     address _pledger,
     uint256 _pledgesForDispute,
     uint256 _pledgesAgainstDispute,
+    uint256 _bondSize,
     uint256 _amount
-  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _amount) {
+  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _bondSize, _amount) {
     // Mock and expect the call to oracle checking the dispute status
     _mockAndExpect(
       address(oracle),
@@ -484,8 +518,9 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     address _pledger,
     uint256 _pledgesForDispute,
     uint256 _pledgesAgainstDispute,
+    uint256 _bondSize,
     uint256 _amount
-  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _amount) {
+  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _bondSize, _amount) {
     // Mock and expect the call to oracle checking the dispute status
     _mockAndExpect(
       address(oracle),
@@ -509,8 +544,9 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     address _pledger,
     uint256 _pledgesForDispute,
     uint256 _pledgesAgainstDispute,
+    uint256 _bondSize,
     uint256 _amount
-  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _amount) {
+  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _bondSize, _amount) {
     // Mock and expect the call to oracle checking the dispute status
     _mockAndExpect(
       address(oracle),
