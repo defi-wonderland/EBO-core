@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
+import {IBondedResponseModule} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import {Arbitrable} from 'contracts/Arbitrable.sol';
@@ -60,6 +62,9 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
     IEBORequestModule.RequestParameters memory _requestModuleData =
       IEBORequestModule(_requestData.requestModule).decodeRequestData(_requestData.requestModuleData);
 
+    // TODO: Increment nonce?
+    _requestModuleData.epoch = _epoch;
+
     for (uint256 _i; _i < _chainIds.length; _i++) {
       _encodedChainId = _encodeChainId(_chainIds[_i]);
       if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
@@ -71,7 +76,6 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
           || (ORACLE.finalizedAt(_requestId) > 0 && ORACLE.finalizedResponseId(_requestId) == bytes32(0))
       ) {
         _requestModuleData.chainId = _chainIds[_i];
-        _requestModuleData.epoch = _epoch;
         //TODO: REWARDS
 
         _requestData.requestModuleData = abi.encode(_requestModuleData);
@@ -111,17 +115,18 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
     IEBORequestModule.RequestParameters calldata _requestModuleData
   ) external onlyArbitrator {
     requestData.requestModule = _requestModule;
+    requestData.requestModuleData = abi.encode(_requestModuleData);
 
-    bytes memory _encodedRequestModuleData = abi.encode(_requestModuleData);
-    requestData.requestModuleData = _encodedRequestModuleData;
-
-    emit RequestModuleDataSet(_requestModule, _encodedRequestModuleData);
+    emit RequestModuleDataSet(_requestModule, _requestModuleData);
   }
 
   /// @inheritdoc IEBORequestCreator
-  function setResponseModuleData(address _responseModule, bytes calldata _responseModuleData) external onlyArbitrator {
+  function setResponseModuleData(
+    address _responseModule,
+    IBondedResponseModule.RequestParameters calldata _responseModuleData
+  ) external onlyArbitrator {
     requestData.responseModule = _responseModule;
-    requestData.responseModuleData = _responseModuleData;
+    requestData.responseModuleData = abi.encode(_responseModuleData);
 
     emit ResponseModuleDataSet(_responseModule, _responseModuleData);
   }
