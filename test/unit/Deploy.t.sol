@@ -70,8 +70,7 @@ contract Deploy_Unit_Run is Deploy_Unit_BaseTest {
     // Extensions
     // BUG: Error (9274): "runtimeCode" is not available for contracts containing immutable variables.
     // assertEq(address(deploy.accountingExtension()).code, type(BondEscalationAccounting).runtimeCode);
-    // TODO: Inherit from `IValidator` in `IBondEscalationAccounting`
-    // assertEq(address(deploy.accountingExtension().ORACLE()), address(deploy.oracle()));
+    assertEq(address(deploy.accountingExtension().ORACLE()), address(deploy.oracle()));
 
     // Periphery
     // BUG: Error (9274): "runtimeCode" is not available for contracts containing immutable variables.
