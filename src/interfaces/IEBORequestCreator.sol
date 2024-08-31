@@ -6,10 +6,10 @@ import {IBondedResponseModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
+import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
-import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
-interface IEBORequestCreator {
+interface IEBORequestCreator is IArbitrable {
   /*///////////////////////////////////////////////////////////////
                             EVENTS
   //////////////////////////////////////////////////////////////*/

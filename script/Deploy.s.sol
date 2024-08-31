@@ -19,10 +19,11 @@ import {
   IBondedResponseModule
 } from '@defi-wonderland/prophet-modules/solidity/contracts/modules/response/BondedResponseModule.sol';
 import {IERC20} from '@openzeppelin/contracts/interfaces/IERC20.sol';
+import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
 import {CouncilArbitrator, ICouncilArbitrator} from 'contracts/CouncilArbitrator.sol';
 import {EBOFinalityModule, IEBOFinalityModule} from 'contracts/EBOFinalityModule.sol';
-import {EBORequestCreator, IEBORequestCreator, IEpochManager} from 'contracts/EBORequestCreator.sol';
+import {EBORequestCreator, IEBORequestCreator} from 'contracts/EBORequestCreator.sol';
 import {EBORequestModule, IEBORequestModule} from 'contracts/EBORequestModule.sol';
 
 import {_ARBITRATOR, _COUNCIL, _DEPLOYER, _EPOCH_MANAGER, _GRAPH_TOKEN} from './Constants.sol';
@@ -31,31 +32,31 @@ import 'forge-std/Script.sol';
 
 contract Deploy is Script {
   // Oracle
-  IOracle internal _oracle;
+  IOracle public oracle;
 
   // Modules
-  IEBORequestModule internal _eboRequestModule;
-  IBondedResponseModule internal _bondedResponseModule;
-  IBondEscalationModule internal _bondEscalationModule;
-  IArbitratorModule internal _arbitratorModule;
-  IEBOFinalityModule internal _eboFinalityModule;
+  IEBORequestModule public eboRequestModule;
+  IBondedResponseModule public bondedResponseModule;
+  IBondEscalationModule public bondEscalationModule;
+  IArbitratorModule public arbitratorModule;
+  IEBOFinalityModule public eboFinalityModule;
 
   // Extensions
-  IBondEscalationAccounting internal _accountingExtension;
+  IBondEscalationAccounting public accountingExtension;
 
   // Periphery
-  IEBORequestCreator internal _eboRequestCreator;
-  ICouncilArbitrator internal _councilArbitrator;
+  IEBORequestCreator public eboRequestCreator;
+  ICouncilArbitrator public councilArbitrator;
 
   // The Graph
-  IERC20 internal _graphToken;
-  IEpochManager internal _epochManager;
-  address internal _arbitrator;
-  address internal _council;
-  address internal _deployer;
+  IERC20 public graphToken;
+  IEpochManager public epochManager;
+  address public arbitrator;
+  address public council;
+  address public deployer;
 
   // Data
-  IOracle.Request internal _requestData;
+  IOracle.Request public requestData;
   IEBORequestModule.RequestParameters internal _requestParams;
   IBondedResponseModule.RequestParameters internal _responseParams;
   IBondEscalationModule.RequestParameters internal _disputeParams;
@@ -72,11 +73,11 @@ contract Deploy is Script {
 
   function setUp() public virtual {
     // Define The Graph accounts
-    _graphToken = IERC20(_GRAPH_TOKEN);
-    _epochManager = IEpochManager(_EPOCH_MANAGER);
-    _arbitrator = _ARBITRATOR;
-    _council = _COUNCIL;
-    _deployer = _DEPLOYER;
+    graphToken = IERC20(_GRAPH_TOKEN);
+    epochManager = IEpochManager(_EPOCH_MANAGER);
+    arbitrator = _ARBITRATOR;
+    council = _COUNCIL;
+    deployer = _DEPLOYER;
 
     // TODO: Define request module params
     _paymentAmount = 0;
@@ -95,89 +96,93 @@ contract Deploy is Script {
   }
 
   function run() public virtual {
-    vm.rememberKey(vm.envUint('ARBITRUM_DEPLOYER_PK'));
-    vm.startBroadcast(_deployer);
+    // BUG: failed parsing $ARBITRUM_DEPLOYER_PK as type `uint256`: missing hex prefix ("0x") for hex string
+    // vm.rememberKey(vm.envUint('ARBITRUM_DEPLOYER_PK'));
+    vm.startBroadcast(deployer);
 
     // Deploy Oracle
-    _oracle = new Oracle();
+    oracle = new Oracle();
 
     // Deploy BondedResponseModule
-    _bondedResponseModule = new BondedResponseModule(_oracle);
+    bondedResponseModule = new BondedResponseModule(oracle);
 
     // Deploy BondEscalationModule
-    _bondEscalationModule = new BondEscalationModule(_oracle);
+    bondEscalationModule = new BondEscalationModule(oracle);
 
     // Deploy ArbitratorModule
-    _arbitratorModule = new ArbitratorModule(_oracle);
+    arbitratorModule = new ArbitratorModule(oracle);
 
     // Deploy AccountingExtension
-    _accountingExtension = new BondEscalationAccounting(_oracle);
+    accountingExtension = new BondEscalationAccounting(oracle);
+
+    // Deploy CouncilArbitrator
+    councilArbitrator = new CouncilArbitrator(arbitratorModule, arbitrator, council);
 
     // Precompute the address of EBORequestCreator
     IEBORequestCreator _precomputedEBORequestCreator = IEBORequestCreator(_precomputeCreateAddress(2));
 
     // Deploy EBORequestModule
-    _eboRequestModule = new EBORequestModule(_oracle, _precomputedEBORequestCreator, _arbitrator, _council);
+    eboRequestModule = new EBORequestModule(oracle, _precomputedEBORequestCreator, arbitrator, council);
 
     // Deploy EBOFinalityModule
-    _eboFinalityModule = new EBOFinalityModule(_oracle, _precomputedEBORequestCreator, _arbitrator, _council);
+    eboFinalityModule = new EBOFinalityModule(oracle, _precomputedEBORequestCreator, arbitrator, council);
 
     // Deploy EBORequestCreator
     _setRequestData();
-    _eboRequestCreator = new EBORequestCreator(_oracle, _epochManager, _arbitrator, _council, _requestData);
+    eboRequestCreator = new EBORequestCreator(oracle, epochManager, arbitrator, council, requestData);
 
     // Assert that EBORequestCreator was deployed at the precomputed address
-    assert(_eboRequestCreator == _precomputedEBORequestCreator);
+    assert(eboRequestCreator == _precomputedEBORequestCreator);
 
     vm.stopBroadcast();
   }
 
   function _setRequestData() internal {
     // Set placeholder nonce
-    _requestData.nonce = 0;
+    requestData.nonce = 0;
 
     // Set modules
-    _requestData.requestModule = address(_eboRequestModule);
-    _requestData.responseModule = address(_bondedResponseModule);
-    _requestData.disputeModule = address(_bondEscalationModule);
-    _requestData.resolutionModule = address(_arbitratorModule);
-    _requestData.finalityModule = address(_eboFinalityModule);
+    requestData.requestModule = address(eboRequestModule);
+    requestData.responseModule = address(bondedResponseModule);
+    requestData.disputeModule = address(bondEscalationModule);
+    requestData.resolutionModule = address(arbitratorModule);
+    requestData.finalityModule = address(eboFinalityModule);
 
     // Set request module data
-    _requestParams.accountingExtension = _accountingExtension;
+    _requestParams.accountingExtension = accountingExtension;
     _requestParams.paymentAmount = _paymentAmount;
-    _requestData.requestModuleData = abi.encode(_requestParams);
+    requestData.requestModuleData = abi.encode(_requestParams);
 
     // Set response module data
-    _responseParams.accountingExtension = _accountingExtension;
-    _responseParams.bondToken = _graphToken;
+    _responseParams.accountingExtension = accountingExtension;
+    _responseParams.bondToken = graphToken;
     _responseParams.bondSize = _responseBondSize;
     _responseParams.deadline = _responseDeadline;
     _responseParams.disputeWindow = _responseDisputeWindow;
-    _requestData.responseModuleData = abi.encode(_responseParams);
+    requestData.responseModuleData = abi.encode(_responseParams);
 
     // Set dispute module data
-    _disputeParams.accountingExtension = _accountingExtension;
-    _disputeParams.bondToken = _graphToken;
+    _disputeParams.accountingExtension = accountingExtension;
+    _disputeParams.bondToken = graphToken;
     _disputeParams.bondSize = _disputeBondSize;
     _disputeParams.maxNumberOfEscalations = _maxNumberOfEscalations;
     _disputeParams.bondEscalationDeadline = _disputeDeadline;
     _disputeParams.tyingBuffer = _tyingBuffer;
     _disputeParams.disputeWindow = _disputeDisputeWindow;
-    _requestData.disputeModuleData = abi.encode(_disputeParams);
+    requestData.disputeModuleData = abi.encode(_disputeParams);
 
     // Set resolution module data
-    _resolutionParams.arbitrator = address(_councilArbitrator);
-    _requestData.resolutionModuleData = abi.encode(_resolutionParams);
+    _resolutionParams.arbitrator = address(councilArbitrator);
+    requestData.resolutionModuleData = abi.encode(_resolutionParams);
 
     // TODO: Set finality module data?
-    // _requestData.finalityModuleData = abi.encode(_finalityParams);
+    // requestData.finalityModuleData = abi.encode(_finalityParams);
   }
 
   function _precomputeCreateAddress(uint256 _deploymentCount) internal view returns (address _targetAddress) {
     // Get nonce for the target deployment
-    uint256 _targetNonce = vm.getNonce(_deployer) + _deploymentCount;
+    uint256 _targetNonce = vm.getNonce(deployer) + _deploymentCount;
     // Precompute the address of the target deployment
-    _targetAddress = vm.computeCreateAddress(_deployer, _targetNonce);
+    _targetAddress = vm.computeCreateAddress(deployer, _targetNonce);
   }
 }

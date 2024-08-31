@@ -1,15 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
+import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 import {IBondedResponseModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
 import {Arbitrable} from 'contracts/Arbitrable.sol';
+import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
+import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
-import {IEBORequestCreator, IEBORequestModule, IEpochManager, IOracle} from 'interfaces/IEBORequestCreator.sol';
-
-contract EBORequestCreator is IEBORequestCreator, Arbitrable {
+contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   /// @inheritdoc IEBORequestCreator
