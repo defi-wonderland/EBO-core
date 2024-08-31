@@ -96,8 +96,7 @@ contract Deploy is Script {
   }
 
   function run() public virtual {
-    // BUG: failed parsing $ARBITRUM_DEPLOYER_PK as type `uint256`: missing hex prefix ("0x") for hex string
-    // vm.rememberKey(vm.envUint('ARBITRUM_DEPLOYER_PK'));
+    vm.rememberKey(vm.envUint('ARBITRUM_DEPLOYER_PK'));
     vm.startBroadcast(deployer);
 
     // Deploy Oracle
