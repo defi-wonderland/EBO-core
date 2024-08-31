@@ -79,8 +79,7 @@ contract Deploy_Unit_Run is Deploy_Unit_BaseTest {
     assertEq(address(deploy.eboRequestCreator().epochManager()), address(deploy.epochManager()));
     assertEq(address(deploy.eboRequestCreator().arbitrator()), address(deploy.arbitrator()));
     assertEq(address(deploy.eboRequestCreator().council()), address(deploy.council()));
-    // TODO: Encode `requestData`
-    // assertEq(abi.encode(deploy.eboRequestCreator().requestData()), abi.encode(deploy.requestData()));
+    assertEq(abi.encode(deploy.eboRequestCreator().getRequestData()), abi.encode(deploy.getRequestData()));
     // BUG: Error (9274): "runtimeCode" is not available for contracts containing immutable variables.
     // assertEq(address(deploy.councilArbitrator()).code, type(CouncilArbitrator).runtimeCode);
     assertEq(address(deploy.councilArbitrator().ARBITRATOR_MODULE()), address(deploy.arbitratorModule()));

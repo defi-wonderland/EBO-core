@@ -235,4 +235,10 @@ interface IEBORequestCreator is IArbitrable {
    * @param _epochManager The epoch manager
    */
   function setEpochManager(IEpochManager _epochManager) external;
+
+  /**
+   * @notice Get the request data
+   * @return _requestData The request data
+   */
+  function getRequestData() external view returns (IOracle.Request memory _requestData);
 }

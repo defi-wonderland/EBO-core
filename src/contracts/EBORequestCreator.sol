@@ -165,6 +165,11 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
     _setEpochManager(_epochManager);
   }
 
+  /// @inheritdoc IEBORequestCreator
+  function getRequestData() external view returns (IOracle.Request memory _requestData) {
+    _requestData = requestData;
+  }
+
   /**
    * @notice Set the epoch manager
    * @param _epochManager The epoch manager

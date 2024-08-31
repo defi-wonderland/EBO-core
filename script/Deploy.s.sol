@@ -127,7 +127,7 @@ contract Deploy is Script {
     eboFinalityModule = new EBOFinalityModule(oracle, _precomputedEBORequestCreator, arbitrator, council);
 
     // Deploy EBORequestCreator
-    _setRequestData();
+    _setRequestData(_precomputedEBORequestCreator);
     eboRequestCreator = new EBORequestCreator(oracle, epochManager, arbitrator, council, requestData);
 
     // Assert that EBORequestCreator was deployed at the precomputed address
@@ -136,9 +136,16 @@ contract Deploy is Script {
     vm.stopBroadcast();
   }
 
-  function _setRequestData() internal {
+  function getRequestData() external view returns (IOracle.Request memory _requestData) {
+    _requestData = requestData;
+  }
+
+  function _setRequestData(IEBORequestCreator _precomputedEBORequestCreator) internal {
     // Set placeholder nonce
     requestData.nonce = 0;
+
+    // Set requester
+    requestData.requester = address(_precomputedEBORequestCreator);
 
     // Set modules
     requestData.requestModule = address(eboRequestModule);
