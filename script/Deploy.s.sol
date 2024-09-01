@@ -42,7 +42,7 @@ contract Deploy is Script {
   IEBOFinalityModule public eboFinalityModule;
 
   // Extensions
-  IBondEscalationAccounting public accountingExtension;
+  IBondEscalationAccounting public bondEscalationAccounting;
 
   // Periphery
   IEBORequestCreator public eboRequestCreator;
@@ -71,7 +71,11 @@ contract Deploy is Script {
   uint256 internal _tyingBuffer;
   uint256 internal _disputeDisputeWindow;
 
-  function setUp() public virtual {
+  function getRequestData() external view returns (IOracle.Request memory _requestData) {
+    _requestData = requestData;
+  }
+
+  function setUp() public {
     // Define The Graph accounts
     graphToken = IERC20(_GRAPH_TOKEN);
     epochManager = IEpochManager(_EPOCH_MANAGER);
@@ -95,7 +99,7 @@ contract Deploy is Script {
     _disputeDisputeWindow = 0;
   }
 
-  function run() public virtual {
+  function run() public {
     vm.rememberKey(vm.envUint('ARBITRUM_DEPLOYER_PK'));
     vm.startBroadcast(deployer);
 
@@ -111,8 +115,8 @@ contract Deploy is Script {
     // Deploy ArbitratorModule
     arbitratorModule = new ArbitratorModule(oracle);
 
-    // Deploy AccountingExtension
-    accountingExtension = new BondEscalationAccounting(oracle);
+    // Deploy BondEscalationAccounting
+    bondEscalationAccounting = new BondEscalationAccounting(oracle);
 
     // Deploy CouncilArbitrator
     councilArbitrator = new CouncilArbitrator(arbitratorModule, arbitrator, council);
@@ -136,10 +140,6 @@ contract Deploy is Script {
     vm.stopBroadcast();
   }
 
-  function getRequestData() external view returns (IOracle.Request memory _requestData) {
-    _requestData = requestData;
-  }
-
   function _setRequestData(IEBORequestCreator _precomputedEBORequestCreator) internal {
     // Set placeholder nonce
     requestData.nonce = 0;
@@ -155,12 +155,12 @@ contract Deploy is Script {
     requestData.finalityModule = address(eboFinalityModule);
 
     // Set request module data
-    _requestParams.accountingExtension = accountingExtension;
+    _requestParams.accountingExtension = bondEscalationAccounting;
     _requestParams.paymentAmount = _paymentAmount;
     requestData.requestModuleData = abi.encode(_requestParams);
 
     // Set response module data
-    _responseParams.accountingExtension = accountingExtension;
+    _responseParams.accountingExtension = bondEscalationAccounting;
     _responseParams.bondToken = graphToken;
     _responseParams.bondSize = _responseBondSize;
     _responseParams.deadline = _responseDeadline;
@@ -168,7 +168,7 @@ contract Deploy is Script {
     requestData.responseModuleData = abi.encode(_responseParams);
 
     // Set dispute module data
-    _disputeParams.accountingExtension = accountingExtension;
+    _disputeParams.accountingExtension = bondEscalationAccounting;
     _disputeParams.bondToken = graphToken;
     _disputeParams.bondSize = _disputeBondSize;
     _disputeParams.maxNumberOfEscalations = _maxNumberOfEscalations;

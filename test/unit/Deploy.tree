@@ -1,0 +1,16 @@
+Deploy::setUp
+└── it should define The Graph accounts
+
+Deploy::run
+├── given The Graph accounts are not set up
+│   └── it should revert
+└── given The Graph accounts are set up
+    ├── it should deploy Oracle
+    ├── it should deploy EBORequestModule with correct args
+    ├── it should deploy BondedResponseModule with correct args
+    ├── it should deploy BondEscalationModule with correct args
+    ├── it should deploy ArbitratorModule with correct args
+    ├── it should deploy EBOFinalityModule with correct args
+    ├── it should deploy BondEscalationAccounting with correct args
+    ├── it should deploy EBORequestCreator with correct args
+    └── it should deploy CouncilArbitrator with correct args
