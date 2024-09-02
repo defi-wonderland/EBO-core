@@ -74,7 +74,10 @@ contract UnitDeploy is Test {
     _;
   }
 
-  function test_RunRevertWhen_PrecomputedAddressIsIncorrect(address _precomputedAddress) public givenTheGraphAccountsAreSetUp {
+  function test_RunRevertWhen_PrecomputedAddressIsIncorrect(address _precomputedAddress)
+    public
+    givenTheGraphAccountsAreSetUp
+  {
     uint256 _nonceEBORequestCreator = vm.getNonce(deploy.deployer()) + deploy.OFFSET_EBO_REQUEST_CREATOR();
     address _precomputedEBORequestCreator = vm.computeCreateAddress(deploy.deployer(), _nonceEBORequestCreator);
     vm.assume(_precomputedEBORequestCreator != _precomputedAddress);

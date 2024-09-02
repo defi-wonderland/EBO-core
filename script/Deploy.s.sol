@@ -33,7 +33,7 @@ import 'forge-std/Script.sol';
 contract Deploy is Script {
   uint256 public constant DEPLOYMENT_COUNT = 9;
   uint256 public constant OFFSET_EBO_REQUEST_CREATOR = DEPLOYMENT_COUNT - 1;
-  
+
   // Oracle
   IOracle public oracle;
 
@@ -109,7 +109,8 @@ contract Deploy is Script {
     vm.startBroadcast(deployer);
 
     // Precompute address of `EBORequestCreator`
-    IEBORequestCreator _precomputedEBORequestCreator = IEBORequestCreator(_precomputeCreateAddress(OFFSET_EBO_REQUEST_CREATOR));
+    IEBORequestCreator _precomputedEBORequestCreator =
+      IEBORequestCreator(_precomputeCreateAddress(OFFSET_EBO_REQUEST_CREATOR));
 
     // Deploy `Oracle`
     oracle = new Oracle();

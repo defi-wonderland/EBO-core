@@ -98,9 +98,7 @@ interface ICouncilArbitrator is IArbitrator, IArbitrable {
    * @return _response The response data
    * @return _dispute The dispute data
    */
-  function resolutions(
-    bytes32 _disputeId
-  )
+  function resolutions(bytes32 _disputeId)
     external
     view
     returns (IOracle.Request memory _request, IOracle.Response memory _response, IOracle.Dispute memory _dispute);

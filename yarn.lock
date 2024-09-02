@@ -195,10 +195,10 @@
   resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-core/-/prophet-core-0.0.0-0954a47f.tgz#83124e103738a1d1d33b555ea774acbb90c0c153"
   integrity sha512-MFJt7IQAkZys0wsJtFR4kt1x7zB1PMLr+jd40s14tLshlWm/7zrog8pfxUQ4EzYjVGkLKJm8jR8WcrEhCla39Q==
 
-"@defi-wonderland/prophet-modules@0.0.0-e18f972e":
-  version "0.0.0-e18f972e"
-  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-modules/-/prophet-modules-0.0.0-e18f972e.tgz#282fdc9c826cb36a34ea04c6a1356a3229c0a976"
-  integrity sha512-SyJw9CexLCWIPUcIlWbzIJxpDALH5ay2TIzBzCXtoWk/rYKDQ0aoBKGtBYFId/LGBjEtW/fV0sBRh7RXrLzJ5g==
+"@defi-wonderland/prophet-modules@0.0.0-6986feea":
+  version "0.0.0-6986feea"
+  resolved "https://registry.yarnpkg.com/@defi-wonderland/prophet-modules/-/prophet-modules-0.0.0-6986feea.tgz#bf89f5fd01172e148eb7ee2ff20841b793966ecb"
+  integrity sha512-XuK86y3pAlOfuc2cxg6XmzObsASDZU+cIkDmxrIZ/0desKETKEBroTayOBBM1W0NNVEzD7K6A6WvTmL3Cr8uVw==
   dependencies:
     "@defi-wonderland/prophet-core" "0.0.0-0954a47f"
     "@openzeppelin/contracts" "4.9.5"

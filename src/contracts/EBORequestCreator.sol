@@ -2,6 +2,8 @@
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IBondEscalationModule} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
 import {IBondedResponseModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
@@ -132,15 +134,18 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
     emit ResponseModuleDataSet(_responseModule, _responseModuleData);
   }
 
-  /// TODO: Change module data to the specific interface when we have
   /// @inheritdoc IEBORequestCreator
-  function setDisputeModuleData(address _disputeModule, bytes calldata _disputeModuleData) external onlyArbitrator {
+  function setDisputeModuleData(
+    address _disputeModule,
+    IBondEscalationModule.RequestParameters calldata _disputeModuleData
+  ) external onlyArbitrator {
     requestData.disputeModule = _disputeModule;
-    requestData.disputeModuleData = _disputeModuleData;
+    requestData.disputeModuleData = abi.encode(_disputeModuleData);
 
     emit DisputeModuleDataSet(_disputeModule, _disputeModuleData);
   }
 
+  // TODO: Change module data to the specific interface when we have
   /// @inheritdoc IEBORequestCreator
   function setResolutionModuleData(
     address _resolutionModule,
