@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import { EnumerableSet } from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import { Math } from '@openzeppelin/contracts/utils/Math/Math.sol';
+import {Math} from '@openzeppelin/contracts/utils/Math/Math.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import {
   IBondEscalationModule,
@@ -12,7 +12,7 @@ import {
   IOracle
 } from 'interfaces/IHorizonAccountingExtension.sol';
 
-import { Validator } from '@defi-wonderland/prophet-core/solidity/contracts/Validator.sol';
+import {Validator} from '@defi-wonderland/prophet-core/solidity/contracts/Validator.sol';
 
 contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   using EnumerableSet for EnumerableSet.AddressSet;
@@ -202,17 +202,18 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     // If not enough balance, slash some users to get enough balance
     uint256 _balance = GRT.balanceOf(address(this));
     // How many iterations should we do?
-    while(_balance <  _claimAmount) {
+    while (_balance < _claimAmount) {
       _balance += _slash(_disputeId, 1, MAX_USERS_TO_CHECK);
     }
 
     // Send the user the amount they won by participating in the dispute
+    // TODO: Maybe safe ERC20?
     GRT.transfer(_pledger, _claimAmount - _totalPledged);
 
     pledgerClaimed[_requestId][_pledger] = true;
 
     pledges[_disputeId] -= _claimAmount;
-    
+
     emit EscalationRewardClaimed({
       _requestId: _requestId,
       _disputeId: _disputeId,
@@ -350,18 +351,22 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
         ? _result.bondEscalationModule.pledgesForDispute(_requestId, _pledger)
         : _result.bondEscalationModule.pledgesAgainstDispute(_requestId, _pledger);
     }
-    
+
     _slashAmount = _result.bondSize * _numberOfPledges;
   }
 
-  function _slash(bytes32 _disputeId, uint256 _usersToSlash, uint256 _maxUsersToCheck) internal returns (uint256 _slashedAmount) {
+  function _slash(
+    bytes32 _disputeId,
+    uint256 _usersToSlash,
+    uint256 _maxUsersToCheck
+  ) internal returns (uint256 _slashedAmount) {
     EnumerableSet.AddressSet storage _users = _pledgers[_disputeId];
 
     uint256 _slashedUsers;
     address _user;
     _maxUsersToCheck = Math.min(_maxUsersToCheck, _users.length());
 
-    for(uint256 _i; _i < _maxUsersToCheck || _slashedUsers < _usersToSlash; _i++) {
+    for (uint256 _i; _i < _maxUsersToCheck && _slashedUsers < _usersToSlash; _i++) {
       _user = _users.at(0);
 
       // Check if the user is actually slashable
