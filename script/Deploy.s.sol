@@ -31,6 +31,9 @@ import {_ARBITRATOR, _COUNCIL, _DEPLOYER, _EPOCH_MANAGER, _GRAPH_TOKEN} from './
 import 'forge-std/Script.sol';
 
 contract Deploy is Script {
+  uint256 public constant DEPLOYMENT_COUNT = 9;
+  uint256 public constant OFFSET_EBO_REQUEST_CREATOR = DEPLOYMENT_COUNT - 1;
+  
   // Oracle
   IOracle public oracle;
 
@@ -71,6 +74,8 @@ contract Deploy is Script {
   uint256 internal _tyingBuffer;
   uint256 internal _disputeDisputeWindow;
 
+  error Deploy_InvalidPrecomputedAddress();
+
   function getRequestData() external view returns (IOracle.Request memory _requestData) {
     _requestData = requestData;
   }
@@ -103,39 +108,39 @@ contract Deploy is Script {
     vm.rememberKey(vm.envUint('ARBITRUM_DEPLOYER_PK'));
     vm.startBroadcast(deployer);
 
-    // Deploy Oracle
+    // Precompute address of `EBORequestCreator`
+    IEBORequestCreator _precomputedEBORequestCreator = IEBORequestCreator(_precomputeCreateAddress(OFFSET_EBO_REQUEST_CREATOR));
+
+    // Deploy `Oracle`
     oracle = new Oracle();
 
-    // Deploy BondedResponseModule
-    bondedResponseModule = new BondedResponseModule(oracle);
-
-    // Deploy BondEscalationModule
-    bondEscalationModule = new BondEscalationModule(oracle);
-
-    // Deploy ArbitratorModule
-    arbitratorModule = new ArbitratorModule(oracle);
-
-    // Deploy BondEscalationAccounting
-    bondEscalationAccounting = new BondEscalationAccounting(oracle);
-
-    // Deploy CouncilArbitrator
-    councilArbitrator = new CouncilArbitrator(arbitratorModule, arbitrator, council);
-
-    // Precompute the address of EBORequestCreator
-    IEBORequestCreator _precomputedEBORequestCreator = IEBORequestCreator(_precomputeCreateAddress(2));
-
-    // Deploy EBORequestModule
+    // Deploy `EBORequestModule`
     eboRequestModule = new EBORequestModule(oracle, _precomputedEBORequestCreator, arbitrator, council);
 
-    // Deploy EBOFinalityModule
+    // Deploy `BondedResponseModule`
+    bondedResponseModule = new BondedResponseModule(oracle);
+
+    // Deploy `BondEscalationModule`
+    bondEscalationModule = new BondEscalationModule(oracle);
+
+    // Deploy `ArbitratorModule`
+    arbitratorModule = new ArbitratorModule(oracle);
+
+    // Deploy `EBOFinalityModule`
     eboFinalityModule = new EBOFinalityModule(oracle, _precomputedEBORequestCreator, arbitrator, council);
 
-    // Deploy EBORequestCreator
+    // Deploy `BondEscalationAccounting`
+    bondEscalationAccounting = new BondEscalationAccounting(oracle);
+
+    // Deploy `CouncilArbitrator`
+    councilArbitrator = new CouncilArbitrator(arbitratorModule, arbitrator, council);
+
+    // Deploy `EBORequestCreator`
     _setRequestData(_precomputedEBORequestCreator);
     eboRequestCreator = new EBORequestCreator(oracle, epochManager, arbitrator, council, requestData);
 
-    // Assert that EBORequestCreator was deployed at the precomputed address
-    assert(eboRequestCreator == _precomputedEBORequestCreator);
+    // Assert that `EBORequestCreator` was deployed at the precomputed address
+    if (eboRequestCreator != _precomputedEBORequestCreator) revert Deploy_InvalidPrecomputedAddress();
 
     vm.stopBroadcast();
   }
@@ -185,10 +190,10 @@ contract Deploy is Script {
     // requestData.finalityModuleData = abi.encode(_finalityParams);
   }
 
-  function _precomputeCreateAddress(uint256 _deploymentCount) internal view returns (address _targetAddress) {
+  function _precomputeCreateAddress(uint256 _deploymentOffset) internal view virtual returns (address _targetAddress) {
     // Get nonce for the target deployment
-    uint256 _targetNonce = vm.getNonce(deployer) + _deploymentCount;
-    // Precompute the address of the target deployment
+    uint256 _targetNonce = vm.getNonce(deployer) + _deploymentOffset;
+    // Precompute address of the target deployment
     _targetAddress = vm.computeCreateAddress(deployer, _targetNonce);
   }
 }
