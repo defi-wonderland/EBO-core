@@ -2,12 +2,13 @@
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IBondEscalationModule} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
 import {IBondedResponseModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
-import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
 interface IEBORequestCreator {
   /*///////////////////////////////////////////////////////////////
@@ -55,7 +56,9 @@ interface IEBORequestCreator {
    * @param _disputeModule The dispute module
    * @param _disputeModuleData The dispute module data
    */
-  event DisputeModuleDataSet(address indexed _disputeModule, bytes _disputeModuleData);
+  event DisputeModuleDataSet(
+    address indexed _disputeModule, IBondEscalationModule.RequestParameters _disputeModuleData
+  );
 
   /**
    * @notice Emitted when the resolution data module is set
@@ -214,7 +217,10 @@ interface IEBORequestCreator {
    * @param _disputeModule The dispute module
    * @param _disputeModuleData The dispute module data
    */
-  function setDisputeModuleData(address _disputeModule, bytes calldata _disputeModuleData) external;
+  function setDisputeModuleData(
+    address _disputeModule,
+    IBondEscalationModule.RequestParameters calldata _disputeModuleData
+  ) external;
 
   /**
    * @notice Set the resolution data module
