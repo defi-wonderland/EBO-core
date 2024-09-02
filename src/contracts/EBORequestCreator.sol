@@ -90,7 +90,9 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function addChain(string calldata _chainId) external onlyArbitrator {
+  function addChain(
+    string calldata _chainId
+  ) external onlyArbitrator {
     bytes32 _encodedChainId = _encodeChainId(_chainId);
     if (!_chainIdsAllowed.add(_encodedChainId)) {
       revert EBORequestCreator_ChainAlreadyAdded();
@@ -100,7 +102,9 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function removeChain(string calldata _chainId) external onlyArbitrator {
+  function removeChain(
+    string calldata _chainId
+  ) external onlyArbitrator {
     bytes32 _encodedChainId = _encodeChainId(_chainId);
     if (!_chainIdsAllowed.remove(_encodedChainId)) {
       revert EBORequestCreator_ChainNotAdded();
@@ -160,7 +164,9 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function setEpochManager(IEpochManager _epochManager) external onlyArbitrator {
+  function setEpochManager(
+    IEpochManager _epochManager
+  ) external onlyArbitrator {
     _setEpochManager(_epochManager);
   }
 
@@ -168,7 +174,9 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
    * @notice Set the epoch manager
    * @param _epochManager The epoch manager
    */
-  function _setEpochManager(IEpochManager _epochManager) internal {
+  function _setEpochManager(
+    IEpochManager _epochManager
+  ) internal {
     epochManager = _epochManager;
 
     emit EpochManagerSet(_epochManager);
@@ -178,7 +186,9 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
    * @notice Encodes the chain id
    * @dev The chain id is hashed to have a enumerable set to avoid duplicates
    */
-  function _encodeChainId(string calldata _chainId) internal pure returns (bytes32 _encodedChainId) {
+  function _encodeChainId(
+    string calldata _chainId
+  ) internal pure returns (bytes32 _encodedChainId) {
     _encodedChainId = keccak256(abi.encodePacked(_chainId));
   }
 }

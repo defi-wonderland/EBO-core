@@ -46,47 +46,61 @@ contract EBORequestModule_Unit_Constructor is EBORequestModule_Unit_BaseTest {
     address council;
   }
 
-  function test_setOracle(ConstructorParams calldata _params) public {
+  function test_setOracle(
+    ConstructorParams calldata _params
+  ) public {
     eboRequestModule =
       new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
 
     assertEq(address(eboRequestModule.ORACLE()), address(_params.oracle));
   }
 
-  function test_setArbitrator(ConstructorParams calldata _params) public {
+  function test_setArbitrator(
+    ConstructorParams calldata _params
+  ) public {
     eboRequestModule =
       new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
 
     assertEq(eboRequestModule.arbitrator(), _params.arbitrator);
   }
 
-  function test_emitSetArbitrator(ConstructorParams calldata _params) public {
+  function test_emitSetArbitrator(
+    ConstructorParams calldata _params
+  ) public {
     vm.expectEmit();
     emit SetArbitrator(_params.arbitrator);
     new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
   }
 
-  function test_setCouncil(ConstructorParams calldata _params) public {
+  function test_setCouncil(
+    ConstructorParams calldata _params
+  ) public {
     eboRequestModule =
       new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
 
     assertEq(eboRequestModule.council(), _params.council);
   }
 
-  function test_emitSetCouncil(ConstructorParams calldata _params) public {
+  function test_emitSetCouncil(
+    ConstructorParams calldata _params
+  ) public {
     vm.expectEmit();
     emit SetCouncil(_params.council);
     new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
   }
 
-  function test_setEBORequestCreator(ConstructorParams calldata _params) public {
+  function test_setEBORequestCreator(
+    ConstructorParams calldata _params
+  ) public {
     eboRequestModule =
       new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
 
     assertEq(address(eboRequestModule.eboRequestCreator()), address(_params.eboRequestCreator));
   }
 
-  function test_emitSetEBORequestCreator(ConstructorParams calldata _params) public {
+  function test_emitSetEBORequestCreator(
+    ConstructorParams calldata _params
+  ) public {
     vm.expectEmit();
     emit SetEBORequestCreator(_params.eboRequestCreator);
     new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
@@ -100,14 +114,18 @@ contract EBORequestModule_Unit_CreateRequest is EBORequestModule_Unit_BaseTest {
     address requester;
   }
 
-  modifier happyPath(CreateRequestParams memory _params) {
+  modifier happyPath(
+    CreateRequestParams memory _params
+  ) {
     _params.requester = address(eboRequestCreator);
 
     vm.startPrank(address(oracle));
     _;
   }
 
-  function test_revertOnlyOracle(CreateRequestParams memory _params) public happyPath(_params) {
+  function test_revertOnlyOracle(
+    CreateRequestParams memory _params
+  ) public happyPath(_params) {
     vm.stopPrank();
 
     bytes memory _encodedParams = abi.encode(_params.requestData);
@@ -142,7 +160,9 @@ contract EBORequestModule_Unit_FinalizeRequest is EBORequestModule_Unit_BaseTest
     bool finalizeWithResponse;
   }
 
-  modifier happyPath(FinalizeRequestParams memory _params) {
+  modifier happyPath(
+    FinalizeRequestParams memory _params
+  ) {
     _params.request.requester = address(eboRequestCreator);
 
     if (_params.finalizeWithResponse) {
@@ -163,7 +183,9 @@ contract EBORequestModule_Unit_FinalizeRequest is EBORequestModule_Unit_BaseTest
     _;
   }
 
-  function test_revertOnlyOracle(FinalizeRequestParams memory _params) public happyPath(_params) {
+  function test_revertOnlyOracle(
+    FinalizeRequestParams memory _params
+  ) public happyPath(_params) {
     vm.stopPrank();
 
     vm.expectRevert(IModule.Module_OnlyOracle.selector);
@@ -181,7 +203,9 @@ contract EBORequestModule_Unit_FinalizeRequest is EBORequestModule_Unit_BaseTest
     eboRequestModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
   }
 
-  function test_emitRequestFinalized(FinalizeRequestParams memory _params) public happyPath(_params) {
+  function test_emitRequestFinalized(
+    FinalizeRequestParams memory _params
+  ) public happyPath(_params) {
     vm.expectEmit();
     emit RequestFinalized(_params.response.requestId, _params.response, _params.finalizer);
     eboRequestModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
@@ -194,20 +218,26 @@ contract EBORequestModule_Unit_SetEBORequestCreator is EBORequestModule_Unit_Bas
     _;
   }
 
-  function test_revertOnlyArbitrator(IEBORequestCreator _eboRequestCreator) public happyPath {
+  function test_revertOnlyArbitrator(
+    IEBORequestCreator _eboRequestCreator
+  ) public happyPath {
     vm.stopPrank();
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
     eboRequestModule.setEBORequestCreator(_eboRequestCreator);
   }
 
-  function test_setEBORequestCreator(IEBORequestCreator _eboRequestCreator) public happyPath {
+  function test_setEBORequestCreator(
+    IEBORequestCreator _eboRequestCreator
+  ) public happyPath {
     eboRequestModule.setEBORequestCreator(_eboRequestCreator);
 
     assertEq(address(eboRequestModule.eboRequestCreator()), address(_eboRequestCreator));
   }
 
-  function test_emitSetEBORequestCreator(IEBORequestCreator _eboRequestCreator) public happyPath {
+  function test_emitSetEBORequestCreator(
+    IEBORequestCreator _eboRequestCreator
+  ) public happyPath {
     vm.expectEmit();
     emit SetEBORequestCreator(_eboRequestCreator);
     eboRequestModule.setEBORequestCreator(_eboRequestCreator);
@@ -215,7 +245,9 @@ contract EBORequestModule_Unit_SetEBORequestCreator is EBORequestModule_Unit_Bas
 }
 
 contract EBORequestModule_Unit_ValidateParameters is EBORequestModule_Unit_BaseTest {
-  function test_returnInvalidEpochParam(IEBORequestModule.RequestParameters memory _params) public view {
+  function test_returnInvalidEpochParam(
+    IEBORequestModule.RequestParameters memory _params
+  ) public view {
     _params.epoch = 0;
 
     bytes memory _encodedParams = abi.encode(_params);
@@ -223,7 +255,9 @@ contract EBORequestModule_Unit_ValidateParameters is EBORequestModule_Unit_BaseT
     assertFalse(eboRequestModule.validateParameters(_encodedParams));
   }
 
-  function test_returnInvalidChainIdParam(IEBORequestModule.RequestParameters memory _params) public view {
+  function test_returnInvalidChainIdParam(
+    IEBORequestModule.RequestParameters memory _params
+  ) public view {
     vm.assume(_params.epoch != 0);
     _params.chainId = '';
 
@@ -232,7 +266,9 @@ contract EBORequestModule_Unit_ValidateParameters is EBORequestModule_Unit_BaseT
     assertFalse(eboRequestModule.validateParameters(_encodedParams));
   }
 
-  function test_returnInvalidAccountingExtensionParam(IEBORequestModule.RequestParameters memory _params) public view {
+  function test_returnInvalidAccountingExtensionParam(
+    IEBORequestModule.RequestParameters memory _params
+  ) public view {
     vm.assume(_params.epoch != 0);
     vm.assume(bytes(_params.chainId).length != 0);
     _params.accountingExtension = IAccountingExtension(address(0));
@@ -242,7 +278,9 @@ contract EBORequestModule_Unit_ValidateParameters is EBORequestModule_Unit_BaseT
     assertFalse(eboRequestModule.validateParameters(_encodedParams));
   }
 
-  function test_returnValidParams(IEBORequestModule.RequestParameters memory _params) public view {
+  function test_returnValidParams(
+    IEBORequestModule.RequestParameters memory _params
+  ) public view {
     vm.assume(_params.epoch != 0);
     vm.assume(bytes(_params.chainId).length != 0);
     vm.assume(address(_params.accountingExtension) != address(0));
@@ -260,7 +298,9 @@ contract EBORequestModule_Unit_ModuleName is EBORequestModule_Unit_BaseTest {
 }
 
 contract EBORequestModule_Unit_DecodeRequestData is EBORequestModule_Unit_BaseTest {
-  function test_returnDecodedParams(IEBORequestModule.RequestParameters calldata _params) public view {
+  function test_returnDecodedParams(
+    IEBORequestModule.RequestParameters calldata _params
+  ) public view {
     bytes memory _encodedParams = abi.encode(_params);
     IEBORequestModule.RequestParameters memory _decodedParams = eboRequestModule.decodeRequestData(_encodedParams);
 

@@ -66,47 +66,61 @@ contract EBOFinalityModule_Unit_Constructor is EBOFinalityModule_Unit_BaseTest {
     address council;
   }
 
-  function test_setOracle(ConstructorParams calldata _params) public {
+  function test_setOracle(
+    ConstructorParams calldata _params
+  ) public {
     eboFinalityModule =
       new EBOFinalityModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
 
     assertEq(address(eboFinalityModule.ORACLE()), address(_params.oracle));
   }
 
-  function test_setArbitrator(ConstructorParams calldata _params) public {
+  function test_setArbitrator(
+    ConstructorParams calldata _params
+  ) public {
     eboFinalityModule =
       new EBOFinalityModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
 
     assertEq(eboFinalityModule.arbitrator(), _params.arbitrator);
   }
 
-  function test_emitSetArbitrator(ConstructorParams calldata _params) public {
+  function test_emitSetArbitrator(
+    ConstructorParams calldata _params
+  ) public {
     vm.expectEmit();
     emit SetArbitrator(_params.arbitrator);
     new EBOFinalityModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
   }
 
-  function test_setCouncil(ConstructorParams calldata _params) public {
+  function test_setCouncil(
+    ConstructorParams calldata _params
+  ) public {
     eboFinalityModule =
       new EBOFinalityModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
 
     assertEq(eboFinalityModule.council(), _params.council);
   }
 
-  function test_emitSetCouncil(ConstructorParams calldata _params) public {
+  function test_emitSetCouncil(
+    ConstructorParams calldata _params
+  ) public {
     vm.expectEmit();
     emit SetCouncil(_params.council);
     new EBOFinalityModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
   }
 
-  function test_setEBORequestCreator(ConstructorParams calldata _params) public {
+  function test_setEBORequestCreator(
+    ConstructorParams calldata _params
+  ) public {
     eboFinalityModule =
       new EBOFinalityModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
 
     assertEq(address(eboFinalityModule.eboRequestCreator()), address(_params.eboRequestCreator));
   }
 
-  function test_emitSetEBORequestCreator(ConstructorParams calldata _params) public {
+  function test_emitSetEBORequestCreator(
+    ConstructorParams calldata _params
+  ) public {
     vm.expectEmit();
     emit SetEBORequestCreator(_params.eboRequestCreator);
     new EBOFinalityModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
@@ -125,7 +139,9 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
     bool finalizeWithResponse;
   }
 
-  modifier happyPath(FinalizeRequestParams memory _params) {
+  modifier happyPath(
+    FinalizeRequestParams memory _params
+  ) {
     _params.request.requester = address(eboRequestCreator);
 
     if (_params.finalizeWithResponse) {
@@ -146,7 +162,9 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
     _;
   }
 
-  function test_revertOnlyOracle(FinalizeRequestParams memory _params) public happyPath(_params) {
+  function test_revertOnlyOracle(
+    FinalizeRequestParams memory _params
+  ) public happyPath(_params) {
     vm.stopPrank();
 
     vm.expectRevert(IModule.Module_OnlyOracle.selector);
@@ -164,7 +182,9 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
     eboFinalityModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
   }
 
-  function test_emitNewEpoch(FinalizeRequestParams memory _params) public happyPath(_params) {
+  function test_emitNewEpoch(
+    FinalizeRequestParams memory _params
+  ) public happyPath(_params) {
     vm.assume(_params.finalizeWithResponse);
 
     vm.skip(true);
@@ -173,7 +193,9 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
     eboFinalityModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
   }
 
-  function test_emitRequestFinalized(FinalizeRequestParams memory _params) public happyPath(_params) {
+  function test_emitRequestFinalized(
+    FinalizeRequestParams memory _params
+  ) public happyPath(_params) {
     vm.expectEmit();
     emit RequestFinalized(_params.response.requestId, _params.response, _params.finalizer);
     eboFinalityModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
@@ -192,7 +214,9 @@ contract EBOFinalityModule_Unit_AmendEpoch is EBOFinalityModule_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyArbitrator(AmendEpochParams calldata _params) public happyPath {
+  function test_revertOnlyArbitrator(
+    AmendEpochParams calldata _params
+  ) public happyPath {
     vm.stopPrank();
 
     string[] memory _chainIds = _getDynamicArray(_params.chainIds);
@@ -213,7 +237,9 @@ contract EBOFinalityModule_Unit_AmendEpoch is EBOFinalityModule_Unit_BaseTest {
     eboFinalityModule.amendEpoch(_params.epoch, _chainIds, _blockNumbers);
   }
 
-  function test_emitAmendEpoch(AmendEpochParams calldata _params) public happyPath {
+  function test_emitAmendEpoch(
+    AmendEpochParams calldata _params
+  ) public happyPath {
     string[] memory _chainIds = _getDynamicArray(_params.chainIds);
     uint256[] memory _blockNumbers = _getDynamicArray(_params.blockNumbers);
 
@@ -231,20 +257,26 @@ contract EBOFinalityModule_Unit_SetEBORequestCreator is EBOFinalityModule_Unit_B
     _;
   }
 
-  function test_revertOnlyArbitrator(IEBORequestCreator _eboRequestCreator) public happyPath {
+  function test_revertOnlyArbitrator(
+    IEBORequestCreator _eboRequestCreator
+  ) public happyPath {
     vm.stopPrank();
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
     eboFinalityModule.setEBORequestCreator(_eboRequestCreator);
   }
 
-  function test_setEBORequestCreator(IEBORequestCreator _eboRequestCreator) public happyPath {
+  function test_setEBORequestCreator(
+    IEBORequestCreator _eboRequestCreator
+  ) public happyPath {
     eboFinalityModule.setEBORequestCreator(_eboRequestCreator);
 
     assertEq(address(eboFinalityModule.eboRequestCreator()), address(_eboRequestCreator));
   }
 
-  function test_emitSetEBORequestCreator(IEBORequestCreator _eboRequestCreator) public happyPath {
+  function test_emitSetEBORequestCreator(
+    IEBORequestCreator _eboRequestCreator
+  ) public happyPath {
     vm.expectEmit();
     emit SetEBORequestCreator(_eboRequestCreator);
     eboFinalityModule.setEBORequestCreator(_eboRequestCreator);

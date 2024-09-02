@@ -41,7 +41,9 @@ contract Arbitrable_Unit_BaseTest is Test {
     arbitrable = new ArbitrableMock(arbitrator, council);
   }
 
-  function _mockPendingCouncil(address _pendingCouncil) internal {
+  function _mockPendingCouncil(
+    address _pendingCouncil
+  ) internal {
     stdstore.target(address(arbitrable)).sig(IArbitrable.pendingCouncil.selector).checked_write(_pendingCouncil);
   }
 }
@@ -78,20 +80,26 @@ contract Arbitrable_Unit_SetArbitrator is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyCouncil(address _arbitrator) public happyPath {
+  function test_revertOnlyCouncil(
+    address _arbitrator
+  ) public happyPath {
     vm.stopPrank();
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
     arbitrable.setArbitrator(_arbitrator);
   }
 
-  function test_setArbitrator(address _arbitrator) public happyPath {
+  function test_setArbitrator(
+    address _arbitrator
+  ) public happyPath {
     arbitrable.setArbitrator(_arbitrator);
 
     assertEq(arbitrable.arbitrator(), _arbitrator);
   }
 
-  function test_emitSetArbitrator(address _arbitrator) public happyPath {
+  function test_emitSetArbitrator(
+    address _arbitrator
+  ) public happyPath {
     vm.expectEmit();
     emit SetArbitrator(_arbitrator);
     arbitrable.setArbitrator(_arbitrator);
@@ -104,20 +112,26 @@ contract Arbitrable_Unit_SetPendingCouncil is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyCouncil(address _pendingCouncil) public happyPath {
+  function test_revertOnlyCouncil(
+    address _pendingCouncil
+  ) public happyPath {
     vm.stopPrank();
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
     arbitrable.setPendingCouncil(_pendingCouncil);
   }
 
-  function test_setPendingCouncil(address _pendingCouncil) public happyPath {
+  function test_setPendingCouncil(
+    address _pendingCouncil
+  ) public happyPath {
     arbitrable.setPendingCouncil(_pendingCouncil);
 
     assertEq(arbitrable.pendingCouncil(), _pendingCouncil);
   }
 
-  function test_emitSetPendingCouncil(address _pendingCouncil) public happyPath {
+  function test_emitSetPendingCouncil(
+    address _pendingCouncil
+  ) public happyPath {
     vm.expectEmit();
     emit SetPendingCouncil(_pendingCouncil);
     arbitrable.setPendingCouncil(_pendingCouncil);

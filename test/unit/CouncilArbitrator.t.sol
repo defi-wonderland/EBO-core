@@ -77,43 +77,57 @@ contract CouncilArbitrator_Unit_Constructor is CouncilArbitrator_Unit_BaseTest {
     IOracle oracle;
   }
 
-  modifier happyPath(ConstructorParams calldata _params) {
+  modifier happyPath(
+    ConstructorParams calldata _params
+  ) {
     assumeNotForgeAddress(address(_params.arbitratorModule));
     vm.mockCall(address(_params.arbitratorModule), abi.encodeCall(IValidator.ORACLE, ()), abi.encode(_params.oracle));
     _;
   }
 
-  function test_setArbitrator(ConstructorParams calldata _params) public happyPath(_params) {
+  function test_setArbitrator(
+    ConstructorParams calldata _params
+  ) public happyPath(_params) {
     councilArbitrator = new CouncilArbitratorMock(_params.arbitratorModule, _params.arbitrator, _params.council);
 
     assertEq(councilArbitrator.arbitrator(), _params.arbitrator);
   }
 
-  function test_emitSetArbitrator(ConstructorParams calldata _params) public happyPath(_params) {
+  function test_emitSetArbitrator(
+    ConstructorParams calldata _params
+  ) public happyPath(_params) {
     vm.expectEmit();
     emit SetArbitrator(_params.arbitrator);
     new CouncilArbitratorMock(_params.arbitratorModule, _params.arbitrator, _params.council);
   }
 
-  function test_setCouncil(ConstructorParams calldata _params) public happyPath(_params) {
+  function test_setCouncil(
+    ConstructorParams calldata _params
+  ) public happyPath(_params) {
     councilArbitrator = new CouncilArbitratorMock(_params.arbitratorModule, _params.arbitrator, _params.council);
 
     assertEq(councilArbitrator.council(), _params.council);
   }
 
-  function test_emitSetCouncil(ConstructorParams calldata _params) public happyPath(_params) {
+  function test_emitSetCouncil(
+    ConstructorParams calldata _params
+  ) public happyPath(_params) {
     vm.expectEmit();
     emit SetCouncil(_params.council);
     new CouncilArbitratorMock(_params.arbitratorModule, _params.arbitrator, _params.council);
   }
 
-  function test_setOracle(ConstructorParams calldata _params) public happyPath(_params) {
+  function test_setOracle(
+    ConstructorParams calldata _params
+  ) public happyPath(_params) {
     councilArbitrator = new CouncilArbitratorMock(_params.arbitratorModule, _params.arbitrator, _params.council);
 
     assertEq(address(councilArbitrator.ORACLE()), address(_params.oracle));
   }
 
-  function test_setArbitratorModule(ConstructorParams calldata _params) public happyPath(_params) {
+  function test_setArbitratorModule(
+    ConstructorParams calldata _params
+  ) public happyPath(_params) {
     councilArbitrator = new CouncilArbitratorMock(_params.arbitratorModule, _params.arbitrator, _params.council);
 
     assertEq(address(councilArbitrator.ARBITRATOR_MODULE()), address(_params.arbitratorModule));
@@ -128,14 +142,18 @@ contract CouncilArbitrator_Unit_Resolve is CouncilArbitrator_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyArbitratorModule(ICouncilArbitrator.ResolutionParameters calldata _params) public happyPath {
+  function test_revertOnlyArbitratorModule(
+    ICouncilArbitrator.ResolutionParameters calldata _params
+  ) public happyPath {
     vm.stopPrank();
 
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_OnlyArbitratorModule.selector);
     councilArbitrator.resolve(_params.request, _params.response, _params.dispute);
   }
 
-  function test_setResolutions(ICouncilArbitrator.ResolutionParameters calldata _params) public happyPath {
+  function test_setResolutions(
+    ICouncilArbitrator.ResolutionParameters calldata _params
+  ) public happyPath {
     councilArbitrator.resolve(_params.request, _params.response, _params.dispute);
 
     bytes32 _disputeId = _params.dispute._getId();
@@ -147,7 +165,9 @@ contract CouncilArbitrator_Unit_Resolve is CouncilArbitrator_Unit_BaseTest {
     assertEq(abi.encode(_dispute), abi.encode(_params.dispute));
   }
 
-  function test_emitResolutionStarted(ICouncilArbitrator.ResolutionParameters calldata _params) public happyPath {
+  function test_emitResolutionStarted(
+    ICouncilArbitrator.ResolutionParameters calldata _params
+  ) public happyPath {
     bytes32 _disputeId = _params.dispute._getId();
 
     vm.expectEmit();
@@ -164,7 +184,9 @@ contract CouncilArbitrator_Unit_ResolveDispute is CouncilArbitrator_Unit_BaseTes
     uint8 answer;
   }
 
-  modifier happyPath(ResolveDisputeParams memory _params) {
+  modifier happyPath(
+    ResolveDisputeParams memory _params
+  ) {
     vm.assume(_params.resolutionData.dispute.disputer != address(0));
     vm.assume(
       _params.status > uint8(IOracle.DisputeStatus.Escalated)
@@ -179,14 +201,18 @@ contract CouncilArbitrator_Unit_ResolveDispute is CouncilArbitrator_Unit_BaseTes
     _;
   }
 
-  function test_revertOnlyArbitrator(ResolveDisputeParams memory _params) public happyPath(_params) {
+  function test_revertOnlyArbitrator(
+    ResolveDisputeParams memory _params
+  ) public happyPath(_params) {
     vm.stopPrank();
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
     councilArbitrator.resolveDispute(_params.disputeId, IOracle.DisputeStatus(_params.status));
   }
 
-  function test_revertInvalidResolution(ResolveDisputeParams memory _params) public happyPath(_params) {
+  function test_revertInvalidResolution(
+    ResolveDisputeParams memory _params
+  ) public happyPath(_params) {
     _params.resolutionData.dispute.disputer = address(0);
     councilArbitrator.mockResolutions(_params.disputeId, _params.resolutionData);
 
@@ -215,13 +241,17 @@ contract CouncilArbitrator_Unit_ResolveDispute is CouncilArbitrator_Unit_BaseTes
     councilArbitrator.resolveDispute(_params.disputeId, IOracle.DisputeStatus(_params.status));
   }
 
-  function test_setGetAnswer(ResolveDisputeParams memory _params) public happyPath(_params) {
+  function test_setGetAnswer(
+    ResolveDisputeParams memory _params
+  ) public happyPath(_params) {
     councilArbitrator.resolveDispute(_params.disputeId, IOracle.DisputeStatus(_params.status));
 
     assertEq(uint8(councilArbitrator.getAnswer(_params.disputeId)), _params.status);
   }
 
-  function test_callOracleResolveDispute(ResolveDisputeParams memory _params) public happyPath(_params) {
+  function test_callOracleResolveDispute(
+    ResolveDisputeParams memory _params
+  ) public happyPath(_params) {
     vm.expectCall(
       address(oracle),
       abi.encodeCall(
@@ -232,7 +262,9 @@ contract CouncilArbitrator_Unit_ResolveDispute is CouncilArbitrator_Unit_BaseTes
     councilArbitrator.resolveDispute(_params.disputeId, IOracle.DisputeStatus(_params.status));
   }
 
-  function test_callOracleFinalize(ResolveDisputeParams memory _params) public happyPath(_params) {
+  function test_callOracleFinalize(
+    ResolveDisputeParams memory _params
+  ) public happyPath(_params) {
     vm.expectCall(
       address(oracle),
       abi.encodeCall(IOracle.finalize, (_params.resolutionData.request, _params.resolutionData.response))
@@ -240,7 +272,9 @@ contract CouncilArbitrator_Unit_ResolveDispute is CouncilArbitrator_Unit_BaseTes
     councilArbitrator.resolveDispute(_params.disputeId, IOracle.DisputeStatus(_params.status));
   }
 
-  function test_emitDisputeResolved(ResolveDisputeParams memory _params) public happyPath(_params) {
+  function test_emitDisputeResolved(
+    ResolveDisputeParams memory _params
+  ) public happyPath(_params) {
     vm.expectEmit();
     emit DisputeResolved(_params.disputeId, IOracle.DisputeStatus(_params.status));
     councilArbitrator.resolveDispute(_params.disputeId, IOracle.DisputeStatus(_params.status));

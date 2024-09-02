@@ -181,13 +181,17 @@ interface IEBORequestCreator {
    * @notice Add a chain to the allowed chains which can be updated
    * @param _chainId The chain id to add
    */
-  function addChain(string calldata _chainId) external;
+  function addChain(
+    string calldata _chainId
+  ) external;
 
   /**
    * @notice Remove a chain from the allowed chains which can be updated
    * @param _chainId The chain id to remove
    */
-  function removeChain(string calldata _chainId) external;
+  function removeChain(
+    string calldata _chainId
+  ) external;
 
   /**
    * @notice Set the request data module
@@ -234,5 +238,7 @@ interface IEBORequestCreator {
    * @notice Set the epoch manager
    * @param _epochManager The epoch manager
    */
-  function setEpochManager(IEpochManager _epochManager) external;
+  function setEpochManager(
+    IEpochManager _epochManager
+  ) external;
 }
