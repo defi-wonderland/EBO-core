@@ -2,6 +2,8 @@
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IBondedResponseModule} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
@@ -37,14 +39,16 @@ interface IEBORequestCreator {
    * @param _requestModule The request module
    * @param _requestModuleData The request module data
    */
-  event RequestModuleDataSet(address indexed _requestModule, bytes _requestModuleData);
+  event RequestModuleDataSet(address indexed _requestModule, IEBORequestModule.RequestParameters _requestModuleData);
 
   /**
    * @notice Emitted when the response data module is set
    * @param _responseModule The response module
    * @param _responseModuleData The response module data
    */
-  event ResponseModuleDataSet(address indexed _responseModule, bytes _responseModuleData);
+  event ResponseModuleDataSet(
+    address indexed _responseModule, IBondedResponseModule.RequestParameters _responseModuleData
+  );
 
   /**
    * @notice Emitted when the dispute data module is set
@@ -177,13 +181,17 @@ interface IEBORequestCreator {
    * @notice Add a chain to the allowed chains which can be updated
    * @param _chainId The chain id to add
    */
-  function addChain(string calldata _chainId) external;
+  function addChain(
+    string calldata _chainId
+  ) external;
 
   /**
    * @notice Remove a chain from the allowed chains which can be updated
    * @param _chainId The chain id to remove
    */
-  function removeChain(string calldata _chainId) external;
+  function removeChain(
+    string calldata _chainId
+  ) external;
 
   /**
    * @notice Set the request data module
@@ -200,7 +208,10 @@ interface IEBORequestCreator {
    * @param _responseModule The response module
    * @param _responseModuleData The response module data
    */
-  function setResponseModuleData(address _responseModule, bytes calldata _responseModuleData) external;
+  function setResponseModuleData(
+    address _responseModule,
+    IBondedResponseModule.RequestParameters calldata _responseModuleData
+  ) external;
 
   /**
    * @notice Set the dispute data module
@@ -227,5 +238,7 @@ interface IEBORequestCreator {
    * @notice Set the epoch manager
    * @param _epochManager The epoch manager
    */
-  function setEpochManager(IEpochManager _epochManager) external;
+  function setEpochManager(
+    IEpochManager _epochManager
+  ) external;
 }
