@@ -94,7 +94,5 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
    * @dev Callable only by The Graph's Arbitrator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function setEBORequestCreator(
-    IEBORequestCreator _eboRequestCreator
-  ) external;
+  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
 }

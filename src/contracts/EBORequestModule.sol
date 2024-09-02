@@ -61,16 +61,17 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
   }
 
   /// @inheritdoc IEBORequestModule
-  function setEBORequestCreator(
-    IEBORequestCreator _eboRequestCreator
-  ) external onlyArbitrator {
+  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external onlyArbitrator {
     _setEBORequestCreator(_eboRequestCreator);
   }
 
   /// @inheritdoc IModule
-  function validateParameters(
-    bytes calldata _encodedParameters
-  ) external pure override(IModule, Module) returns (bool _valid) {
+  function validateParameters(bytes calldata _encodedParameters)
+    external
+    pure
+    override(IModule, Module)
+    returns (bool _valid)
+  {
     RequestParameters memory _params = decodeRequestData(_encodedParameters);
     _valid =
       _params.epoch != 0 && bytes(_params.chainId).length != 0 && address(_params.accountingExtension) != address(0);
@@ -82,9 +83,7 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
   }
 
   /// @inheritdoc IEBORequestModule
-  function decodeRequestData(
-    bytes calldata _data
-  ) public pure returns (RequestParameters memory _params) {
+  function decodeRequestData(bytes calldata _data) public pure returns (RequestParameters memory _params) {
     _params = abi.decode(_data, (RequestParameters));
   }
 
@@ -92,9 +91,7 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
    * @notice Sets the address of the EBORequestCreator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function _setEBORequestCreator(
-    IEBORequestCreator _eboRequestCreator
-  ) private {
+  function _setEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
     eboRequestCreator = _eboRequestCreator;
     emit SetEBORequestCreator(_eboRequestCreator);
   }

@@ -21,9 +21,7 @@ interface IHorizonStaking {
    *
    * @param tokens Amount of tokens to stake
    */
-  function stake(
-    uint256 tokens
-  ) external;
+  function stake(uint256 tokens) external;
 
   /**
    * @notice Provision stake to a verifier. The tokens will be locked with a thawing period

@@ -123,9 +123,7 @@ contract HorizonAccountingExtension_Unit_Constructor is HorizonAccountingExtensi
 }
 
 contract HorizonAccountingExtension_Unit_ApproveModule is HorizonAccountingExtension_Unit_BaseTest {
-  function test_approveModule(
-    address _module
-  ) public {
+  function test_approveModule(address _module) public {
     vm.prank(user);
     horizonAccountingExtension.approveModule(_module);
 
@@ -136,9 +134,7 @@ contract HorizonAccountingExtension_Unit_ApproveModule is HorizonAccountingExten
 }
 
 contract HorizonAccountingExtension_Unit_RevokeModule is HorizonAccountingExtension_Unit_BaseTest {
-  function test_revokeModule(
-    address _module
-  ) public {
+  function test_revokeModule(address _module) public {
     horizonAccountingExtension.approveModuleForTest(user, _module);
 
     vm.prank(user);
@@ -434,9 +430,7 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     _;
   }
 
-  function test_revertIfNoEscalationResult(
-    address _pledger
-  ) public {
+  function test_revertIfNoEscalationResult(address _pledger) public {
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NoEscalationResult.selector);
     horizonAccountingExtension.claimEscalationReward(_mockDisputeId, _pledger);
   }

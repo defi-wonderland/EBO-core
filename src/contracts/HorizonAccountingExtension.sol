@@ -67,9 +67,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
    * @notice Checks that the caller is an allowed module used in the request.
    * @param _requestId The request ID.
    */
-  modifier onlyAllowedModule(
-    bytes32 _requestId
-  ) {
+  modifier onlyAllowedModule(bytes32 _requestId) {
     if (!ORACLE.allowedModule(_requestId, msg.sender)) revert HorizonAccountingExtension_UnauthorizedModule();
     _;
   }
@@ -85,23 +83,17 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   }
 
   /// @inheritdoc IHorizonAccountingExtension
-  function approvedModules(
-    address _user
-  ) external view returns (address[] memory _approvedModules) {
+  function approvedModules(address _user) external view returns (address[] memory _approvedModules) {
     _approvedModules = _approvals[_user].values();
   }
 
   /// @inheritdoc IHorizonAccountingExtension
-  function approveModule(
-    address _module
-  ) external {
+  function approveModule(address _module) external {
     _approvals[msg.sender].add(_module);
   }
 
   /// @inheritdoc IHorizonAccountingExtension
-  function revokeModule(
-    address _module
-  ) external {
+  function revokeModule(address _module) external {
     _approvals[msg.sender].remove(_module);
   }
 

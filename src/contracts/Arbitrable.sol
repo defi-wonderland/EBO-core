@@ -62,16 +62,12 @@ abstract contract Arbitrable is IArbitrable {
   }
 
   /// @inheritdoc IArbitrable
-  function setArbitrator(
-    address __arbitrator
-  ) external onlyCouncil {
+  function setArbitrator(address __arbitrator) external onlyCouncil {
     _setArbitrator(__arbitrator);
   }
 
   /// @inheritdoc IArbitrable
-  function setPendingCouncil(
-    address __pendingCouncil
-  ) external onlyCouncil {
+  function setPendingCouncil(address __pendingCouncil) external onlyCouncil {
     _setPendingCouncil(__pendingCouncil);
   }
 
@@ -85,9 +81,7 @@ abstract contract Arbitrable is IArbitrable {
    * @notice Sets the address of The Graph's Arbitrator
    * @param __arbitrator The address of The Graph's Arbitrator
    */
-  function _setArbitrator(
-    address __arbitrator
-  ) private {
+  function _setArbitrator(address __arbitrator) private {
     _arbitrator = __arbitrator;
     emit SetArbitrator(__arbitrator);
   }
@@ -96,9 +90,7 @@ abstract contract Arbitrable is IArbitrable {
    * @notice Sets the address of The Graph's Council
    * @param __council The address of The Graph's Council
    */
-  function _setCouncil(
-    address __council
-  ) private {
+  function _setCouncil(address __council) private {
     _council = __council;
     emit SetCouncil(__council);
   }
@@ -107,9 +99,7 @@ abstract contract Arbitrable is IArbitrable {
    * @notice Sets the address of the pending The Graph's Council
    * @param __pendingCouncil The address of the pending The Graph's Council
    */
-  function _setPendingCouncil(
-    address __pendingCouncil
-  ) private {
+  function _setPendingCouncil(address __pendingCouncil) private {
     _pendingCouncil = __pendingCouncil;
     emit SetPendingCouncil(__pendingCouncil);
   }

@@ -92,16 +92,12 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
    * @dev Callable only by The Graph's Arbitrator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function setEBORequestCreator(
-    IEBORequestCreator _eboRequestCreator
-  ) external;
+  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
 
   /**
    * @notice Determines how to decode the inputted request data
    * @param _data The encoded request parameters
    * @return _params The struct containing the parameters for the request
    */
-  function decodeRequestData(
-    bytes calldata _data
-  ) external pure returns (RequestParameters memory _params);
+  function decodeRequestData(bytes calldata _data) external pure returns (RequestParameters memory _params);
 }

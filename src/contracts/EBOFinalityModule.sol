@@ -65,9 +65,7 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
   }
 
   /// @inheritdoc IEBOFinalityModule
-  function setEBORequestCreator(
-    IEBORequestCreator _eboRequestCreator
-  ) external onlyArbitrator {
+  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external onlyArbitrator {
     _setEBORequestCreator(_eboRequestCreator);
   }
 
@@ -80,9 +78,7 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
    * @notice Sets the address of the EBORequestCreator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function _setEBORequestCreator(
-    IEBORequestCreator _eboRequestCreator
-  ) private {
+  function _setEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
     eboRequestCreator = _eboRequestCreator;
     emit SetEBORequestCreator(_eboRequestCreator);
   }

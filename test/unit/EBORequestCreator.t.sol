@@ -28,9 +28,7 @@ contract EBORequestCreatorForTest is EBORequestCreator {
     IOracle.Request memory _requestData
   ) EBORequestCreator(_oracle, _epochManager, _arbitrator, _council, _requestData) {}
 
-  function setChainIdForTest(
-    string calldata _chainId
-  ) external returns (bool _added) {
+  function setChainIdForTest(string calldata _chainId) external returns (bool _added) {
     _added = _chainIdsAllowed.add(_encodeChainId(_chainId));
   }
 
@@ -187,9 +185,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
   /**
    * @notice Test the revert if the caller is not the arbitrator
    */
-  function test_revertIfChainNotAdded(
-    uint256 _epoch
-  ) external {
+  function test_revertIfChainNotAdded(uint256 _epoch) external {
     vm.assume(_epoch > startEpoch);
 
     eboRequestCreator.setRequestModuleDataForTest(address(eboRequestModule), '');
@@ -209,9 +205,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
   /**
    * @notice Test the revert if the epoch is not valid because it is before the start epoch
    */
-  function test_revertIfEpochBeforeStart(
-    uint256 _epoch
-  ) external {
+  function test_revertIfEpochBeforeStart(uint256 _epoch) external {
     vm.assume(_epoch > 0 && _epoch < 100);
 
     vm.mockCall(address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(_epoch));
@@ -224,9 +218,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
   /**
    * @notice Test the revert if the epoch is not valid because it is after the current epoch
    */
-  function test_revertIfEpochAfterCurrent(
-    uint256 _epoch
-  ) external {
+  function test_revertIfEpochAfterCurrent(uint256 _epoch) external {
     vm.assume(_epoch < type(uint256).max);
 
     vm.mockCall(address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(_epoch));
@@ -384,9 +376,7 @@ contract EBORequestCreator_Unit_AddChain is EBORequestCreator_Unit_BaseTest {
   /**
    * @notice Test the revert if the caller is not the arbitrator
    */
-  function test_revertIfNotArbitrator(
-    string calldata _chainId
-  ) external {
+  function test_revertIfNotArbitrator(string calldata _chainId) external {
     _revertIfNotArbitrator();
     eboRequestCreator.addChain(_chainId);
   }
@@ -394,9 +384,7 @@ contract EBORequestCreator_Unit_AddChain is EBORequestCreator_Unit_BaseTest {
   /**
    * @notice Test the revert if the chain is already added
    */
-  function test_revertIfChainAdded(
-    string calldata _chainId
-  ) external happyPath {
+  function test_revertIfChainAdded(string calldata _chainId) external happyPath {
     eboRequestCreator.setChainIdForTest(_chainId);
 
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_ChainAlreadyAdded.selector));
@@ -406,9 +394,7 @@ contract EBORequestCreator_Unit_AddChain is EBORequestCreator_Unit_BaseTest {
   /**
    * @notice Test the emit chain added
    */
-  function test_emitChainAdded(
-    string calldata _chainId
-  ) external happyPath {
+  function test_emitChainAdded(string calldata _chainId) external happyPath {
     vm.expectEmit();
     emit ChainAdded(_chainId);
 
@@ -417,9 +403,7 @@ contract EBORequestCreator_Unit_AddChain is EBORequestCreator_Unit_BaseTest {
 }
 
 contract EBORequestCreator_Unit_RemoveChain is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(
-    string calldata _chainId
-  ) {
+  modifier happyPath(string calldata _chainId) {
     eboRequestCreator.setChainIdForTest(_chainId);
     vm.startPrank(arbitrator);
     _;
@@ -428,9 +412,7 @@ contract EBORequestCreator_Unit_RemoveChain is EBORequestCreator_Unit_BaseTest {
   /**
    * @notice Test the revert if the caller is not the arbitrator
    */
-  function test_revertIfNotArbitrator(
-    string calldata _chainId
-  ) external {
+  function test_revertIfNotArbitrator(string calldata _chainId) external {
     _revertIfNotArbitrator();
     eboRequestCreator.removeChain(_chainId);
   }
@@ -438,9 +420,7 @@ contract EBORequestCreator_Unit_RemoveChain is EBORequestCreator_Unit_BaseTest {
   /**
    * @notice Test the revert if the chain is not added
    */
-  function test_revertIfChainNotAdded(
-    string calldata _chainId
-  ) external {
+  function test_revertIfChainNotAdded(string calldata _chainId) external {
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector));
 
     vm.prank(arbitrator);
@@ -450,9 +430,7 @@ contract EBORequestCreator_Unit_RemoveChain is EBORequestCreator_Unit_BaseTest {
   /**
    * @notice Test the emit chain removed
    */
-  function test_emitChainRemoved(
-    string calldata _chainId
-  ) external happyPath(_chainId) {
+  function test_emitChainRemoved(string calldata _chainId) external happyPath(_chainId) {
     vm.expectEmit();
     emit ChainRemoved(_chainId);
 
@@ -622,9 +600,7 @@ contract EBORequestCreator_Unit_SetFinalityModuleData is EBORequestCreator_Unit_
 }
 
 contract EBORequestCreator_Unit_SetEpochManager is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(
-    IEpochManager _epochManager
-  ) {
+  modifier happyPath(IEpochManager _epochManager) {
     vm.assume(address(_epochManager) != address(0));
     vm.startPrank(arbitrator);
     _;
@@ -633,9 +609,7 @@ contract EBORequestCreator_Unit_SetEpochManager is EBORequestCreator_Unit_BaseTe
   /**
    * @notice Test the revert if the caller is not the arbitrator
    */
-  function test_revertIfNotArbitrator(
-    IEpochManager _epochManager
-  ) external {
+  function test_revertIfNotArbitrator(IEpochManager _epochManager) external {
     _revertIfNotArbitrator();
     eboRequestCreator.setEpochManager(_epochManager);
   }
@@ -643,9 +617,7 @@ contract EBORequestCreator_Unit_SetEpochManager is EBORequestCreator_Unit_BaseTe
   /**
    * @notice Test the emit epoch manager set
    */
-  function test_emitEpochManagerSet(
-    IEpochManager _epochManager
-  ) external happyPath(_epochManager) {
+  function test_emitEpochManagerSet(IEpochManager _epochManager) external happyPath(_epochManager) {
     vm.expectEmit();
     emit EpochManagerSet(_epochManager);
 
