@@ -39,18 +39,22 @@ contract EBOFinalityModule_Unit_BaseTest is Test {
     eboFinalityModule = new EBOFinalityModule(oracle, eboRequestCreator, arbitrator, council);
   }
 
-  function _getDynamicArray(
-    string[FUZZED_ARRAY_LENGTH] calldata _staticArray
-  ) internal pure returns (string[] memory _dynamicArray) {
+  function _getDynamicArray(string[FUZZED_ARRAY_LENGTH] calldata _staticArray)
+    internal
+    pure
+    returns (string[] memory _dynamicArray)
+  {
     _dynamicArray = new string[](FUZZED_ARRAY_LENGTH);
     for (uint256 _i; _i < FUZZED_ARRAY_LENGTH; ++_i) {
       _dynamicArray[_i] = _staticArray[_i];
     }
   }
 
-  function _getDynamicArray(
-    uint256[FUZZED_ARRAY_LENGTH] calldata _staticArray
-  ) internal pure returns (uint256[] memory _dynamicArray) {
+  function _getDynamicArray(uint256[FUZZED_ARRAY_LENGTH] calldata _staticArray)
+    internal
+    pure
+    returns (uint256[] memory _dynamicArray)
+  {
     _dynamicArray = new uint256[](FUZZED_ARRAY_LENGTH);
     for (uint256 _i; _i < FUZZED_ARRAY_LENGTH; ++_i) {
       _dynamicArray[_i] = _staticArray[_i];
