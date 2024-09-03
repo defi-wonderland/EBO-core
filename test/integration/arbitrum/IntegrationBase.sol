@@ -7,6 +7,11 @@ import {
   BondEscalationAccounting,
   IBondEscalationAccounting
 } from '@defi-wonderland/prophet-modules/solidity/contracts/extensions/BondEscalationAccounting.sol';
+
+import {
+  BondEscalationModule,
+  IBondEscalationModule
+} from '@defi-wonderland/prophet-modules/solidity/contracts/modules/dispute/BondEscalationModule.sol';
 import {
   BondedResponseModule,
   IBondedResponseModule
@@ -24,6 +29,7 @@ import 'forge-std/Test.sol';
 contract IntegrationBase is Test {
   using ValidatorLib for IOracle.Request;
   using ValidatorLib for IOracle.Response;
+  using ValidatorLib for IOracle.Dispute;
 
   uint256 internal constant _FORK_BLOCK = 240_000_000;
 
@@ -33,6 +39,7 @@ contract IntegrationBase is Test {
   // Modules
   IEBORequestModule internal _eboRequestModule;
   IBondedResponseModule internal _bondedResponseModule;
+  IBondEscalationModule internal _bondEscalationModule;
 
   // Extensions
   IBondEscalationAccounting internal _accountingExtension;
@@ -54,10 +61,13 @@ contract IntegrationBase is Test {
   // Data
   IOracle.Request internal _requestData;
   IOracle.Response internal _responseData;
+  IOracle.Dispute internal _disputeData;
   IEBORequestModule.RequestParameters internal _requestParams;
   IBondedResponseModule.RequestParameters internal _responseParams;
+  IBondEscalationModule.RequestParameters internal _disputeParams;
   bytes32 internal _requestId;
   bytes32 internal _responseId;
+  bytes32 internal _disputeId;
   uint256 internal _bondSize;
   uint256 internal _currentEpoch;
   string internal _chainId = 'chainId1';
@@ -76,11 +86,6 @@ contract IntegrationBase is Test {
     // Deploy Oracle
     _oracle = new Oracle();
 
-    // Get nonce of the deployment EBORequestModule
-    uint256 _nonce = vm.getNonce(_deployer) + 1;
-    address _preComputedEboRequestModule = vm.computeCreateAddress(_deployer, _nonce);
-    // TODO: Why precompute?
-
     // Deploy EBORequestCreator
     _eboRequestCreator = new EBORequestCreator(_oracle, _epochManager, _arbitrator, _council, _requestData);
 
@@ -89,6 +94,9 @@ contract IntegrationBase is Test {
 
     // Deploy BondedResponseModule
     _bondedResponseModule = new BondedResponseModule(_oracle);
+
+    // Deploy BondEscalationModule
+    _bondEscalationModule = new BondEscalationModule(_oracle);
 
     // Deploy AccountingExtension
     _accountingExtension = new BondEscalationAccounting(_oracle);
@@ -120,6 +128,18 @@ contract IntegrationBase is Test {
     _oracle.proposeResponse(_requestData, _responseData);
   }
 
+  function _disputeResponse() internal {
+    _disputeData.disputer = _user;
+    _disputeData.proposer = _user;
+    _disputeData.responseId = _responseId;
+    _disputeData.requestId = _requestId;
+
+    _disputeId = _disputeData._getId();
+
+    vm.prank(_user);
+    _oracle.disputeResponse(_requestData, _responseData, _disputeData);
+  }
+
   function _setRequestModuleData() internal {
     _requestData.nonce = 0;
     _requestData.requester = address(_eboRequestCreator);
@@ -146,10 +166,27 @@ contract IntegrationBase is Test {
     _eboRequestCreator.setResponseModuleData(address(_bondedResponseModule), _responseParams);
   }
 
+  function _setDisputeModuleData() internal {
+    _requestData.disputeModule = address(_bondEscalationModule);
+
+    _disputeParams.accountingExtension = _accountingExtension;
+    _disputeParams.bondToken = _graphToken;
+    _disputeParams.bondSize = _bondSize;
+    _disputeParams.maxNumberOfEscalations = 1;
+    _disputeParams.bondEscalationDeadline = block.timestamp + 1 days;
+    _disputeParams.tyingBuffer = block.timestamp + 1 days;
+    _disputeParams.disputeWindow = block.number + 1 days;
+    _requestData.disputeModuleData = abi.encode(_disputeParams);
+
+    vm.prank(_arbitrator);
+    _eboRequestCreator.setDisputeModuleData(address(_bondEscalationModule), _disputeParams);
+  }
+
   function _approveModules(address _sender) internal {
     vm.startPrank(_sender);
     _accountingExtension.approveModule(address(_eboRequestModule));
     _accountingExtension.approveModule(address(_bondedResponseModule));
+    _accountingExtension.approveModule(address(_bondEscalationModule));
     vm.stopPrank();
   }
 

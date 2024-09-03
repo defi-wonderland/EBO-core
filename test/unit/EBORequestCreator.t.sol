@@ -1,21 +1,20 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
+import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IBondEscalationModule} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
 import {IBondedResponseModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
-import {
-  EBORequestCreator,
-  IEBORequestCreator,
-  IEBORequestModule,
-  IEpochManager,
-  IOracle
-} from 'contracts/EBORequestCreator.sol';
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
+import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
-import {Test} from 'forge-std/Test.sol';
-import 'forge-std/console.sol';
+import {EBORequestCreator, IEBORequestCreator} from 'contracts/EBORequestCreator.sol';
+
+import 'forge-std/Test.sol';
 
 contract EBORequestCreatorForTest is EBORequestCreator {
   using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -52,7 +51,9 @@ abstract contract EBORequestCreator_Unit_BaseTest is Test {
   event ResponseModuleDataSet(
     address indexed _responseModule, IBondedResponseModule.RequestParameters _responseModuleData
   );
-  event DisputeModuleDataSet(address indexed _disputeModule, bytes _disputeModuleData);
+  event DisputeModuleDataSet(
+    address indexed _disputeModule, IBondEscalationModule.RequestParameters _disputeModuleData
+  );
   event ResolutionModuleDataSet(address indexed _resolutionModule, bytes _resolutionModuleData);
   event FinalityModuleDataSet(address indexed _finalityModule, bytes _finalityModuleData);
   event EpochManagerSet(IEpochManager indexed _epochManager);
@@ -516,7 +517,7 @@ contract EBORequestCreator_Unit_SetResponseModuleData is EBORequestCreator_Unit_
 }
 
 contract EBORequestCreator_Unit_SetDisputeModuleData is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(address _disputeModule, bytes calldata _disputeModuleData) {
+  modifier happyPath(address _disputeModule, IBondEscalationModule.RequestParameters calldata _disputeModuleData) {
     vm.startPrank(arbitrator);
     _;
   }
@@ -524,7 +525,10 @@ contract EBORequestCreator_Unit_SetDisputeModuleData is EBORequestCreator_Unit_B
   /**
    * @notice Test the revert if the caller is not the arbitrator
    */
-  function test_revertIfNotArbitrator(address _disputeModule, bytes calldata _disputeModuleData) external {
+  function test_revertIfNotArbitrator(
+    address _disputeModule,
+    IBondEscalationModule.RequestParameters calldata _disputeModuleData
+  ) external {
     _revertIfNotArbitrator();
     eboRequestCreator.setDisputeModuleData(_disputeModule, _disputeModuleData);
   }
@@ -534,7 +538,7 @@ contract EBORequestCreator_Unit_SetDisputeModuleData is EBORequestCreator_Unit_B
    */
   function test_emitDisputeModuleDataSet(
     address _disputeModule,
-    bytes calldata _disputeModuleData
+    IBondEscalationModule.RequestParameters calldata _disputeModuleData
   ) external happyPath(_disputeModule, _disputeModuleData) {
     vm.expectEmit();
     emit DisputeModuleDataSet(_disputeModule, _disputeModuleData);
