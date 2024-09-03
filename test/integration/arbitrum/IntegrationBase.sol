@@ -146,9 +146,7 @@ contract IntegrationBase is Test {
     _eboRequestCreator.setResponseModuleData(address(_bondedResponseModule), _responseParams);
   }
 
-  function _approveModules(
-    address _sender
-  ) internal {
+  function _approveModules(address _sender) internal {
     vm.startPrank(_sender);
     _accountingExtension.approveModule(address(_eboRequestModule));
     _accountingExtension.approveModule(address(_bondedResponseModule));

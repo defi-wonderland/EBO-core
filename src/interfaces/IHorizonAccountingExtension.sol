@@ -205,9 +205,7 @@ interface IHorizonAccountingExtension {
    * @param _user The user address
    * @return _totalBonded The total bonded tokens for a user
    */
-  function totalBonded(
-    address _user
-  ) external view returns (uint256 _totalBonded);
+  function totalBonded(address _user) external view returns (uint256 _totalBonded);
 
   /**
    * @notice The bound amount of tokens for a user in a request
@@ -222,9 +220,7 @@ interface IHorizonAccountingExtension {
    * @param _disputeId The dispute Id
    * @return _amount The total pledged tokens for a user
    */
-  function pledges(
-    bytes32 _disputeId
-  ) external view returns (uint256 _amount);
+  function pledges(bytes32 _disputeId) external view returns (uint256 _amount);
 
   /**
    * @notice The escalation result of a request
@@ -234,9 +230,7 @@ interface IHorizonAccountingExtension {
    * @return _bondSize             The size of the bond required for bond escalation
    * @return _bondEscalationModule The address of the bond escalation module that was used
    */
-  function escalationResults(
-    bytes32 _disputeId
-  )
+  function escalationResults(bytes32 _disputeId)
     external
     view
     returns (
@@ -259,9 +253,7 @@ interface IHorizonAccountingExtension {
    * @param _user The address of the user
    * @return _approvedModules The approved modules for bonding tokens
    */
-  function approvedModules(
-    address _user
-  ) external view returns (address[] memory _approvedModules);
+  function approvedModules(address _user) external view returns (address[] memory _approvedModules);
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC
@@ -271,17 +263,13 @@ interface IHorizonAccountingExtension {
    * @notice Allows a user to approve a module for bonding tokens
    * @param _module The address of the module to be approved
    */
-  function approveModule(
-    address _module
-  ) external;
+  function approveModule(address _module) external;
 
   /**
    * @notice Allows a user to revoke a module's approval for bonding tokens
    * @param _module The address of the module to be revoked
    */
-  function revokeModule(
-    address _module
-  ) external;
+  function revokeModule(address _module) external;
 
   /**
    * @notice Pledges the given amount of token to the provided dispute id of the provided request id

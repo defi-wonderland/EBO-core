@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
+import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
 import {Math} from '@openzeppelin/contracts/utils/Math/Math.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
@@ -16,6 +17,7 @@ import {Validator} from '@defi-wonderland/prophet-core/solidity/contracts/Valida
 
 contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   using EnumerableSet for EnumerableSet.AddressSet;
+  using SafeERC20 for IERC20;
   using Math for uint256;
 
   // TODO: Validate what the correct magic numbers should be
@@ -206,19 +208,18 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       _balance += _slash(_disputeId, 1, MAX_USERS_TO_CHECK);
     }
 
-    // Send the user the amount they won by participating in the dispute
-    // TODO: Maybe safe ERC20?
-    GRT.transfer(_pledger, _claimAmount - _totalPledged);
-
     pledgerClaimed[_requestId][_pledger] = true;
 
     pledges[_disputeId] -= _claimAmount;
+
+    // Send the user the amount they won by participating in the dispute
+    GRT.safeTransfer(_pledger, _claimAmount - _totalPledged);
 
     emit EscalationRewardClaimed({
       _requestId: _requestId,
       _disputeId: _disputeId,
       _pledger: _pledger,
-      _amount: _claimAmount
+      _amount: _claimAmount - _totalPledged
     });
   }
 
