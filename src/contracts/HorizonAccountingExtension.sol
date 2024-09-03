@@ -347,10 +347,11 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     IOracle.DisputeStatus _status = ORACLE.disputeStatus(_disputeId);
     uint256 _numberOfPledges;
 
+    // If Won slash the against pledges, if Lost slash the for pledges
     if (_status != IOracle.DisputeStatus.NoResolution) {
-      _numberOfPledges = !(_status == IOracle.DisputeStatus.Won)
-        ? _result.bondEscalationModule.pledgesForDispute(_requestId, _pledger)
-        : _result.bondEscalationModule.pledgesAgainstDispute(_requestId, _pledger);
+      _numberOfPledges = _status == IOracle.DisputeStatus.Won
+        ? _result.bondEscalationModule.pledgesAgainstDispute(_requestId, _pledger)
+        : _result.bondEscalationModule.pledgesForDispute(_requestId, _pledger);
     }
 
     _slashAmount = _result.bondSize * _numberOfPledges;
@@ -365,13 +366,15 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
     uint256 _slashedUsers;
     address _user;
+    uint256 _slashAmount;
+
     _maxUsersToCheck = Math.min(_maxUsersToCheck, _users.length());
 
     for (uint256 _i; _i < _maxUsersToCheck && _slashedUsers < _usersToSlash; _i++) {
       _user = _users.at(0);
 
       // Check if the user is actually slashable
-      uint256 _slashAmount = _calculateSlashAmount(_disputeId, _user);
+      _slashAmount = _calculateSlashAmount(_disputeId, _user);
       if (_slashAmount > 0) {
         // Slash the user
         HORIZON_STAKING.slash(

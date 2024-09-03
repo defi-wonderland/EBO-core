@@ -63,6 +63,18 @@ contract HorizonAccountingExtensionForTest is HorizonAccountingExtension {
     pledgerClaimed[_requestId][_pledger] = _claimed;
   }
 
+  function setPledgersForTest(bytes32 _disputeId, address _pledger) public {
+    _pledgers[_disputeId].add(_pledger);
+  }
+
+  function getPledgerForTest(bytes32 _disputeId, uint256 _index) public view returns (address _pledger) {
+    _pledger = _pledgers[_disputeId].at(_index);
+  }
+
+  function getPledgersLengthForTest(bytes32 _disputeId) public view returns (uint256 _length) {
+    _length = _pledgers[_disputeId].length();
+  }
+
   function setApprovalForTest(address _bonder, address _caller) public {
     _approvals[_bonder].add(_caller);
   }
@@ -1173,5 +1185,166 @@ contract HorizonAccountingExtension_Unit_Release is HorizonAccountingExtension_U
 
     assertEq(_bondedForRequestAfter, 0);
     assertEq(_totalBondedAfter, 0);
+  }
+}
+
+contract HorizonAccountingExtension_Unit_Slash is HorizonAccountingExtension_Unit_BaseTest {
+  using EnumerableSet for EnumerableSet.AddressSet;
+
+  EnumerableSet.AddressSet internal _cleanPledgers;
+
+  modifier happyPath(
+    uint256 _usersToSlash,
+    uint256 _maxUsersToCheck,
+    address[] memory _users,
+    uint256 _pledgesForDispute,
+    uint256 _bondSize
+  ) {
+    vm.assume(_usersToSlash > 0 && _usersToSlash < type(uint16).max);
+    vm.assume(_maxUsersToCheck > 0 && _maxUsersToCheck < type(uint16).max);
+    vm.assume(_users.length > 0 && _users.length < type(uint16).max);
+    vm.assume(_pledgesForDispute > 0 && _pledgesForDispute < type(uint16).max);
+    vm.assume(_bondSize > 0 && _bondSize < type(uint16).max);
+
+    for (uint256 _i; _i < _users.length; _i++) {
+      horizonAccountingExtension.setPledgersForTest(_mockDisputeId, _users[_i]);
+      _cleanPledgers.add(_users[_i]);
+    }
+
+    for (uint256 _i; _i < _cleanPledgers.length(); _i++) {
+      assertEq(horizonAccountingExtension.getPledgerForTest(_mockDisputeId, _i), _cleanPledgers.at(_i));
+    }
+
+    horizonAccountingExtension.setEscalationResultForTest(
+      _mockDisputeId, _mockRequestId, 1, _bondSize, bondEscalationModule
+    );
+    _;
+  }
+
+  function test_revertIfNoEscalationResult(uint256 _usersToSlash, uint256 _maxUsersToCheck, address _pledger) public {
+    vm.assume(_usersToSlash > 0 && _usersToSlash < type(uint16).max);
+    vm.assume(_maxUsersToCheck > 0 && _maxUsersToCheck < type(uint16).max);
+
+    horizonAccountingExtension.setPledgersForTest(_mockDisputeId, _pledger);
+    // Check: does it revert if the module is not allowed?
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NoEscalationResult.selector);
+
+    horizonAccountingExtension.slash(_mockDisputeId, _usersToSlash, _maxUsersToCheck);
+  }
+
+  function test_revertIfAlreadyClaimed(uint256 _usersToSlash, uint256 _maxUsersToCheck, address _pledger) public {
+    vm.assume(_usersToSlash > 0 && _usersToSlash < type(uint16).max);
+    vm.assume(_maxUsersToCheck > 0 && _maxUsersToCheck < type(uint16).max);
+
+    horizonAccountingExtension.setPledgersForTest(_mockDisputeId, _pledger);
+    horizonAccountingExtension.setEscalationResultForTest(
+      _mockDisputeId, _mockRequestId, 0, 0, IBondEscalationModule(address(0))
+    );
+    horizonAccountingExtension.setPledgerClaimedForTest(_mockRequestId, _pledger, true);
+
+    // Check: does it revert if the module is not allowed?
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_AlreadyClaimed.selector);
+
+    horizonAccountingExtension.slash(_mockDisputeId, _usersToSlash, _maxUsersToCheck);
+  }
+
+  function test_successfulCallResultionWon(
+    uint256 _usersToSlash,
+    uint256 _maxUsersToCheck,
+    address[] memory _users,
+    uint256 _pledgesAgainstDispute,
+    uint256 _bondSize
+  ) public happyPath(_usersToSlash, _maxUsersToCheck, _users, _pledgesAgainstDispute, _bondSize) {
+    // Mock and expect the call to oracle checking the dispute status
+    _mockAndExpect(
+      address(oracle),
+      abi.encodeWithSelector(IOracle.disputeStatus.selector, _mockDisputeId),
+      abi.encode(IOracle.DisputeStatus.Won)
+    );
+
+    uint256 _length = _cleanPledgers.length();
+
+    uint256 _slashAmount;
+    for (uint256 _i; _i < _length; _i++) {
+      _mockAndExpect(
+        address(bondEscalationModule),
+        abi.encodeCall(IBondEscalationModule.pledgesAgainstDispute, (_mockRequestId, _cleanPledgers.at(_i))),
+        abi.encode(_pledgesAgainstDispute)
+      );
+
+      _slashAmount = _pledgesAgainstDispute * _bondSize;
+
+      _mockAndExpect(
+        address(horizonStaking),
+        abi.encodeCall(
+          IHorizonStaking.slash,
+          (_cleanPledgers.at(_i), _slashAmount, _slashAmount, address(horizonAccountingExtension))
+        ),
+        abi.encode(true)
+      );
+    }
+
+    horizonAccountingExtension.slash(_mockDisputeId, _length, _length);
+  }
+
+  function test_successfulCallResultionLost(
+    uint256 _usersToSlash,
+    uint256 _maxUsersToCheck,
+    address[] memory _users,
+    uint256 _pledgesForDispute,
+    uint256 _bondSize
+  ) public happyPath(_usersToSlash, _maxUsersToCheck, _users, _pledgesForDispute, _bondSize) {
+    // Mock and expect the call to oracle checking the dispute status
+    _mockAndExpect(
+      address(oracle),
+      abi.encodeWithSelector(IOracle.disputeStatus.selector, _mockDisputeId),
+      abi.encode(IOracle.DisputeStatus.Lost)
+    );
+
+    uint256 _length = _cleanPledgers.length();
+
+    uint256 _slashAmount;
+    for (uint256 _i; _i < _length; _i++) {
+      _mockAndExpect(
+        address(bondEscalationModule),
+        abi.encodeCall(IBondEscalationModule.pledgesForDispute, (_mockRequestId, _cleanPledgers.at(_i))),
+        abi.encode(_pledgesForDispute)
+      );
+
+      _slashAmount = _pledgesForDispute * _bondSize;
+
+      _mockAndExpect(
+        address(horizonStaking),
+        abi.encodeCall(
+          IHorizonStaking.slash,
+          (_cleanPledgers.at(_i), _slashAmount, _slashAmount, address(horizonAccountingExtension))
+        ),
+        abi.encode(true)
+      );
+    }
+
+    horizonAccountingExtension.slash(_mockDisputeId, _length, _length);
+  }
+
+  function test_successfulCallNoResultion(
+    uint256 _usersToSlash,
+    uint256 _maxUsersToCheck,
+    address[] memory _users,
+    uint256 _pledgesForDispute,
+    uint256 _bondSize
+  ) public happyPath(_usersToSlash, _maxUsersToCheck, _users, _pledgesForDispute, _bondSize) {
+    // Mock and expect the call to oracle checking the dispute status
+    _mockAndExpect(
+      address(oracle),
+      abi.encodeWithSelector(IOracle.disputeStatus.selector, _mockDisputeId),
+      abi.encode(IOracle.DisputeStatus.NoResolution)
+    );
+
+    vm.expectCall(
+      address(bondEscalationModule), abi.encodeWithSelector(IBondEscalationModule.pledgeAgainstDispute.selector), 0
+    );
+    vm.expectCall(address(horizonStaking), abi.encodeWithSelector(IHorizonStaking.slash.selector), 0);
+
+    horizonAccountingExtension.slash(_mockDisputeId, _usersToSlash, _maxUsersToCheck);
   }
 }
