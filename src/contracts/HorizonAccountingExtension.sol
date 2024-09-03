@@ -2,7 +2,6 @@
 pragma solidity 0.8.26;
 
 import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol';
-import {Math} from '@openzeppelin/contracts/utils/Math/Math.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import {
@@ -18,7 +17,6 @@ import {Validator} from '@defi-wonderland/prophet-core/solidity/contracts/Valida
 contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
-  using Math for uint256;
 
   // TODO: Validate what the correct magic numbers should be
   uint256 public constant MAX_SLASHING_USERS = 4;
@@ -368,7 +366,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     address _user;
     uint256 _slashAmount;
 
-    _maxUsersToCheck = Math.min(_maxUsersToCheck, _users.length());
+    _maxUsersToCheck = _maxUsersToCheck > _users.length() ? _users.length() : _maxUsersToCheck;
 
     for (uint256 _i; _i < _maxUsersToCheck && _slashedUsers < _usersToSlash; _i++) {
       _user = _users.at(0);
