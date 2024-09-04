@@ -108,53 +108,58 @@ contract UnitDeploy is Test {
     assertEq(address(deploy.oracle()).code, type(Oracle).runtimeCode);
 
     // it should deploy `EBORequestModule` with correct args
-    // BUG: Error (9274): "runtimeCode" is not available for contracts containing immutable variables.
-    // assertEq(address(deploy.eboRequestModule()).code, type(EBORequestModule).runtimeCode);
+    EBORequestModule _eboRequestModule =
+      new EBORequestModule(deploy.oracle(), deploy.eboRequestCreator(), deploy.arbitrator(), deploy.council());
+    assertEq(address(deploy.eboRequestModule()).code, address(_eboRequestModule).code);
     assertEq(address(deploy.eboRequestModule().ORACLE()), address(deploy.oracle()));
     assertEq(address(deploy.eboRequestModule().eboRequestCreator()), address(deploy.eboRequestCreator()));
     assertEq(address(deploy.eboRequestModule().arbitrator()), address(deploy.arbitrator()));
     assertEq(address(deploy.eboRequestModule().council()), address(deploy.council()));
 
     // it should deploy `BondedResponseModule` with correct args
-    // BUG: Error (9274): "runtimeCode" is not available for contracts containing immutable variables.
-    // assertEq(address(deploy.bondedResponseModule()).code, type(BondedResponseModule).runtimeCode);
+    BondedResponseModule _bondedResponseModule = new BondedResponseModule(deploy.oracle());
+    assertEq(address(deploy.bondedResponseModule()).code, address(_bondedResponseModule).code);
     assertEq(address(deploy.bondedResponseModule().ORACLE()), address(deploy.oracle()));
 
     // it should deploy `BondEscalationModule` with correct args
-    // BUG: Error (9274): "runtimeCode" is not available for contracts containing immutable variables.
-    // assertEq(address(deploy.bondEscalationModule()).code, type(BondEscalationModule).runtimeCode);
+    BondEscalationModule _bondEscalationModule = new BondEscalationModule(deploy.oracle());
+    assertEq(address(deploy.bondEscalationModule()).code, address(_bondEscalationModule).code);
     assertEq(address(deploy.bondEscalationModule().ORACLE()), address(deploy.oracle()));
 
     // it should deploy `ArbitratorModule` with correct args
-    // BUG: Error (9274): "runtimeCode" is not available for contracts containing immutable variables.
-    // assertEq(address(deploy.arbitratorModule()).code, type(ArbitratorModule).runtimeCode);
+    ArbitratorModule _arbitratorModule = new ArbitratorModule(deploy.oracle());
+    assertEq(address(deploy.arbitratorModule()).code, address(_arbitratorModule).code);
     assertEq(address(deploy.arbitratorModule().ORACLE()), address(deploy.oracle()));
 
     // it should deploy `EBOFinalityModule` with correct args
-    // BUG: Error (9274): "runtimeCode" is not available for contracts containing immutable variables.
-    // assertEq(address(deploy.eboFinalityModule()).code, type(EBOFinalityModule).runtimeCode);
+    EBOFinalityModule _eboFinalityModule =
+      new EBOFinalityModule(deploy.oracle(), deploy.eboRequestCreator(), deploy.arbitrator(), deploy.council());
+    assertEq(address(deploy.eboFinalityModule()).code, address(_eboFinalityModule).code);
     assertEq(address(deploy.eboFinalityModule().ORACLE()), address(deploy.oracle()));
     assertEq(address(deploy.eboFinalityModule().eboRequestCreator()), address(deploy.eboRequestCreator()));
     assertEq(address(deploy.eboFinalityModule().arbitrator()), address(deploy.arbitrator()));
     assertEq(address(deploy.eboFinalityModule().council()), address(deploy.council()));
 
     // it should deploy `BondEscalationAccounting` with correct args
-    // BUG: Error (9274): "runtimeCode" is not available for contracts containing immutable variables.
-    // assertEq(address(deploy.bondEscalationAccounting()).code, type(BondEscalationAccounting).runtimeCode);
+    BondEscalationAccounting _bondEscalationAccounting = new BondEscalationAccounting(deploy.oracle());
+    assertEq(address(deploy.bondEscalationAccounting()).code, address(_bondEscalationAccounting).code);
     assertEq(address(deploy.bondEscalationAccounting().ORACLE()), address(deploy.oracle()));
 
     // it should deploy `EBORequestCreator` with correct args
-    // BUG: Error (9274): "runtimeCode" is not available for contracts containing immutable variables.
-    // assertEq(address(deploy.eboRequestCreator()).code, type(EBORequestCreator).runtimeCode);
+    IOracle.Request memory _requestData = _instantiateRequestData();
+    EBORequestCreator _eboRequestCreator =
+      new EBORequestCreator(deploy.oracle(), deploy.epochManager(), deploy.arbitrator(), deploy.council(), _requestData);
+    assertEq(address(deploy.eboRequestCreator()).code, address(_eboRequestCreator).code);
     assertEq(address(deploy.eboRequestCreator().ORACLE()), address(deploy.oracle()));
     assertEq(address(deploy.eboRequestCreator().epochManager()), address(deploy.epochManager()));
     assertEq(address(deploy.eboRequestCreator().arbitrator()), address(deploy.arbitrator()));
     assertEq(address(deploy.eboRequestCreator().council()), address(deploy.council()));
-    assertEq(abi.encode(deploy.eboRequestCreator().getRequestData()), abi.encode(_instantiateRequestData()));
+    assertEq(abi.encode(deploy.eboRequestCreator().getRequestData()), abi.encode(_requestData));
 
     // it should deploy `CouncilArbitrator` with correct args
-    // BUG: Error (9274): "runtimeCode" is not available for contracts containing immutable variables.
-    // assertEq(address(deploy.councilArbitrator()).code, type(CouncilArbitrator).runtimeCode);
+    CouncilArbitrator _councilArbitrator =
+      new CouncilArbitrator(deploy.arbitratorModule(), deploy.arbitrator(), deploy.council());
+    assertEq(address(deploy.councilArbitrator()).code, address(_councilArbitrator).code);
     assertEq(address(deploy.councilArbitrator().ARBITRATOR_MODULE()), address(deploy.arbitratorModule()));
     assertEq(address(deploy.councilArbitrator().arbitrator()), address(deploy.arbitrator()));
     assertEq(address(deploy.councilArbitrator().council()), address(deploy.council()));
@@ -170,10 +175,14 @@ contract UnitDeploy is Test {
     _requestData.resolutionModule = address(deploy.arbitratorModule());
     _requestData.finalityModule = address(deploy.eboFinalityModule());
 
-    _requestData.requestModuleData = abi.encode(_instantiateRequestParams());
-    _requestData.responseModuleData = abi.encode(_instantiateResponseParams());
-    _requestData.disputeModuleData = abi.encode(_instantiateDisputeParams());
-    _requestData.resolutionModuleData = abi.encode(_instantiateResolutionParams());
+    IEBORequestModule.RequestParameters memory _requestParams = _instantiateRequestParams();
+    IBondedResponseModule.RequestParameters memory _responseParams = _instantiateResponseParams();
+    IBondEscalationModule.RequestParameters memory _disputeParams = _instantiateDisputeParams();
+    IArbitratorModule.RequestParameters memory _resolutionParams = _instantiateResolutionParams();
+    _requestData.requestModuleData = abi.encode(_requestParams);
+    _requestData.responseModuleData = abi.encode(_responseParams);
+    _requestData.disputeModuleData = abi.encode(_disputeParams);
+    _requestData.resolutionModuleData = abi.encode(_resolutionParams);
   }
 
   function _instantiateRequestParams()

@@ -125,7 +125,8 @@ contract Deploy is Script {
     councilArbitrator = new CouncilArbitrator(arbitratorModule, arbitrator, council);
 
     // Deploy `EBORequestCreator`
-    eboRequestCreator = new EBORequestCreator(oracle, epochManager, arbitrator, council, _instantiateRequestData());
+    IOracle.Request memory _requestData = _instantiateRequestData();
+    eboRequestCreator = new EBORequestCreator(oracle, epochManager, arbitrator, council, _requestData);
 
     // Assert that `EBORequestCreator` was deployed at the precomputed address
     if (eboRequestCreator != _precomputedEBORequestCreator) revert Deploy_InvalidPrecomputedAddress();
@@ -146,10 +147,14 @@ contract Deploy is Script {
     _requestData.finalityModule = address(eboFinalityModule);
 
     // Set modules data
-    _requestData.requestModuleData = abi.encode(_instantiateRequestParams());
-    _requestData.responseModuleData = abi.encode(_instantiateResponseParams());
-    _requestData.disputeModuleData = abi.encode(_instantiateDisputeParams());
-    _requestData.resolutionModuleData = abi.encode(_instantiateResolutionParams());
+    IEBORequestModule.RequestParameters memory _requestParams = _instantiateRequestParams();
+    IBondedResponseModule.RequestParameters memory _responseParams = _instantiateResponseParams();
+    IBondEscalationModule.RequestParameters memory _disputeParams = _instantiateDisputeParams();
+    IArbitratorModule.RequestParameters memory _resolutionParams = _instantiateResolutionParams();
+    _requestData.requestModuleData = abi.encode(_requestParams);
+    _requestData.responseModuleData = abi.encode(_responseParams);
+    _requestData.disputeModuleData = abi.encode(_disputeParams);
+    _requestData.resolutionModuleData = abi.encode(_resolutionParams);
   }
 
   function _instantiateRequestParams()
