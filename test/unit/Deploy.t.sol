@@ -19,7 +19,7 @@ import {EBORequestModule} from 'contracts/EBORequestModule.sol';
 
 import {Deploy} from 'script/Deploy.s.sol';
 
-import {_ARBITRATOR, _COUNCIL, _DEPLOYER, _EPOCH_MANAGER, _GRAPH_TOKEN} from 'script/Constants.sol';
+import {_ARBITRATOR, _COUNCIL, _EPOCH_MANAGER, _GRAPH_TOKEN} from 'script/Constants.sol';
 
 import 'forge-std/Test.sol';
 
@@ -44,10 +44,12 @@ contract MockDeploy is Deploy {
 contract UnitDeploy is Test {
   MockDeploy public deploy;
 
-  uint256 internal _currentEpoch = 100;
+  uint256 internal _currentEpoch;
 
   function setUp() public {
     deploy = new MockDeploy();
+
+    _currentEpoch = 100;
   }
 
   function test_SetUpShouldDefineTheGraphAccounts() public {
@@ -58,7 +60,6 @@ contract UnitDeploy is Test {
     assertEq(address(deploy.epochManager()).code, _EPOCH_MANAGER.code);
     assertEq(address(deploy.arbitrator()), _ARBITRATOR);
     assertEq(address(deploy.council()), _COUNCIL);
-    assertEq(address(deploy.deployer()), _DEPLOYER);
   }
 
   function test_RunRevertWhen_TheGraphAccountsAreNotSetUp() public {
@@ -78,8 +79,8 @@ contract UnitDeploy is Test {
     public
     givenTheGraphAccountsAreSetUp
   {
-    uint256 _nonceEBORequestCreator = vm.getNonce(deploy.deployer()) + deploy.OFFSET_EBO_REQUEST_CREATOR();
-    address _precomputedEBORequestCreator = vm.computeCreateAddress(deploy.deployer(), _nonceEBORequestCreator);
+    uint256 _nonceEBORequestCreator = vm.getNonce(tx.origin) + deploy.OFFSET_EBO_REQUEST_CREATOR();
+    address _precomputedEBORequestCreator = vm.computeCreateAddress(tx.origin, _nonceEBORequestCreator);
     vm.assume(_precomputedEBORequestCreator != _precomputedAddress);
 
     deploy.mock_setPrecomputedAddress(_precomputedAddress);
@@ -90,7 +91,12 @@ contract UnitDeploy is Test {
   }
 
   function test_RunWhenPrecomputedAddressIsCorrect() public givenTheGraphAccountsAreSetUp {
+    uint256 _nonceBefore = vm.getNonce(tx.origin);
     deploy.run();
+    uint256 _nonceAfter = vm.getNonce(tx.origin);
+
+    // it should deploy all contracts using a single EOA
+    assertEq(deploy.DEPLOYMENT_COUNT(), _nonceAfter - _nonceBefore);
 
     // it should deploy `Oracle`
     assertEq(address(deploy.oracle()).code, type(Oracle).runtimeCode);
@@ -146,8 +152,5 @@ contract UnitDeploy is Test {
     assertEq(address(deploy.councilArbitrator().ARBITRATOR_MODULE()), address(deploy.arbitratorModule()));
     assertEq(address(deploy.councilArbitrator().arbitrator()), address(deploy.arbitrator()));
     assertEq(address(deploy.councilArbitrator().council()), address(deploy.council()));
-
-    // it should deploy all contracts using deployer's account
-    assertEq(deploy.DEPLOYMENT_COUNT(), vm.getNonce(deploy.deployer()));
   }
 }

@@ -8,6 +8,7 @@ Deploy::run
     ├── when precomputed address is incorrect
     │   └── it should revert
     └── when precomputed address is correct
+        ├── it should deploy all contracts using a single EOA
         ├── it should deploy `Oracle`
         ├── it should deploy `EBORequestModule` with correct args
         ├── it should deploy `BondedResponseModule` with correct args
@@ -16,5 +17,4 @@ Deploy::run
         ├── it should deploy `EBOFinalityModule` with correct args
         ├── it should deploy `BondEscalationAccounting` with correct args
         ├── it should deploy `EBORequestCreator` with correct args
-        ├── it should deploy `CouncilArbitrator` with correct args
-        └── it should deploy all contracts using deployer's account
+        └── it should deploy `CouncilArbitrator` with correct args

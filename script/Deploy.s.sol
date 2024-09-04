@@ -26,7 +26,7 @@ import {EBOFinalityModule, IEBOFinalityModule} from 'contracts/EBOFinalityModule
 import {EBORequestCreator, IEBORequestCreator} from 'contracts/EBORequestCreator.sol';
 import {EBORequestModule, IEBORequestModule} from 'contracts/EBORequestModule.sol';
 
-import {_ARBITRATOR, _COUNCIL, _DEPLOYER, _EPOCH_MANAGER, _GRAPH_TOKEN} from './Constants.sol';
+import {_ARBITRATOR, _COUNCIL, _EPOCH_MANAGER, _GRAPH_TOKEN} from './Constants.sol';
 
 import 'forge-std/Script.sol';
 
@@ -56,7 +56,6 @@ contract Deploy is Script {
   IEpochManager public epochManager;
   address public arbitrator;
   address public council;
-  address public deployer;
 
   // Data
   IOracle.Request public requestData;
@@ -86,7 +85,6 @@ contract Deploy is Script {
     epochManager = IEpochManager(_EPOCH_MANAGER);
     arbitrator = _ARBITRATOR;
     council = _COUNCIL;
-    deployer = _DEPLOYER;
 
     // TODO: Define request module params
     _paymentAmount = 0;
@@ -105,8 +103,7 @@ contract Deploy is Script {
   }
 
   function run() public {
-    vm.rememberKey(vm.envUint('ARBITRUM_DEPLOYER_PK'));
-    vm.startBroadcast(deployer);
+    vm.startBroadcast();
 
     // Precompute address of `EBORequestCreator`
     IEBORequestCreator _precomputedEBORequestCreator =
@@ -186,15 +183,12 @@ contract Deploy is Script {
     // Set resolution module data
     _resolutionParams.arbitrator = address(councilArbitrator);
     requestData.resolutionModuleData = abi.encode(_resolutionParams);
-
-    // TODO: Set finality module data?
-    // requestData.finalityModuleData = abi.encode(_finalityParams);
   }
 
   function _precomputeCreateAddress(uint256 _deploymentOffset) internal view virtual returns (address _targetAddress) {
     // Get nonce for the target deployment
-    uint256 _targetNonce = vm.getNonce(deployer) + _deploymentOffset;
+    uint256 _targetNonce = vm.getNonce(tx.origin) + _deploymentOffset;
     // Precompute address of the target deployment
-    _targetAddress = vm.computeCreateAddress(deployer, _targetNonce);
+    _targetAddress = vm.computeCreateAddress(tx.origin, _targetNonce);
   }
 }
