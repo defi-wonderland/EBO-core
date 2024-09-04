@@ -15,26 +15,26 @@ interface IHorizonAccountingExtension {
 
   /**
    * @notice A payment between users has been made
-   * @param _requestId The ID of the request
-   * @param _beneficiary The user receiving the tokens
-   * @param _payer The user who is getting its tokens transferred
-   * @param _amount The amount of `_token` transferred
+   * @param _requestId    The ID of the request
+   * @param _beneficiary  The user receiving the tokens
+   * @param _payer        The user who is getting its tokens transferred
+   * @param _amount       The amount of GRT transferred
    */
   event Paid(bytes32 indexed _requestId, address indexed _beneficiary, address indexed _payer, uint256 _amount);
 
   /**
    * @notice User's funds have been bonded
-   * @param _requestId The ID of the request
-   * @param _bonder The user who is getting its tokens bonded
-   * @param _amount The amount of `_token` bonded
+   * @param _requestId    The ID of the request
+   * @param _bonder       The user who is getting its tokens bonded
+   * @param _amount       The amount of GRT bonded
    */
   event Bonded(bytes32 indexed _requestId, address indexed _bonder, uint256 _amount);
 
   /**
    * @notice User's funds have been released
-   * @param _requestId The ID of the request
-   * @param _beneficiary The user who is getting its tokens released
-   * @param _amount The amount of `_token` released
+   * @param _requestId    The ID of the request
+   * @param _beneficiary  The user who is getting its tokens released
+   * @param _amount       The amount of GRT released
    */
   event Released(bytes32 indexed _requestId, address indexed _beneficiary, uint256 _amount);
 
@@ -44,7 +44,7 @@ interface IHorizonAccountingExtension {
    * @param _pledger          The user who pledged the tokens
    * @param _requestId        The ID of the bond-escalated request
    * @param _disputeId        The ID of the bond-escalated dispute
-   * @param _amount           The amount of `_token` pledged by the user
+   * @param _amount           The amount of GRT pledged by the user
    */
   event Pledged(address indexed _pledger, bytes32 indexed _requestId, bytes32 indexed _disputeId, uint256 _amount);
 
@@ -54,7 +54,7 @@ interface IHorizonAccountingExtension {
    * @param _requestId        The ID of the bond-escalated request
    * @param _disputeId        The ID of the bond-escalated dispute
    * @param _winningPledgers  The users who got paid for pledging for the winning side
-   * @param _amountPerPledger The amount of `_token` paid to each of the winning pledgers
+   * @param _amountPerPledger The amount of GRT paid to each of the winning pledgers
    */
   event WinningPledgersPaid(
     bytes32 indexed _requestId,
@@ -68,7 +68,7 @@ interface IHorizonAccountingExtension {
    *
    * @param _requestId             The ID of the bond-escalated request
    * @param _disputeId             The ID of the bond-escalated dispute
-   * @param _amountPerPledger      The amount of `_token` to be paid for each winning pledgers
+   * @param _amountPerPledger      The amount of GRT to be paid for each winning pledgers
    * @param _winningPledgersLength The number of winning pledgers
    */
   event BondEscalationSettled(
@@ -81,7 +81,7 @@ interface IHorizonAccountingExtension {
    * @param _requestId        The ID of the bond-escalated request
    * @param _disputeId        The ID of the bond-escalated dispute
    * @param _pledger          The user who is getting their tokens released
-   * @param _amount           The amount of `_token` released
+   * @param _amount           The amount of GRT released
    */
   event PledgeReleased(
     bytes32 indexed _requestId, bytes32 indexed _disputeId, address indexed _pledger, uint256 _amount
@@ -93,10 +93,11 @@ interface IHorizonAccountingExtension {
    * @param _requestId        The ID of the bond-escalated request
    * @param _disputeId        The ID of the bond-escalated dispute
    * @param _pledger          The user who claimed their reward
-   * @param _amount           The amount of `_token` paid to the pledger
+   * @param _reward           The amount of GRT the user claimed
+   * @param _released         The amount of GRT released to the user
    */
   event EscalationRewardClaimed(
-    bytes32 indexed _requestId, bytes32 indexed _disputeId, address indexed _pledger, uint256 _amount
+    bytes32 indexed _requestId, bytes32 indexed _disputeId, address indexed _pledger, uint256 _reward, uint256 _released
   );
 
   /*///////////////////////////////////////////////////////////////
@@ -160,6 +161,11 @@ interface IHorizonAccountingExtension {
    */
   error HorizonAccountingExtension_AlreadySettled();
 
+  /**
+   * @notice Thrown when the max verifier cut is invalid
+   */
+  error HorizonAccountingExtension_InvalidMaxVerifierCut();
+
   /*///////////////////////////////////////////////////////////////
                               STRUCTS
   //////////////////////////////////////////////////////////////*/
@@ -199,6 +205,12 @@ interface IHorizonAccountingExtension {
    * @return _MIN_THAWING_PERIOD The minimum thawing period
    */
   function MIN_THAWING_PERIOD() external view returns (uint256 _MIN_THAWING_PERIOD);
+
+  /**
+   * @notice The maximum verifier cut
+   * @return _MAX_VERIFIER_CUT The maximum verifier cut
+   */
+  function MAX_VERIFIER_CUT() external view returns (uint256 _MAX_VERIFIER_CUT);
 
   /**
    * @notice The total bonded tokens for a user
@@ -290,7 +302,7 @@ interface IHorizonAccountingExtension {
    * @notice Updates the accounting of the given dispute to reflect the result of the bond escalation
    * @param _request The bond-escalated request
    * @param _dispute The bond-escalated dispute
-   * @param _amountPerPledger Amount of `_token` to be rewarded to each of the winning pledgers
+   * @param _amountPerPledger Amount of GRT to be rewarded to each of the winning pledgers
    * @param _winningPledgersLength Amount of pledges that won the dispute
    */
   function onSettleBondEscalation(
@@ -312,7 +324,7 @@ interface IHorizonAccountingExtension {
    * @param _request The bond-escalated request
    * @param _dispute The bond-escalated dispute
    * @param _pledger Address of the pledger
-   * @param _amount  Amount of `_token` to be released to the pledger
+   * @param _amount  Amount of GRT to be released to the pledger
    */
   function releasePledge(
     IOracle.Request calldata _request,
@@ -326,7 +338,7 @@ interface IHorizonAccountingExtension {
    * @param _requestId The id of the request handling the user's tokens
    * @param _payer The address of the user paying the tokens
    * @param _receiver The address of the user receiving the tokens
-   * @param _amount The amount of `_token` being transferred
+   * @param _amount The amount of GRT being transferred
    */
   function pay(bytes32 _requestId, address _payer, address _receiver, uint256 _amount) external;
 
@@ -334,7 +346,7 @@ interface IHorizonAccountingExtension {
    * @notice Allows a allowed module to bond a user's tokens for a request
    * @param _bonder The address of the user to bond tokens for
    * @param _requestId The id of the request the user is bonding for
-   * @param _amount The amount of `_token` to bond
+   * @param _amount The amount of GRT to bond
    */
   function bond(address _bonder, bytes32 _requestId, uint256 _amount) external;
 
@@ -342,7 +354,7 @@ interface IHorizonAccountingExtension {
    * @notice Allows a valid module to release a user's tokens
    * @param _bonder The address of the user to release tokens for
    * @param _requestId The id of the request where the tokens were bonded
-   * @param _amount The amount of `_token` to release
+   * @param _amount The amount of GRT to release
    */
   function release(address _bonder, bytes32 _requestId, uint256 _amount) external;
 }
