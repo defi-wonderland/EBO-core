@@ -58,26 +58,17 @@ contract Deploy is Script {
   address public council;
 
   // Data
-  IOracle.Request public requestData;
-  IEBORequestModule.RequestParameters internal _requestParams;
-  IBondedResponseModule.RequestParameters internal _responseParams;
-  IBondEscalationModule.RequestParameters internal _disputeParams;
-  IArbitratorModule.RequestParameters internal _resolutionParams;
-  uint256 internal _paymentAmount;
-  uint256 internal _responseBondSize;
-  uint256 internal _responseDeadline;
-  uint256 internal _responseDisputeWindow;
-  uint256 internal _disputeBondSize;
-  uint256 internal _maxNumberOfEscalations;
-  uint256 internal _disputeDeadline;
-  uint256 internal _tyingBuffer;
-  uint256 internal _disputeDisputeWindow;
+  uint256 public paymentAmount;
+  uint256 public responseBondSize;
+  uint256 public responseDeadline;
+  uint256 public responseDisputeWindow;
+  uint256 public disputeBondSize;
+  uint256 public maxNumberOfEscalations;
+  uint256 public disputeDeadline;
+  uint256 public tyingBuffer;
+  uint256 public disputeDisputeWindow;
 
   error Deploy_InvalidPrecomputedAddress();
-
-  function getRequestData() external view returns (IOracle.Request memory _requestData) {
-    _requestData = requestData;
-  }
 
   function setUp() public {
     // Define The Graph accounts
@@ -86,20 +77,20 @@ contract Deploy is Script {
     arbitrator = _ARBITRATOR;
     council = _COUNCIL;
 
-    // TODO: Define request module params
-    _paymentAmount = 0;
+    // TODO: Set production request module params
+    paymentAmount = 0.1 ether;
 
-    // TODO: Define response module params
-    _responseBondSize = 0;
-    _responseDeadline = 0;
-    _responseDisputeWindow = 0;
+    // TODO: Set production response module params
+    responseBondSize = 0.5 ether;
+    responseDeadline = block.timestamp + 5 days;
+    responseDisputeWindow = 1 weeks;
 
-    // TODO: Define dispute module params
-    _disputeBondSize = 0;
-    _maxNumberOfEscalations = 0;
-    _disputeDeadline = 0;
-    _tyingBuffer = 0;
-    _disputeDisputeWindow = 0;
+    // TODO: Set production dispute module params
+    disputeBondSize = 0.3 ether;
+    maxNumberOfEscalations = 1;
+    disputeDeadline = block.timestamp + 10 days;
+    tyingBuffer = 3 days;
+    disputeDisputeWindow = 1 weeks;
   }
 
   function run() public {
@@ -134,8 +125,7 @@ contract Deploy is Script {
     councilArbitrator = new CouncilArbitrator(arbitratorModule, arbitrator, council);
 
     // Deploy `EBORequestCreator`
-    _setRequestData(_precomputedEBORequestCreator);
-    eboRequestCreator = new EBORequestCreator(oracle, epochManager, arbitrator, council, requestData);
+    eboRequestCreator = new EBORequestCreator(oracle, epochManager, arbitrator, council, _instantiateRequestData());
 
     // Assert that `EBORequestCreator` was deployed at the precomputed address
     if (eboRequestCreator != _precomputedEBORequestCreator) revert Deploy_InvalidPrecomputedAddress();
@@ -143,46 +133,66 @@ contract Deploy is Script {
     vm.stopBroadcast();
   }
 
-  function _setRequestData(IEBORequestCreator _precomputedEBORequestCreator) internal {
+  function _instantiateRequestData() public view returns (IOracle.Request memory _requestData) {
     // Set placeholder nonce
-    requestData.nonce = 0;
+    _requestData.nonce = 0;
 
-    // Set requester
-    requestData.requester = address(_precomputedEBORequestCreator);
+    // Set requester and modules
+    _requestData.requester = address(eboRequestCreator);
+    _requestData.requestModule = address(eboRequestModule);
+    _requestData.responseModule = address(bondedResponseModule);
+    _requestData.disputeModule = address(bondEscalationModule);
+    _requestData.resolutionModule = address(arbitratorModule);
+    _requestData.finalityModule = address(eboFinalityModule);
 
-    // Set modules
-    requestData.requestModule = address(eboRequestModule);
-    requestData.responseModule = address(bondedResponseModule);
-    requestData.disputeModule = address(bondEscalationModule);
-    requestData.resolutionModule = address(arbitratorModule);
-    requestData.finalityModule = address(eboFinalityModule);
+    // Set modules data
+    _requestData.requestModuleData = abi.encode(_instantiateRequestParams());
+    _requestData.responseModuleData = abi.encode(_instantiateResponseParams());
+    _requestData.disputeModuleData = abi.encode(_instantiateDisputeParams());
+    _requestData.resolutionModuleData = abi.encode(_instantiateResolutionParams());
+  }
 
-    // Set request module data
+  function _instantiateRequestParams()
+    internal
+    view
+    returns (IEBORequestModule.RequestParameters memory _requestParams)
+  {
     _requestParams.accountingExtension = bondEscalationAccounting;
-    _requestParams.paymentAmount = _paymentAmount;
-    requestData.requestModuleData = abi.encode(_requestParams);
+    _requestParams.paymentAmount = paymentAmount;
+  }
 
-    // Set response module data
+  function _instantiateResponseParams()
+    internal
+    view
+    returns (IBondedResponseModule.RequestParameters memory _responseParams)
+  {
     _responseParams.accountingExtension = bondEscalationAccounting;
     _responseParams.bondToken = graphToken;
-    _responseParams.bondSize = _responseBondSize;
-    _responseParams.deadline = _responseDeadline;
-    _responseParams.disputeWindow = _responseDisputeWindow;
-    requestData.responseModuleData = abi.encode(_responseParams);
+    _responseParams.bondSize = responseBondSize;
+    _responseParams.deadline = responseDeadline;
+    _responseParams.disputeWindow = responseDisputeWindow;
+  }
 
-    // Set dispute module data
+  function _instantiateDisputeParams()
+    internal
+    view
+    returns (IBondEscalationModule.RequestParameters memory _disputeParams)
+  {
     _disputeParams.accountingExtension = bondEscalationAccounting;
     _disputeParams.bondToken = graphToken;
-    _disputeParams.bondSize = _disputeBondSize;
-    _disputeParams.maxNumberOfEscalations = _maxNumberOfEscalations;
-    _disputeParams.bondEscalationDeadline = _disputeDeadline;
-    _disputeParams.tyingBuffer = _tyingBuffer;
-    _disputeParams.disputeWindow = _disputeDisputeWindow;
-    requestData.disputeModuleData = abi.encode(_disputeParams);
+    _disputeParams.bondSize = disputeBondSize;
+    _disputeParams.maxNumberOfEscalations = maxNumberOfEscalations;
+    _disputeParams.bondEscalationDeadline = disputeDeadline;
+    _disputeParams.tyingBuffer = tyingBuffer;
+    _disputeParams.disputeWindow = disputeDisputeWindow;
+  }
 
-    // Set resolution module data
+  function _instantiateResolutionParams()
+    internal
+    view
+    returns (IArbitratorModule.RequestParameters memory _resolutionParams)
+  {
     _resolutionParams.arbitrator = address(councilArbitrator);
-    requestData.resolutionModuleData = abi.encode(_resolutionParams);
   }
 
   function _precomputeCreateAddress(uint256 _deploymentOffset) internal view virtual returns (address _targetAddress) {

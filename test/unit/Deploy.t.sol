@@ -1,21 +1,27 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {Oracle} from '@defi-wonderland/prophet-core/solidity/contracts/Oracle.sol';
+import {IOracle, Oracle} from '@defi-wonderland/prophet-core/solidity/contracts/Oracle.sol';
 import {BondEscalationAccounting} from
   '@defi-wonderland/prophet-modules/solidity/contracts/extensions/BondEscalationAccounting.sol';
-import {BondEscalationModule} from
-  '@defi-wonderland/prophet-modules/solidity/contracts/modules/dispute/BondEscalationModule.sol';
-import {ArbitratorModule} from
-  '@defi-wonderland/prophet-modules/solidity/contracts/modules/resolution/ArbitratorModule.sol';
-import {BondedResponseModule} from
-  '@defi-wonderland/prophet-modules/solidity/contracts/modules/response/BondedResponseModule.sol';
+import {
+  BondEscalationModule,
+  IBondEscalationModule
+} from '@defi-wonderland/prophet-modules/solidity/contracts/modules/dispute/BondEscalationModule.sol';
+import {
+  ArbitratorModule,
+  IArbitratorModule
+} from '@defi-wonderland/prophet-modules/solidity/contracts/modules/resolution/ArbitratorModule.sol';
+import {
+  BondedResponseModule,
+  IBondedResponseModule
+} from '@defi-wonderland/prophet-modules/solidity/contracts/modules/response/BondedResponseModule.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
 import {CouncilArbitrator} from 'contracts/CouncilArbitrator.sol';
 import {EBOFinalityModule} from 'contracts/EBOFinalityModule.sol';
 import {EBORequestCreator} from 'contracts/EBORequestCreator.sol';
-import {EBORequestModule} from 'contracts/EBORequestModule.sol';
+import {EBORequestModule, IEBORequestModule} from 'contracts/EBORequestModule.sol';
 
 import {Deploy} from 'script/Deploy.s.sol';
 
@@ -144,7 +150,7 @@ contract UnitDeploy is Test {
     assertEq(address(deploy.eboRequestCreator().epochManager()), address(deploy.epochManager()));
     assertEq(address(deploy.eboRequestCreator().arbitrator()), address(deploy.arbitrator()));
     assertEq(address(deploy.eboRequestCreator().council()), address(deploy.council()));
-    assertEq(abi.encode(deploy.eboRequestCreator().getRequestData()), abi.encode(deploy.getRequestData()));
+    assertEq(abi.encode(deploy.eboRequestCreator().getRequestData()), abi.encode(_instantiateRequestData()));
 
     // it should deploy `CouncilArbitrator` with correct args
     // BUG: Error (9274): "runtimeCode" is not available for contracts containing immutable variables.
@@ -152,5 +158,64 @@ contract UnitDeploy is Test {
     assertEq(address(deploy.councilArbitrator().ARBITRATOR_MODULE()), address(deploy.arbitratorModule()));
     assertEq(address(deploy.councilArbitrator().arbitrator()), address(deploy.arbitrator()));
     assertEq(address(deploy.councilArbitrator().council()), address(deploy.council()));
+  }
+
+  function _instantiateRequestData() internal view returns (IOracle.Request memory _requestData) {
+    _requestData.nonce = 0;
+
+    _requestData.requester = address(deploy.eboRequestCreator());
+    _requestData.requestModule = address(deploy.eboRequestModule());
+    _requestData.responseModule = address(deploy.bondedResponseModule());
+    _requestData.disputeModule = address(deploy.bondEscalationModule());
+    _requestData.resolutionModule = address(deploy.arbitratorModule());
+    _requestData.finalityModule = address(deploy.eboFinalityModule());
+
+    _requestData.requestModuleData = abi.encode(_instantiateRequestParams());
+    _requestData.responseModuleData = abi.encode(_instantiateResponseParams());
+    _requestData.disputeModuleData = abi.encode(_instantiateDisputeParams());
+    _requestData.resolutionModuleData = abi.encode(_instantiateResolutionParams());
+  }
+
+  function _instantiateRequestParams()
+    internal
+    view
+    returns (IEBORequestModule.RequestParameters memory _requestParams)
+  {
+    _requestParams.accountingExtension = deploy.bondEscalationAccounting();
+    _requestParams.paymentAmount = deploy.paymentAmount();
+  }
+
+  function _instantiateResponseParams()
+    internal
+    view
+    returns (IBondedResponseModule.RequestParameters memory _responseParams)
+  {
+    _responseParams.accountingExtension = deploy.bondEscalationAccounting();
+    _responseParams.bondToken = deploy.graphToken();
+    _responseParams.bondSize = deploy.responseBondSize();
+    _responseParams.deadline = deploy.responseDeadline();
+    _responseParams.disputeWindow = deploy.responseDisputeWindow();
+  }
+
+  function _instantiateDisputeParams()
+    internal
+    view
+    returns (IBondEscalationModule.RequestParameters memory _disputeParams)
+  {
+    _disputeParams.accountingExtension = deploy.bondEscalationAccounting();
+    _disputeParams.bondToken = deploy.graphToken();
+    _disputeParams.bondSize = deploy.disputeBondSize();
+    _disputeParams.maxNumberOfEscalations = deploy.maxNumberOfEscalations();
+    _disputeParams.bondEscalationDeadline = deploy.disputeDeadline();
+    _disputeParams.tyingBuffer = deploy.tyingBuffer();
+    _disputeParams.disputeWindow = deploy.disputeDisputeWindow();
+  }
+
+  function _instantiateResolutionParams()
+    internal
+    view
+    returns (IArbitratorModule.RequestParameters memory _resolutionParams)
+  {
+    _resolutionParams.arbitrator = address(deploy.councilArbitrator());
   }
 }

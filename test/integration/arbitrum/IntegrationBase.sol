@@ -68,6 +68,7 @@ contract IntegrationBase is Test {
   bytes32 internal _requestId;
   bytes32 internal _responseId;
   bytes32 internal _disputeId;
+  uint256 internal _paymentAmount;
   uint256 internal _bondSize;
   uint256 internal _currentEpoch;
   string internal _chainId = 'chainId1';
@@ -146,6 +147,7 @@ contract IntegrationBase is Test {
     _requestData.requestModule = address(_eboRequestModule);
 
     _requestParams.accountingExtension = _accountingExtension;
+    _requestParams.paymentAmount = _paymentAmount;
     _requestData.requestModuleData = abi.encode(_requestParams);
 
     vm.prank(_arbitrator);
