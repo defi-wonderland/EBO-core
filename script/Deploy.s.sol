@@ -78,7 +78,7 @@ contract Deploy is Script {
     council = _COUNCIL;
 
     // TODO: Set production request module params
-    paymentAmount = 0.1 ether;
+    paymentAmount = 0 ether;
 
     // TODO: Set production response module params
     responseBondSize = 0.5 ether;
