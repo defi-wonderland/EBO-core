@@ -106,8 +106,6 @@ contract IntegrationBase is Test {
   }
 
   function _createRequest() internal {
-    string[] memory _chainIds = _getChainIds();
-
     _requestParams.epoch = _currentEpoch;
     _requestParams.chainId = _chainId;
     _requestData.requestModuleData = abi.encode(_requestParams);
@@ -115,7 +113,7 @@ contract IntegrationBase is Test {
     _requestId = _requestData._getId();
 
     vm.prank(_user);
-    _eboRequestCreator.createRequests(_currentEpoch, _chainIds);
+    _eboRequestCreator.createRequests(_currentEpoch, _chainId);
   }
 
   function _proposeResponse() internal {

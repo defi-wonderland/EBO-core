@@ -55,7 +55,7 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function createRequests(uint256 _epoch, string[] calldata _chainIds) external {
+  function createRequests(uint256 _epoch, string calldata _chainId) external {
     if (_epoch > epochManager.currentEpoch() || START_EPOCH > _epoch) revert EBORequestCreator_InvalidEpoch();
 
     bytes32 _encodedChainId;
@@ -68,27 +68,24 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
 
     _requestModuleData.epoch = _epoch;
 
-    for (uint256 _i; _i < _chainIds.length; _i++) {
-      _encodedChainId = _encodeChainId(_chainIds[_i]);
-      if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
+    _encodedChainId = _encodeChainId(_chainId);
+    if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
 
-      _requestId = requestIdPerChainAndEpoch[_chainIds[_i]][_epoch];
+    _requestId = requestIdPerChainAndEpoch[_chainId][_epoch];
 
-      if (
-        _requestId == bytes32(0)
-          || (ORACLE.finalizedAt(_requestId) > 0 && ORACLE.finalizedResponseId(_requestId) == bytes32(0))
-      ) {
-        _requestModuleData.chainId = _chainIds[_i];
-        //TODO: REWARDS
+    if (
+      _requestId == bytes32(0)
+        || (ORACLE.finalizedAt(_requestId) > 0 && ORACLE.finalizedResponseId(_requestId) == bytes32(0))
+    ) {
+      _requestModuleData.chainId = _chainId;
 
-        _requestData.requestModuleData = abi.encode(_requestModuleData);
+      _requestData.requestModuleData = abi.encode(_requestModuleData);
 
-        _requestId = ORACLE.createRequest(_requestData, bytes32(0));
+      _requestId = ORACLE.createRequest(_requestData, bytes32(0));
 
-        requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] = _requestId;
+      requestIdPerChainAndEpoch[_chainId][_epoch] = _requestId;
 
-        emit RequestCreated(_requestId, _epoch, _chainIds[_i]);
-      }
+      emit RequestCreated(_requestId, _epoch, _chainId);
     }
   }
 

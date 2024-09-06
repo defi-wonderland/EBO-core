@@ -177,9 +177,9 @@ interface IEBORequestCreator is IArbitrable {
   /**
    * @notice Create requests
    * @param _epoch The epoch of the request
-   * @param _chainIds The chain ids to update
+   * @param _chainId The chain id to update
    */
-  function createRequests(uint256 _epoch, string[] calldata _chainIds) external;
+  function createRequests(uint256 _epoch, string calldata _chainId) external;
 
   /**
    * @notice Add a chain to the allowed chains which can be updated
