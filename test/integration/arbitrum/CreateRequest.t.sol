@@ -12,18 +12,15 @@ contract Integration_CreateRequest is IntegrationBase {
   }
 
   function test_createRequest() public {
-    string[] memory _chainIds = new string[](1);
-    _chainIds[0] = _chainId;
-
     // Should revert if the epoch is invalid
     vm.expectRevert(IEBORequestCreator.EBORequestCreator_InvalidEpoch.selector);
     vm.prank(_user);
-    _eboRequestCreator.createRequests(1, _chainIds);
+    _eboRequestCreator.createRequest(1, _chainId);
 
     // Create a request without approving the chain id
     vm.expectRevert(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector);
     vm.prank(_user);
-    _eboRequestCreator.createRequests(_currentEpoch, _chainIds);
+    _eboRequestCreator.createRequest(_currentEpoch, _chainId);
 
     // Create a request with an approved chain id
     _addChains();
@@ -37,7 +34,7 @@ contract Integration_CreateRequest is IntegrationBase {
     vm.expectCall(address(_oracle), abi.encodeWithSelector(IOracle.createRequest.selector, _requestData, bytes32(0)));
 
     vm.prank(_user);
-    _eboRequestCreator.createRequests(_currentEpoch, _chainIds);
+    _eboRequestCreator.createRequest(_currentEpoch, _chainId);
     bytes32 _requestId = _eboRequestCreator.requestIdPerChainAndEpoch(_chainId, _currentEpoch);
 
     // Check that the request id is stored correctly
@@ -50,6 +47,6 @@ contract Integration_CreateRequest is IntegrationBase {
     // Create a request without approving the chain id
     vm.expectRevert(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector);
     vm.prank(_user);
-    _eboRequestCreator.createRequests(_currentEpoch, _chainIds);
+    _eboRequestCreator.createRequest(_currentEpoch, _chainId);
   }
 }

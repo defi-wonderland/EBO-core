@@ -106,8 +106,6 @@ contract IntegrationBase is Test {
   }
 
   function _createRequest() internal {
-    string[] memory _chainIds = _getChainIds();
-
     _requestParams.epoch = _currentEpoch;
     _requestParams.chainId = _chainId;
     _requestData.requestModuleData = abi.encode(_requestParams);
@@ -115,7 +113,7 @@ contract IntegrationBase is Test {
     _requestId = _requestData._getId();
 
     vm.prank(_user);
-    _eboRequestCreator.createRequests(_currentEpoch, _chainIds);
+    _eboRequestCreator.createRequest(_currentEpoch, _chainId);
   }
 
   function _proposeResponse() internal {
@@ -193,17 +191,8 @@ contract IntegrationBase is Test {
   }
 
   function _addChains() internal {
-    string[] memory _chainIds = _getChainIds();
-
     vm.startPrank(_arbitrator);
-    for (uint256 _i; _i < _chainIds.length; ++_i) {
-      _eboRequestCreator.addChain(_chainIds[_i]);
-    }
+    _eboRequestCreator.addChain('');
     vm.stopPrank();
-  }
-
-  function _getChainIds() internal view returns (string[] memory _chainIds) {
-    _chainIds = new string[](1);
-    _chainIds[0] = _chainId;
   }
 }
