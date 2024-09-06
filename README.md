@@ -1,10 +1,9 @@
-<img src="https://raw.githubusercontent.com/defi-wonderland/brand/v1.0.0/external/solidity-foundry-boilerplate-banner.png" alt="wonderland banner" align="center" />
+<br />
 <br />
 
-<div align="center"><strong>Start your next Solidity project with Foundry in seconds</strong></div>
-<div align="center">A highly scalable foundation focused on DX and best practices</div>
+# EBO - Epoch Block Oracle
 
-<br />
+EBO is a mechanism for clock syncronization in the multichain world. It allows The Graph to permissionlessly sync up clocks between the protocol chain (Arbitrum) and multiple other chains supported by them to pay rewards to indexers. 
 
 ## Features
 
