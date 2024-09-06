@@ -13,7 +13,7 @@ import {Arbitrable} from 'contracts/Arbitrable.sol';
 import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
-contract EBORequestCreator is IEBORequestCreator, Arbitrable {
+contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   /// @inheritdoc IEBORequestCreator
@@ -168,6 +168,11 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   /// @inheritdoc IEBORequestCreator
   function setEpochManager(IEpochManager _epochManager) external onlyArbitrator {
     _setEpochManager(_epochManager);
+  }
+
+  /// @inheritdoc IEBORequestCreator
+  function getRequestData() external view returns (IOracle.Request memory _requestData) {
+    _requestData = requestData;
   }
 
   /**

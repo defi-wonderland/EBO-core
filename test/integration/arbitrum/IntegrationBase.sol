@@ -22,7 +22,7 @@ import {CouncilArbitrator, ICouncilArbitrator} from 'contracts/CouncilArbitrator
 import {EBORequestCreator, IEBORequestCreator, IEpochManager} from 'contracts/EBORequestCreator.sol';
 import {EBORequestModule, IEBORequestModule} from 'contracts/EBORequestModule.sol';
 
-import {_EPOCH_MANAGER, _GRAPH_TOKEN} from '../Constants.sol';
+import {_EPOCH_MANAGER, _GRAPH_TOKEN} from 'script/Constants.sol';
 
 import 'forge-std/Test.sol';
 
@@ -53,9 +53,9 @@ contract IntegrationBase is Test {
   IEpochManager internal _epochManager;
   address internal _arbitrator = makeAddr('arbitrator');
   address internal _council = makeAddr('council');
-
-  // EOAs
   address internal _deployer = makeAddr('deployer');
+
+  // Others
   address internal _user = makeAddr('user');
 
   // Data
@@ -68,6 +68,7 @@ contract IntegrationBase is Test {
   bytes32 internal _requestId;
   bytes32 internal _responseId;
   bytes32 internal _disputeId;
+  uint256 internal _paymentAmount;
   uint256 internal _bondSize;
   uint256 internal _currentEpoch;
   string internal _chainId = 'chainId1';
@@ -76,11 +77,11 @@ contract IntegrationBase is Test {
     vm.createSelectFork(vm.rpcUrl('arbitrum'), _FORK_BLOCK);
     vm.startPrank(_deployer);
 
-    // Deploy GraphToken
+    // Fetch GraphToken
     _graphToken = IERC20(_GRAPH_TOKEN);
-    // Deploy EpochManager
+    // Fetch EpochManager
     _epochManager = IEpochManager(_EPOCH_MANAGER);
-    // Get the current epoch
+    // Fetch the current epoch
     _currentEpoch = _epochManager.currentEpoch();
 
     // Deploy Oracle
@@ -146,6 +147,7 @@ contract IntegrationBase is Test {
     _requestData.requestModule = address(_eboRequestModule);
 
     _requestParams.accountingExtension = _accountingExtension;
+    _requestParams.paymentAmount = _paymentAmount;
     _requestData.requestModuleData = abi.encode(_requestParams);
 
     vm.prank(_arbitrator);

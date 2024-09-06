@@ -8,9 +8,10 @@ import {IBondedResponseModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
+import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
-interface IEBORequestCreator {
+interface IEBORequestCreator is IArbitrable {
   /*///////////////////////////////////////////////////////////////
                             EVENTS
   //////////////////////////////////////////////////////////////*/
@@ -241,4 +242,10 @@ interface IEBORequestCreator {
    * @param _epochManager The epoch manager
    */
   function setEpochManager(IEpochManager _epochManager) external;
+
+  /**
+   * @notice Get the request data
+   * @return _requestData The request data
+   */
+  function getRequestData() external view returns (IOracle.Request memory _requestData);
 }
