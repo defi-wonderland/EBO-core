@@ -192,7 +192,7 @@ contract IntegrationBase is Test {
 
   function _addChains() internal {
     vm.startPrank(_arbitrator);
-    _eboRequestCreator.addChain('');
+    _eboRequestCreator.addChain(_chainId);
     vm.stopPrank();
   }
 }
