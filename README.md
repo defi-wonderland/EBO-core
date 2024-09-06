@@ -1,6 +1,3 @@
-<br />
-<br />
-
 # EBO - Epoch Block Oracle
 
 ⚠️ The code has not been audited yet, tread with caution.
