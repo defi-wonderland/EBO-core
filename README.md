@@ -1,6 +1,7 @@
 # EBO - Epoch Block Oracle
 
-⚠️ The code has not been audited yet, tread with caution.
+> [!CAUTION]  
+> The code has not been audited yet, tread with caution.
 
 ## Overview
 
