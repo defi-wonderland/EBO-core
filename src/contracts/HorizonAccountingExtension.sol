@@ -74,9 +74,9 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   // [ ] 7. Can a bonder that has an operator be an operator for another address?
   mapping(address _operator => address _bonder) public operators;
 
-  mapping(bytes32 _requestId => mapping(address _caller => address _bonder)) bonderForRequest;
+  mapping(bytes32 _requestId => mapping(address _caller => address _bonder)) public bonderForRequest;
 
-  mapping(bytes32 _disputeId => mapping(address _caller => address _bonder)) bonderForDispute;
+  mapping(bytes32 _disputeId => mapping(address _caller => address _bonder)) public bonderForDispute;
 
   /**
    * @notice Constructor
@@ -151,7 +151,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     _bondForDispute(_disputeId, _pledger, _bonder);
 
     pledges[_disputeId] += _amount;
-
+ 
     _pledgers[_disputeId].add(_bonder);
 
     _bond(_bonder, _amount);
@@ -214,6 +214,9 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     uint256 _claimAmount;
     uint256 _rewardAmount;
 
+    // TODO: To calculate the amount of pledges, we need to check for both 
+    //       the bonder and the operator. How should we do this?
+
     if (_status == IOracle.DisputeStatus.NoResolution) {
       _numberOfPledges = _result.bondEscalationModule.pledgesForDispute(_requestId, _pledger)
         + _result.bondEscalationModule.pledgesAgainstDispute(_requestId, _pledger);
@@ -269,10 +272,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     uint256 _amount
   ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _payer) onlyParticipant(_requestId, _receiver) {
     // TODO: Validate participants against bonders
-    // TODO: The payer could be an operator, we need to translate it and slash the bonder
     address _bonderPayer = bonderForRequest[_requestId][_payer];
-
-    // TODO: Can the receiver be an operator? If so, we need to translate it to the bonder to add the bond to the correct address
     address _bonderReceiver = bonderForRequest[_requestId][_receiver];
 
     // Discount the payer bondedForRequest
@@ -432,7 +432,8 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     if (pledgerClaimed[_requestId][_pledger]) revert HorizonAccountingExtension_AlreadyClaimed();
 
     uint256 _numberOfPledges;
-
+    // TODO: To calculate the amount of pledges, we need to check for both 
+    //       the bonder and the operator. How should we do this?
     // If Won slash the against pledges, if Lost slash the for pledges
     if (_status != IOracle.DisputeStatus.NoResolution) {
       _numberOfPledges = _status == IOracle.DisputeStatus.Won
