@@ -2,8 +2,11 @@
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+
 import {IBondEscalationModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
+import {IArbitratorModule} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 import {IBondedResponseModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
@@ -54,7 +57,9 @@ abstract contract EBORequestCreator_Unit_BaseTest is Test {
   event DisputeModuleDataSet(
     address indexed _disputeModule, IBondEscalationModule.RequestParameters _disputeModuleData
   );
-  event ResolutionModuleDataSet(address indexed _resolutionModule, bytes _resolutionModuleData);
+  event ResolutionModuleDataSet(
+    address indexed _resolutionModule, IArbitratorModule.RequestParameters _resolutionModuleData
+  );
   event FinalityModuleDataSet(address indexed _finalityModule, bytes _finalityModuleData);
   event EpochManagerSet(IEpochManager indexed _epochManager);
 
@@ -548,7 +553,7 @@ contract EBORequestCreator_Unit_SetDisputeModuleData is EBORequestCreator_Unit_B
 }
 
 contract EBORequestCreator_Unit_SetResolutionModuleData is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(address _resolutionModule, bytes calldata _resolutionModuleData) {
+  modifier happyPath(address _resolutionModule, IArbitratorModule.RequestParameters calldata _resolutionModuleData) {
     vm.startPrank(arbitrator);
     _;
   }
@@ -556,7 +561,10 @@ contract EBORequestCreator_Unit_SetResolutionModuleData is EBORequestCreator_Uni
   /**
    * @notice Test the revert if the caller is not the arbitrator
    */
-  function test_revertIfNotArbitrator(address _resolutionModule, bytes calldata _resolutionModuleData) external {
+  function test_revertIfNotArbitrator(
+    address _resolutionModule,
+    IArbitratorModule.RequestParameters calldata _resolutionModuleData
+  ) external {
     _revertIfNotArbitrator();
     eboRequestCreator.setResolutionModuleData(_resolutionModule, _resolutionModuleData);
   }
@@ -566,7 +574,7 @@ contract EBORequestCreator_Unit_SetResolutionModuleData is EBORequestCreator_Uni
    */
   function test_emitResolutionModuleDataSet(
     address _resolutionModule,
-    bytes calldata _resolutionModuleData
+    IArbitratorModule.RequestParameters calldata _resolutionModuleData
   ) external happyPath(_resolutionModule, _resolutionModuleData) {
     vm.expectEmit();
     emit ResolutionModuleDataSet(_resolutionModule, _resolutionModuleData);

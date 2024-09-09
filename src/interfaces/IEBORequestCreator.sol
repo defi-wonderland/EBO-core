@@ -2,8 +2,11 @@
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+
 import {IBondEscalationModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
+import {IArbitratorModule} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 import {IBondedResponseModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
@@ -66,7 +69,9 @@ interface IEBORequestCreator is IArbitrable {
    * @param _resolutionModule The resolution module
    * @param _resolutionModuleData The resolution module data
    */
-  event ResolutionModuleDataSet(address indexed _resolutionModule, bytes _resolutionModuleData);
+  event ResolutionModuleDataSet(
+    address indexed _resolutionModule, IArbitratorModule.RequestParameters _resolutionModuleData
+  );
 
   /**
    * @notice Emitted when the finality data module is set
@@ -228,7 +233,10 @@ interface IEBORequestCreator is IArbitrable {
    * @param _resolutionModule The resolution module
    * @param _resolutionModuleData The resolution module data
    */
-  function setResolutionModuleData(address _resolutionModule, bytes calldata _resolutionModuleData) external;
+  function setResolutionModuleData(
+    address _resolutionModule,
+    IArbitratorModule.RequestParameters calldata _resolutionModuleData
+  ) external;
 
   /**
    * @notice Set the finality data module

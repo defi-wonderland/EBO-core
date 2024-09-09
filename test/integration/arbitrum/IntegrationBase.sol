@@ -119,7 +119,7 @@ contract IntegrationBase is Deploy, Test {
     IArbitratorModule.RequestParameters memory _resolutionParams = _instantiateResolutionParams();
 
     vm.prank(arbitrator);
-    eboRequestCreator.setResolutionModuleData(address(arbitratorModule), abi.encode(_resolutionParams)); // TODO
+    eboRequestCreator.setResolutionModuleData(address(arbitratorModule), _resolutionParams);
   }
 
   function _depositGRT() internal {
