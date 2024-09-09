@@ -107,8 +107,9 @@ contract EBORequestModule_Unit_CreateRequest is EBORequestModule_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyOracle(CreateRequestParams memory _params) public happyPath(_params) {
-    vm.stopPrank();
+  function test_revertOnlyOracle(CreateRequestParams memory _params, address _caller) public happyPath(_params) {
+    vm.assume(_caller != address(oracle));
+    changePrank(_caller);
 
     bytes memory _encodedParams = abi.encode(_params.requestData);
 
@@ -163,8 +164,9 @@ contract EBORequestModule_Unit_FinalizeRequest is EBORequestModule_Unit_BaseTest
     _;
   }
 
-  function test_revertOnlyOracle(FinalizeRequestParams memory _params) public happyPath(_params) {
-    vm.stopPrank();
+  function test_revertOnlyOracle(FinalizeRequestParams memory _params, address _caller) public happyPath(_params) {
+    vm.assume(_caller != address(oracle));
+    changePrank(_caller);
 
     vm.expectRevert(IModule.Module_OnlyOracle.selector);
     eboRequestModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
@@ -194,8 +196,9 @@ contract EBORequestModule_Unit_SetEBORequestCreator is EBORequestModule_Unit_Bas
     _;
   }
 
-  function test_revertOnlyArbitrator(IEBORequestCreator _eboRequestCreator) public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyArbitrator(IEBORequestCreator _eboRequestCreator, address _caller) public happyPath {
+    vm.assume(_caller != arbitrator);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
     eboRequestModule.setEBORequestCreator(_eboRequestCreator);
