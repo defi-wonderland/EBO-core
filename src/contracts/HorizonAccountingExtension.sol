@@ -61,6 +61,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   /**
    * @notice Storing the users that have pledged for a dispute.
    */
+  // TODO: Pledgers holds either the bonder or the operator.
   mapping(bytes32 _disputeId => EnumerableSet.AddressSet _pledger) internal _pledgers;
   
   // Operator sets who they operatate for. We check that they can operate on the bonder by calling horzionStaking.isAuthorized
@@ -151,8 +152,8 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     _bondForDispute(_disputeId, _pledger, _bonder);
 
     pledges[_disputeId] += _amount;
- 
-    _pledgers[_disputeId].add(_bonder);
+
+    _pledgers[_disputeId].add(_pledger);
 
     _bond(_bonder, _amount);
 
@@ -217,6 +218,8 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     // TODO: To calculate the amount of pledges, we need to check for both 
     //       the bonder and the operator. How should we do this?
 
+    address _bonder = bonderForDispute[_disputeId][_pledger];
+
     if (_status == IOracle.DisputeStatus.NoResolution) {
       _numberOfPledges = _result.bondEscalationModule.pledgesForDispute(_requestId, _pledger)
         + _result.bondEscalationModule.pledgesAgainstDispute(_requestId, _pledger);
@@ -224,7 +227,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       _pledgeAmount = _result.bondSize * _numberOfPledges;
       _claimAmount = _amountPerPledger * _numberOfPledges;
 
-      _unbond(_pledger, _pledgeAmount);
+      _unbond(_bonder, _pledgeAmount);
     } else {
       _numberOfPledges = _status == IOracle.DisputeStatus.Won
         ? _result.bondEscalationModule.pledgesForDispute(_requestId, _pledger)
@@ -232,7 +235,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
       // Release the winning pledges to the user
       _pledgeAmount = _result.bondSize * _numberOfPledges;
-      _unbond(_pledger, _pledgeAmount);
+      _unbond(_bonder, _pledgeAmount);
 
       _claimAmount = _amountPerPledger * _numberOfPledges;
 
@@ -248,7 +251,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       _rewardAmount = _claimAmount - _pledgeAmount;
 
       // Send the user the amount they won by participating in the dispute
-      GRT.safeTransfer(_pledger, _rewardAmount);
+      GRT.safeTransfer(_bonder, _rewardAmount);
     }
 
     pledgerClaimed[_requestId][_pledger] = true;
@@ -393,19 +396,23 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     EnumerableSet.AddressSet storage _users = _pledgers[_disputeId];
 
     uint256 _slashedUsers;
-    address _user;
+    // The _pledger is the user that has the actual pledges
+    address _pledger;
     uint256 _slashAmount;
 
     _maxUsersToCheck = _maxUsersToCheck > _users.length() ? _users.length() : _maxUsersToCheck;
 
     for (uint256 _i; _i < _maxUsersToCheck && _slashedUsers < _usersToSlash; _i++) {
-      _user = _users.at(0);
+      _pledger = _users.at(0);
 
       // Check if the user is actually slashable
-      _slashAmount = _calculateSlashAmount(_user, _result, _status);
+      _slashAmount = _calculateSlashAmount(_pledger, _result, _status);
       if (_slashAmount > 0) {
-        // Slash the user
-        HORIZON_STAKING.slash(_user, _slashAmount, _slashAmount, address(this));
+        // Find the actual bonder. The user we need to slash
+        address _bonder = bonderForDispute[_disputeId][_pledger];
+
+        // Slash the bonder
+        HORIZON_STAKING.slash(_bonder, _slashAmount, _slashAmount, address(this));
 
         _slashedAmount += _slashAmount;
 
@@ -413,7 +420,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       }
 
       // Remove the user from the list of users
-      _users.remove(_user);
+      _users.remove(_pledger);
     }
   }
 
