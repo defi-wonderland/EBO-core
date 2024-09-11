@@ -55,11 +55,11 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function createRequests(uint256 _epoch, string calldata _chainId) external {
+  function createRequest(uint256 _epoch, string calldata _chainId) external {
     if (_epoch > epochManager.currentEpoch() || START_EPOCH > _epoch) revert EBORequestCreator_InvalidEpoch();
 
-    bytes32 _encodedChainId;
-    bytes32 _requestId;
+    bytes32 _encodedChainId = _encodeChainId(_chainId);
+    if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
 
     IOracle.Request memory _requestData = requestData;
 
@@ -68,25 +68,22 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
 
     _requestModuleData.epoch = _epoch;
 
-    _encodedChainId = _encodeChainId(_chainId);
-    if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
-
-    _requestId = requestIdPerChainAndEpoch[_chainId][_epoch];
+    bytes32 _requestId = requestIdPerChainAndEpoch[_chainId][_epoch];
 
     if (
-      _requestId == bytes32(0)
-        || (ORACLE.finalizedAt(_requestId) > 0 && ORACLE.finalizedResponseId(_requestId) == bytes32(0))
-    ) {
-      _requestModuleData.chainId = _chainId;
+      _requestId != bytes32(0)
+        && (ORACLE.finalizedAt(_requestId) == 0 || ORACLE.finalizedResponseId(_requestId) != bytes32(0))
+    ) revert EBORequestCreator_RequestAlreadyCreated();
 
-      _requestData.requestModuleData = abi.encode(_requestModuleData);
+    _requestModuleData.chainId = _chainId;
 
-      _requestId = ORACLE.createRequest(_requestData, bytes32(0));
+    _requestData.requestModuleData = abi.encode(_requestModuleData);
 
-      requestIdPerChainAndEpoch[_chainId][_epoch] = _requestId;
+    _requestId = ORACLE.createRequest(_requestData, bytes32(0));
 
-      emit RequestCreated(_requestId, _epoch, _chainId);
-    }
+    requestIdPerChainAndEpoch[_chainId][_epoch] = _requestId;
+
+    emit RequestCreated(_requestId, _epoch, _chainId);
   }
 
   /// @inheritdoc IEBORequestCreator

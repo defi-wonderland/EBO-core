@@ -113,7 +113,7 @@ contract IntegrationBase is Test {
     _requestId = _requestData._getId();
 
     vm.prank(_user);
-    _eboRequestCreator.createRequests(_currentEpoch, _chainId);
+    _eboRequestCreator.createRequest(_currentEpoch, _chainId);
   }
 
   function _proposeResponse() internal {

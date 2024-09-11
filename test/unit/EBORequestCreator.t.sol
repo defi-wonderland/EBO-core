@@ -193,7 +193,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     vm.mockCall(address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(_epoch));
 
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector));
-    eboRequestCreator.createRequests(_epoch, '');
+    eboRequestCreator.createRequest(_epoch, '');
   }
 
   /**
@@ -206,7 +206,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
 
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_InvalidEpoch.selector));
 
-    eboRequestCreator.createRequests(_epoch, '');
+    eboRequestCreator.createRequest(_epoch, '');
   }
 
   /**
@@ -219,13 +219,13 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
 
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_InvalidEpoch.selector));
 
-    eboRequestCreator.createRequests(_epoch + 1, '');
+    eboRequestCreator.createRequest(_epoch + 1, '');
   }
 
   /**
    * @notice Test if the request id exists skip the request creation
    */
-  function test_expectNotEmitRequestIdExists(
+  function test_revertIfRequestIdExists(
     uint256 _epoch,
     string calldata _chainId,
     bytes32 _requestId
@@ -236,9 +236,9 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
 
     vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.finalizedAt.selector, _requestId), abi.encode(0));
 
-    vm.expectCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), 0);
+    vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_RequestAlreadyCreated.selector));
 
-    eboRequestCreator.createRequests(_epoch, _chainId);
+    eboRequestCreator.createRequest(_epoch, _chainId);
 
     assertEq(eboRequestCreator.requestIdPerChainAndEpoch(_chainId, _epoch), _requestId);
   }
@@ -246,7 +246,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
   /**
    * @notice Test if the request id skip the request creation because the response id is already finalized
    */
-  function test_expectNotEmitRequestIdHasResponse(
+  function test_revertIfRequestIdHasResponse(
     uint256 _epoch,
     string calldata _chainId,
     bytes32 _requestId,
@@ -267,9 +267,9 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
       abi.encode(bytes32(keccak256('response')))
     );
 
-    vm.expectCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), 0);
+    vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_RequestAlreadyCreated.selector));
 
-    eboRequestCreator.createRequests(_epoch, _chainId);
+    eboRequestCreator.createRequest(_epoch, _chainId);
 
     assertEq(eboRequestCreator.requestIdPerChainAndEpoch(_chainId, _epoch), _requestId);
   }
@@ -277,7 +277,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
   /**
    * @notice Test if the request id skip because the request didn't finalize
    */
-  function test_expectNotEmitRequestIdExistsBlockNumber(
+  function test_revertIfRequestIdExistsBlockNumber(
     uint256 _epoch,
     string calldata _chainId,
     bytes32 _requestId,
@@ -294,9 +294,9 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
       address(oracle), abi.encodeWithSelector(IOracle.finalizedResponseId.selector, _requestId), abi.encode(bytes32(0))
     );
 
-    vm.expectCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), 0);
+    vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_RequestAlreadyCreated.selector));
 
-    eboRequestCreator.createRequests(_epoch, _chainId);
+    eboRequestCreator.createRequest(_epoch, _chainId);
 
     assertEq(eboRequestCreator.requestIdPerChainAndEpoch(_chainId, _epoch), _requestId);
   }
@@ -313,7 +313,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     vm.expectEmit();
     emit RequestCreated(_requestId, _epoch, _chainId);
 
-    eboRequestCreator.createRequests(_epoch, _chainId);
+    eboRequestCreator.createRequest(_epoch, _chainId);
   }
 
   /**
@@ -343,7 +343,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     vm.expectEmit();
     emit RequestCreated(_requestId, _epoch, _chainId);
 
-    eboRequestCreator.createRequests(_epoch, _chainId);
+    eboRequestCreator.createRequest(_epoch, _chainId);
   }
 }
 

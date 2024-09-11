@@ -15,12 +15,12 @@ contract Integration_CreateRequest is IntegrationBase {
     // Should revert if the epoch is invalid
     vm.expectRevert(IEBORequestCreator.EBORequestCreator_InvalidEpoch.selector);
     vm.prank(_user);
-    _eboRequestCreator.createRequests(1, _chainId);
+    _eboRequestCreator.createRequest(1, _chainId);
 
     // Create a request without approving the chain id
     vm.expectRevert(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector);
     vm.prank(_user);
-    _eboRequestCreator.createRequests(_currentEpoch, _chainId);
+    _eboRequestCreator.createRequest(_currentEpoch, _chainId);
 
     // Create a request with an approved chain id
     _addChains();
@@ -34,11 +34,16 @@ contract Integration_CreateRequest is IntegrationBase {
     vm.expectCall(address(_oracle), abi.encodeWithSelector(IOracle.createRequest.selector, _requestData, bytes32(0)));
 
     vm.prank(_user);
-    _eboRequestCreator.createRequests(_currentEpoch, _chainId);
+    _eboRequestCreator.createRequest(_currentEpoch, _chainId);
     bytes32 _requestId = _eboRequestCreator.requestIdPerChainAndEpoch(_chainId, _currentEpoch);
 
     // Check that the request id is stored correctly
     assertEq(_oracle.requestCreatedAt(_requestId), block.number);
+
+    // Revert if the request is already created
+    vm.prank(_user);
+    vm.expectRevert(IEBORequestCreator.EBORequestCreator_RequestAlreadyCreated.selector);
+    _eboRequestCreator.createRequest(_currentEpoch, _chainId);
 
     // Remove the chain id
     vm.prank(_arbitrator);
@@ -47,6 +52,6 @@ contract Integration_CreateRequest is IntegrationBase {
     // Create a request without approving the chain id
     vm.expectRevert(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector);
     vm.prank(_user);
-    _eboRequestCreator.createRequests(_currentEpoch, _chainId);
+    _eboRequestCreator.createRequest(_currentEpoch, _chainId);
   }
 }
