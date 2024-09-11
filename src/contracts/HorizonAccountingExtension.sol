@@ -64,14 +64,17 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   // TODO: Pledgers holds either the bonder or the operator.
   mapping(bytes32 _disputeId => EnumerableSet.AddressSet _pledger) internal _pledgers;
   
-  // Operator sets who they operatate for. We check that they can operate on the bonder by calling horzionStaking.isAuthorized
+  // Operator sets who they operatate for. 
+  // We check that they can operate on the bonder by calling horzionStaking.isAuthorized
   // RULES:
   // [X] 1. Operator can only operate for one bonder at a time 
   // [X] 2. Operator can only operate for bonder if it's still authorized by that bonder 
   // [X] 3. Operator can't be changed in the middle of a dispute for pledges
   // [X] 4. Operator can't be changed in the middle of a request for bonds
   // [ ] 5. Bonder or operator should be able to remove the operator
-  // [ ] 6. Can a bonder have an operator and mix calls by the operator and themselves? 
+  // [ ] 6. Can a bonder have an operator and mix calls by the operator and themselves in the same disputeId?
+  //          The end result would be that both the operator and the bonder need to call the claim function if they win
+  //          or they both need to be slashed in separate calls if they lose.
   // [ ] 7. Can a bonder that has an operator be an operator for another address?
   mapping(address _operator => address _bonder) public operators;
 
