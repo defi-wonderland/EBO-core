@@ -76,6 +76,10 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   //          The end result would be that both the operator and the bonder need to call the claim function if they win
   //          or they both need to be slashed in separate calls if they lose.
   // [ ] 7. Can a bonder that has an operator be an operator for another address?
+  // Maybe we could add a second mapping _bonder => _opertor => bool
+  // If a bonder has an operator, only that operator can act on behalf of them
+  // A bonder can only have an operator and operator can only operate for one bonder
+  // This would simplify 6 and 7 and probably make it more secure and avoid edge cases
   mapping(address _operator => address _bonder) public operators;
 
   mapping(bytes32 _requestId => mapping(address _caller => address _bonder)) public bonderForRequest;
