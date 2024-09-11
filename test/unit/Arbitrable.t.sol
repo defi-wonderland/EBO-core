@@ -78,8 +78,9 @@ contract Arbitrable_Unit_SetArbitrator is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyCouncil(address _arbitrator) public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyCouncil(address _arbitrator, address _caller) public happyPath {
+    vm.assume(_caller != council);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
     arbitrable.setArbitrator(_arbitrator);
@@ -104,8 +105,9 @@ contract Arbitrable_Unit_SetPendingCouncil is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyCouncil(address _pendingCouncil) public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyCouncil(address _pendingCouncil, address _caller) public happyPath {
+    vm.assume(_caller != council);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
     arbitrable.setPendingCouncil(_pendingCouncil);
@@ -132,8 +134,9 @@ contract Arbitrable_Unit_ConfirmCouncil is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyPendingCouncil() public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyPendingCouncil(address _caller) public happyPath {
+    vm.assume(_caller != pendingCouncil);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyPendingCouncil.selector);
     arbitrable.confirmCouncil();
@@ -164,8 +167,9 @@ contract Arbitrable_Unit_OnlyArbitrator is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyArbitrator() public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyArbitrator(address _caller) public happyPath {
+    vm.assume(_caller != arbitrator);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
     arbitrable.mock_onlyArbitrator();
@@ -182,8 +186,9 @@ contract Arbitrable_Unit_OnlyCouncil is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyCouncil() public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyCouncil(address _caller) public happyPath {
+    vm.assume(_caller != council);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
     arbitrable.mock_onlyCouncil();
@@ -202,8 +207,9 @@ contract Arbitrable_Unit_OnlyPendingCouncil is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyPendingCouncil() public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyPendingCouncil(address _caller) public happyPath {
+    vm.assume(_caller != pendingCouncil);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyPendingCouncil.selector);
     arbitrable.mock_onlyPendingCouncil();

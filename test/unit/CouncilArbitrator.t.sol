@@ -128,8 +128,12 @@ contract CouncilArbitrator_Unit_Resolve is CouncilArbitrator_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyArbitratorModule(ICouncilArbitrator.ResolutionParameters calldata _params) public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyArbitratorModule(
+    ICouncilArbitrator.ResolutionParameters calldata _params,
+    address _caller
+  ) public happyPath {
+    vm.assume(_caller != address(arbitratorModule));
+    changePrank(_caller);
 
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_OnlyArbitratorModule.selector);
     councilArbitrator.resolve(_params.request, _params.response, _params.dispute);
@@ -179,8 +183,9 @@ contract CouncilArbitrator_Unit_ResolveDispute is CouncilArbitrator_Unit_BaseTes
     _;
   }
 
-  function test_revertOnlyArbitrator(ResolveDisputeParams memory _params) public happyPath(_params) {
-    vm.stopPrank();
+  function test_revertOnlyArbitrator(ResolveDisputeParams memory _params, address _caller) public happyPath(_params) {
+    vm.assume(_caller != arbitrator);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
     councilArbitrator.resolveDispute(_params.disputeId, IOracle.DisputeStatus(_params.status));
@@ -253,8 +258,9 @@ contract CouncilArbitrator_Unit_OnlyArbitratorModule is CouncilArbitrator_Unit_B
     _;
   }
 
-  function test_revertOnlyArbitratorModule() public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyArbitratorModule(address _caller) public happyPath {
+    vm.assume(_caller != address(arbitratorModule));
+    changePrank(_caller);
 
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_OnlyArbitratorModule.selector);
     councilArbitrator.mock_onlyArbitratorModule();

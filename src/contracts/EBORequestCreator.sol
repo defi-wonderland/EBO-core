@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 import {IBondEscalationModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
+import {IArbitratorModule} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 import {IBondedResponseModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
@@ -145,18 +147,19 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
     emit DisputeModuleDataSet(_disputeModule, _disputeModuleData);
   }
 
-  // TODO: Change module data to the specific interface when we have
   /// @inheritdoc IEBORequestCreator
   function setResolutionModuleData(
     address _resolutionModule,
-    bytes calldata _resolutionModuleData
+    IArbitratorModule.RequestParameters calldata _resolutionModuleData
   ) external onlyArbitrator {
     requestData.resolutionModule = _resolutionModule;
-    requestData.resolutionModuleData = _resolutionModuleData;
+    requestData.resolutionModuleData = abi.encode(_resolutionModuleData);
 
     emit ResolutionModuleDataSet(_resolutionModule, _resolutionModuleData);
   }
 
+  // TODO: Why set finality module data?
+  // TODO: Change module data to the specific interface when we have
   /// @inheritdoc IEBORequestCreator
   function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external onlyArbitrator {
     requestData.finalityModule = _finalityModule;
