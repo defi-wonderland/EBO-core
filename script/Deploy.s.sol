@@ -70,7 +70,7 @@ contract Deploy is Script {
 
   error Deploy_InvalidPrecomputedAddress();
 
-  function setUp() public {
+  function setUp() public virtual {
     // Define The Graph accounts
     graphToken = IERC20(_GRAPH_TOKEN);
     epochManager = IEpochManager(_EPOCH_MANAGER);
@@ -102,31 +102,40 @@ contract Deploy is Script {
 
     // Deploy `Oracle`
     oracle = new Oracle();
+    console.log('`Oracle` deployed at:', address(oracle));
 
     // Deploy `EBORequestModule`
     eboRequestModule = new EBORequestModule(oracle, _precomputedEBORequestCreator, arbitrator, council);
+    console.log('`EBORequestModule` deployed at:', address(eboRequestModule));
 
     // Deploy `BondedResponseModule`
     bondedResponseModule = new BondedResponseModule(oracle);
+    console.log('`BondedResponseModule` deployed at:', address(bondedResponseModule));
 
     // Deploy `BondEscalationModule`
     bondEscalationModule = new BondEscalationModule(oracle);
+    console.log('`BondEscalationModule` deployed at:', address(bondEscalationModule));
 
     // Deploy `ArbitratorModule`
     arbitratorModule = new ArbitratorModule(oracle);
+    console.log('`ArbitratorModule` deployed at:', address(arbitratorModule));
 
     // Deploy `EBOFinalityModule`
     eboFinalityModule = new EBOFinalityModule(oracle, _precomputedEBORequestCreator, arbitrator, council);
+    console.log('`EBOFinalityModule` deployed at:', address(eboFinalityModule));
 
     // Deploy `BondEscalationAccounting`
     bondEscalationAccounting = new BondEscalationAccounting(oracle);
+    console.log('`BondEscalationAccounting` deployed at:', address(bondEscalationAccounting));
 
     // Deploy `CouncilArbitrator`
     councilArbitrator = new CouncilArbitrator(arbitratorModule, arbitrator, council);
+    console.log('`CouncilArbitrator` deployed at:', address(councilArbitrator));
 
     // Deploy `EBORequestCreator`
     IOracle.Request memory _requestData = _instantiateRequestData();
     eboRequestCreator = new EBORequestCreator(oracle, epochManager, arbitrator, council, _requestData);
+    console.log('`EBORequestCreator` deployed at:', address(eboRequestCreator));
 
     // Assert that `EBORequestCreator` was deployed at the precomputed address
     if (eboRequestCreator != _precomputedEBORequestCreator) revert Deploy_InvalidPrecomputedAddress();
@@ -134,7 +143,7 @@ contract Deploy is Script {
     vm.stopBroadcast();
   }
 
-  function _instantiateRequestData() public view returns (IOracle.Request memory _requestData) {
+  function _instantiateRequestData() internal view returns (IOracle.Request memory _requestData) {
     // Set placeholder nonce
     _requestData.nonce = 0;
 
