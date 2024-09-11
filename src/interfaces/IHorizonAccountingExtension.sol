@@ -105,6 +105,16 @@ interface IHorizonAccountingExtension {
   //////////////////////////////////////////////////////////////*/
 
   /**
+   * @notice Thrown when the bonder changed in the middle of an open request/dispute
+   */
+  error HorizonAccountingExtension_BonderMismatch();
+
+  /**
+   * @notice Thrown when the caller is not the operator of the service provider
+   */
+  error HorizonAccountingExtension_UnauthorizedOperator();
+
+  /**
    * @notice Thrown when depositing tokens with a fee on transfer
    */
   error HorizonAccountingExtension_FeeOnTransferToken();
@@ -318,20 +328,6 @@ interface IHorizonAccountingExtension {
    * @param _pledger Address of the pledger to claim the rewards
    */
   function claimEscalationReward(bytes32 _disputeId, address _pledger) external;
-
-  /**
-   * @notice Releases a given amount of funds to the pledger
-   * @param _request The bond-escalated request
-   * @param _dispute The bond-escalated dispute
-   * @param _pledger Address of the pledger
-   * @param _amount  Amount of GRT to be released to the pledger
-   */
-  function releasePledge(
-    IOracle.Request calldata _request,
-    IOracle.Dispute calldata _dispute,
-    address _pledger,
-    uint256 _amount
-  ) external;
 
   /**
    * @notice Allows a allowed module to transfer bonded tokens from one user to another

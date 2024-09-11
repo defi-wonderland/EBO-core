@@ -61,7 +61,30 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   /**
    * @notice Storing the users that have pledged for a dispute.
    */
+  // TODO: Pledgers holds either the bonder or the operator.
   mapping(bytes32 _disputeId => EnumerableSet.AddressSet _pledger) internal _pledgers;
+  
+  // Operator sets who they operatate for. 
+  // We check that they can operate on the bonder by calling horzionStaking.isAuthorized
+  // RULES:
+  // [X] 1. Operator can only operate for one bonder at a time 
+  // [X] 2. Operator can only operate for bonder if it's still authorized by that bonder 
+  // [X] 3. Operator can't be changed in the middle of a dispute for pledges
+  // [X] 4. Operator can't be changed in the middle of a request for bonds
+  // [ ] 5. Bonder or operator should be able to remove the operator
+  // [ ] 6. Can a bonder have an operator and mix calls by the operator and themselves in the same disputeId?
+  //          The end result would be that both the operator and the bonder need to call the claim function if they win
+  //          or they both need to be slashed in separate calls if they lose.
+  // [ ] 7. Can a bonder that has an operator be an operator for another address?
+  // Maybe we could add a second mapping _bonder => _opertor => bool
+  // If a bonder has an operator, only that operator can act on behalf of them
+  // A bonder can only have an operator and operator can only operate for one bonder
+  // This would simplify 6 and 7 and probably make it more secure and avoid edge cases
+  mapping(address _operator => address _bonder) public operators;
+
+  mapping(bytes32 _requestId => mapping(address _caller => address _bonder)) public bonderForRequest;
+
+  mapping(bytes32 _disputeId => mapping(address _caller => address _bonder)) public bonderForDispute;
 
   /**
    * @notice Constructor
@@ -129,14 +152,19 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     bytes32 _disputeId = _validateDispute(_request, _dispute);
 
     if (!ORACLE.allowedModule(_requestId, msg.sender)) revert HorizonAccountingExtension_UnauthorizedModule();
+    
+    // Translate pledger to bonder if operator is set
+    address _bonder = _getBonder(_pledger);
+
+    _bondForDispute(_disputeId, _pledger, _bonder);
 
     pledges[_disputeId] += _amount;
 
     _pledgers[_disputeId].add(_pledger);
 
-    _bond(_pledger, _amount);
+    _bond(_bonder, _amount);
 
-    emit Pledged({_pledger: _pledger, _requestId: _requestId, _disputeId: _disputeId, _amount: _amount});
+    emit Pledged({_pledger: _bonder, _requestId: _requestId, _disputeId: _disputeId, _amount: _amount});
   }
 
   /// @inheritdoc IHorizonAccountingExtension
@@ -194,6 +222,11 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     uint256 _claimAmount;
     uint256 _rewardAmount;
 
+    // TODO: To calculate the amount of pledges, we need to check for both 
+    //       the bonder and the operator. How should we do this?
+
+    address _bonder = bonderForDispute[_disputeId][_pledger];
+
     if (_status == IOracle.DisputeStatus.NoResolution) {
       _numberOfPledges = _result.bondEscalationModule.pledgesForDispute(_requestId, _pledger)
         + _result.bondEscalationModule.pledgesAgainstDispute(_requestId, _pledger);
@@ -201,7 +234,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       _pledgeAmount = _result.bondSize * _numberOfPledges;
       _claimAmount = _amountPerPledger * _numberOfPledges;
 
-      _unbond(_pledger, _pledgeAmount);
+      _unbond(_bonder, _pledgeAmount);
     } else {
       _numberOfPledges = _status == IOracle.DisputeStatus.Won
         ? _result.bondEscalationModule.pledgesForDispute(_requestId, _pledger)
@@ -209,7 +242,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
       // Release the winning pledges to the user
       _pledgeAmount = _result.bondSize * _numberOfPledges;
-      _unbond(_pledger, _pledgeAmount);
+      _unbond(_bonder, _pledgeAmount);
 
       _claimAmount = _amountPerPledger * _numberOfPledges;
 
@@ -225,7 +258,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       _rewardAmount = _claimAmount - _pledgeAmount;
 
       // Send the user the amount they won by participating in the dispute
-      GRT.safeTransfer(_pledger, _rewardAmount);
+      GRT.safeTransfer(_bonder, _rewardAmount);
     }
 
     pledgerClaimed[_requestId][_pledger] = true;
@@ -242,53 +275,39 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   }
 
   /// @inheritdoc IHorizonAccountingExtension
-  function releasePledge(
-    IOracle.Request calldata _request,
-    IOracle.Dispute calldata _dispute,
-    address _pledger,
-    uint256 _amount
-  ) external {
-    bytes32 _requestId = _getId(_request);
-    bytes32 _disputeId = _validateDispute(_request, _dispute);
-
-    if (!ORACLE.allowedModule(_requestId, msg.sender)) revert HorizonAccountingExtension_UnauthorizedModule();
-
-    if (_amount > pledges[_disputeId]) revert HorizonAccountingExtension_InsufficientFunds();
-
-    unchecked {
-      pledges[_disputeId] -= _amount;
-    }
-
-    _unbond(_pledger, _amount);
-
-    emit PledgeReleased({_requestId: _requestId, _disputeId: _disputeId, _pledger: _pledger, _amount: _amount});
-  }
-
-  /// @inheritdoc IHorizonAccountingExtension
   function pay(
     bytes32 _requestId,
     address _payer,
     address _receiver,
     uint256 _amount
   ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _payer) onlyParticipant(_requestId, _receiver) {
+    // TODO: Validate participants against bonders
+    address _bonderPayer = bonderForRequest[_requestId][_payer];
+    address _bonderReceiver = bonderForRequest[_requestId][_receiver];
+
     // Discount the payer bondedForRequest
-    bondedForRequest[_payer][_requestId] -= _amount;
+    bondedForRequest[_bonderPayer][_requestId] -= _amount;
 
     // Discout the payer totalBonded
-    totalBonded[_payer] -= _amount;
+    totalBonded[_bonderPayer] -= _amount;
 
     // Increase the receiver bond
-    HORIZON_STAKING.slash(_payer, _amount, _amount, _receiver);
+    HORIZON_STAKING.slash(_bonderPayer, _amount, _amount, _bonderReceiver);
 
-    emit Paid({_requestId: _requestId, _beneficiary: _receiver, _payer: _payer, _amount: _amount});
+    emit Paid({_requestId: _requestId, _beneficiary: _bonderReceiver, _payer: _bonderPayer, _amount: _amount});
   }
 
   /// @inheritdoc IHorizonAccountingExtension
   function bond(
-    address _bonder,
+    address _caller,
     bytes32 _requestId,
     uint256 _amount
-  ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _bonder) {
+  ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _caller) {
+    // TODO: The onlyParticipant should be called with the _bonder. Not the caller
+    address _bonder = _getBonder(_caller);
+
+    _bondForRequest(_requestId, _caller, _bonder);
+
     if (!_approvals[_bonder].contains(msg.sender)) revert HorizonAccountingExtension_NotAllowed();
 
     bondedForRequest[_bonder][_requestId] += _amount;
@@ -299,11 +318,16 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   }
 
   function bond(
-    address _bonder,
+    address _caller,
     bytes32 _requestId,
     uint256 _amount,
     address _sender
-  ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _bonder) {
+  ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _caller) {
+    // TODO: The onlyParticipant should be called with the _bonder. Not the caller
+    address _bonder = _getBonder(_caller);
+
+    _bondForRequest(_requestId, _caller, _bonder);
+
     bool _moduleApproved = _approvals[_bonder].contains(msg.sender);
     bool _senderApproved = _approvals[_bonder].contains(_sender);
 
@@ -320,10 +344,10 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
   /// @inheritdoc IHorizonAccountingExtension
   function release(
-    address _bonder,
+    address _caller,
     bytes32 _requestId,
     uint256 _amount
-  ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _bonder) {
+  ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _caller) {
     // TODO: Release is used to pay the user the rewards for proposing or returning the funds to the
     // creator in case the request finalized without a response. We need to finish designing the payments
     // integration to do this.
@@ -331,6 +355,9 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     // TODO: Release is also used in the bond escalation module to:
     // 1) return the funds to the disputer in case there is no resolution
     // 2) release the initial dispute bond if the disputer wins
+
+    // TODO: The onlyParticipant should be called with the _bonder. Not the caller
+    address _bonder = bonderForRequest[_requestId][_caller];
 
     // Release the bond amount for the request for the user
     bondedForRequest[_bonder][_requestId] -= _amount;
@@ -348,6 +375,14 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     IOracle.DisputeStatus _status = ORACLE.disputeStatus(_disputeId);
 
     _slash(_disputeId, _usersToSlash, _maxUsersToCheck, _result, _status);
+  }
+
+  function operateFor(address _bonder) external {
+    // TODO: Include a function to remove the operator callable by the operator or the bonder
+    if(!HORIZON_STAKING.isAuthorized(msg.sender, _bonder, address(this))) {
+      revert HorizonAccountingExtension_UnauthorizedOperator();
+    }
+    operators[msg.sender] = _bonder;
   }
 
   /**
@@ -368,19 +403,23 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     EnumerableSet.AddressSet storage _users = _pledgers[_disputeId];
 
     uint256 _slashedUsers;
-    address _user;
+    // The _pledger is the user that has the actual pledges
+    address _pledger;
     uint256 _slashAmount;
 
     _maxUsersToCheck = _maxUsersToCheck > _users.length() ? _users.length() : _maxUsersToCheck;
 
     for (uint256 _i; _i < _maxUsersToCheck && _slashedUsers < _usersToSlash; _i++) {
-      _user = _users.at(0);
+      _pledger = _users.at(0);
 
       // Check if the user is actually slashable
-      _slashAmount = _calculateSlashAmount(_user, _result, _status);
+      _slashAmount = _calculateSlashAmount(_pledger, _result, _status);
       if (_slashAmount > 0) {
-        // Slash the user
-        HORIZON_STAKING.slash(_user, _slashAmount, _slashAmount, address(this));
+        // Find the actual bonder. The user we need to slash
+        address _bonder = bonderForDispute[_disputeId][_pledger];
+
+        // Slash the bonder
+        HORIZON_STAKING.slash(_bonder, _slashAmount, _slashAmount, address(this));
 
         _slashedAmount += _slashAmount;
 
@@ -388,7 +427,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       }
 
       // Remove the user from the list of users
-      _users.remove(_user);
+      _users.remove(_pledger);
     }
   }
 
@@ -407,7 +446,8 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     if (pledgerClaimed[_requestId][_pledger]) revert HorizonAccountingExtension_AlreadyClaimed();
 
     uint256 _numberOfPledges;
-
+    // TODO: To calculate the amount of pledges, we need to check for both 
+    //       the bonder and the operator. How should we do this?
     // If Won slash the against pledges, if Lost slash the for pledges
     if (_status != IOracle.DisputeStatus.NoResolution) {
       _numberOfPledges = _status == IOracle.DisputeStatus.Won
@@ -445,5 +485,39 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   function _unbond(address _bonder, uint256 _amount) internal {
     if (_amount > totalBonded[_bonder]) revert HorizonAccountingExtension_InsufficientBondedTokens();
     totalBonded[_bonder] -= _amount;
+  }
+
+  function _getBonder(address _caller) internal view returns (address _bonder) {
+    address _operator = operators[_caller];
+    if(_operator == address(0)) {
+      _bonder = _caller;
+    } else {
+      if(!HORIZON_STAKING.isAuthorized(_caller, _operator, address(this))) {
+        revert HorizonAccountingExtension_UnauthorizedOperator();
+      }
+      _bonder = _operator;
+    }
+  }
+
+  function _bondForRequest(bytes32 _requestId, address _caller, address _bonder) internal {
+    address _bonderSet = bonderForRequest[_requestId][_caller];
+    if(_bonderSet == address(0)) {
+      bonderForRequest[_requestId][_caller] = _bonder;
+    } else {
+      if(_bonderSet != _bonder) {
+        revert HorizonAccountingExtension_BonderMismatch();
+      }
+    }
+  }
+
+  function _bondForDispute(bytes32 _disputeId, address _caller, address _bonder) internal {
+    address _bonderSet = bonderForDispute[_disputeId][_caller];
+    if(_bonderSet == address(0)) {
+      bonderForDispute[_disputeId][_caller] = _bonder;
+    } else {
+      if(_bonderSet != _bonder) {
+        revert HorizonAccountingExtension_BonderMismatch();
+      }
+    }
   }
 }
