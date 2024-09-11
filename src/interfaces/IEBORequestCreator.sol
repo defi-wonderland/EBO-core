@@ -13,7 +13,7 @@ import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
-interface IEBORequestCreator is IArbitrable {
+interface IEBORequestCreator {
   /*///////////////////////////////////////////////////////////////
                             EVENTS
   //////////////////////////////////////////////////////////////*/
@@ -123,6 +123,12 @@ interface IEBORequestCreator is IArbitrable {
    * @return _START_EPOCH The start epoch
    */
   function START_EPOCH() external view returns (uint256 _START_EPOCH);
+
+  /**
+   * @notice Returns the address of the arbitrable contract
+   * @return _ARBITRABLE The address of the arbitrable contract
+   */
+  function ARBITRABLE() external view returns (IArbitrable _ARBITRABLE);
 
   /**
    * @notice The epoch manager contract

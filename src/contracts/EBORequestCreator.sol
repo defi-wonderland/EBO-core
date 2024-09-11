@@ -11,15 +11,16 @@ import {IBondedResponseModule} from
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
-import {Arbitrable} from 'contracts/Arbitrable.sol';
-import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
+import {IArbitrable, IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
-contract EBORequestCreator is Arbitrable, IEBORequestCreator {
+contract EBORequestCreator is IEBORequestCreator {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   /// @inheritdoc IEBORequestCreator
   IOracle public immutable ORACLE;
+
+  IArbitrable public immutable ARBITRABLE;
 
   /// @inheritdoc IEBORequestCreator
   uint256 public immutable START_EPOCH;
@@ -41,11 +42,12 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   constructor(
     IOracle _oracle,
     IEpochManager _epochManager,
-    address _arbitrator,
-    address _council,
+    IArbitrable _arbitrable,
     IOracle.Request memory _requestData
-  ) Arbitrable(_arbitrator, _council) {
+  ) {
     if (_requestData.nonce != 0) revert EBORequestCreator_InvalidNonce();
+
+    ARBITRABLE = _arbitrable;
 
     ORACLE = _oracle;
     _setEpochManager(_epochManager);
@@ -95,7 +97,8 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function addChain(string calldata _chainId) external onlyArbitrator {
+  function addChain(string calldata _chainId) external {
+    ARBITRABLE.isArbitrator(msg.sender);
     bytes32 _encodedChainId = _encodeChainId(_chainId);
     if (!_chainIdsAllowed.add(_encodedChainId)) {
       revert EBORequestCreator_ChainAlreadyAdded();
@@ -105,7 +108,8 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function removeChain(string calldata _chainId) external onlyArbitrator {
+  function removeChain(string calldata _chainId) external {
+    ARBITRABLE.isArbitrator(msg.sender);
     bytes32 _encodedChainId = _encodeChainId(_chainId);
     if (!_chainIdsAllowed.remove(_encodedChainId)) {
       revert EBORequestCreator_ChainNotAdded();
@@ -118,7 +122,8 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   function setRequestModuleData(
     address _requestModule,
     IEBORequestModule.RequestParameters calldata _requestModuleData
-  ) external onlyArbitrator {
+  ) external {
+    ARBITRABLE.isArbitrator(msg.sender);
     requestData.requestModule = _requestModule;
     requestData.requestModuleData = abi.encode(_requestModuleData);
 
@@ -129,7 +134,8 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   function setResponseModuleData(
     address _responseModule,
     IBondedResponseModule.RequestParameters calldata _responseModuleData
-  ) external onlyArbitrator {
+  ) external {
+    ARBITRABLE.isArbitrator(msg.sender);
     requestData.responseModule = _responseModule;
     requestData.responseModuleData = abi.encode(_responseModuleData);
 
@@ -140,7 +146,8 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   function setDisputeModuleData(
     address _disputeModule,
     IBondEscalationModule.RequestParameters calldata _disputeModuleData
-  ) external onlyArbitrator {
+  ) external {
+    ARBITRABLE.isArbitrator(msg.sender);
     requestData.disputeModule = _disputeModule;
     requestData.disputeModuleData = abi.encode(_disputeModuleData);
 
@@ -151,7 +158,8 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   function setResolutionModuleData(
     address _resolutionModule,
     IArbitratorModule.RequestParameters calldata _resolutionModuleData
-  ) external onlyArbitrator {
+  ) external {
+    ARBITRABLE.isArbitrator(msg.sender);
     requestData.resolutionModule = _resolutionModule;
     requestData.resolutionModuleData = abi.encode(_resolutionModuleData);
 
@@ -161,7 +169,8 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   // TODO: Why set finality module data?
   // TODO: Change module data to the specific interface when we have
   /// @inheritdoc IEBORequestCreator
-  function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external onlyArbitrator {
+  function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external {
+    ARBITRABLE.isArbitrator(msg.sender);
     requestData.finalityModule = _finalityModule;
     requestData.finalityModuleData = _finalityModuleData;
 
@@ -169,7 +178,8 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function setEpochManager(IEpochManager _epochManager) external onlyArbitrator {
+  function setEpochManager(IEpochManager _epochManager) external {
+    ARBITRABLE.isArbitrator(msg.sender);
     _setEpochManager(_epochManager);
   }
 

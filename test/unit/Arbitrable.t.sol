@@ -11,7 +11,9 @@ contract MockArbitrable is Arbitrable {
   constructor(address _arbitrator, address _council) Arbitrable(_arbitrator, _council) {}
 
   // solhint-disable-next-line no-empty-blocks
-  function mock_onlyArbitrator() external onlyArbitrator {}
+  function mock_onlyArbitrator() external {
+    isArbitrator(msg.sender);
+  }
 
   // solhint-disable-next-line no-empty-blocks
   function mock_onlyCouncil() external onlyCouncil {}

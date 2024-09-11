@@ -12,7 +12,7 @@ import {IArbitrable} from 'interfaces/IArbitrable.sol';
  * @title CouncilArbitrator
  * @notice Resolves disputes by arbitration by The Graph
  */
-interface ICouncilArbitrator is IArbitrator, IArbitrable {
+interface ICouncilArbitrator is IArbitrator {
   /*///////////////////////////////////////////////////////////////
                               STRUCTS
   //////////////////////////////////////////////////////////////*/
@@ -90,6 +90,12 @@ interface ICouncilArbitrator is IArbitrator, IArbitrable {
    * @return _arbitratorModule The address of the Arbitrator Module
    */
   function ARBITRATOR_MODULE() external view returns (IArbitratorModule _arbitratorModule);
+
+  /**
+   * @notice Returns the address of the arbitrable contract
+   * @return _ARBITRABLE The address of the arbitrable contract
+   */
+  function ARBITRABLE() external view returns (IArbitrable _ARBITRABLE);
 
   /**
    * @notice Returns the resolution data for a dispute
