@@ -46,6 +46,11 @@ contract IntegrationCreateRequest is IntegrationBase {
     // Check that the request ID is stored correctly
     assertEq(oracle.requestCreatedAt(_requestId), block.number);
 
+    // Expect revert if the request is already created
+    vm.prank(_requester);
+    vm.expectRevert(IEBORequestCreator.EBORequestCreator_RequestAlreadyCreated.selector);
+    eboRequestCreator.createRequest(_currentEpoch, _chainId);
+
     // Remove the chain ID
     vm.prank(arbitrator);
     eboRequestCreator.removeChain(_chainId);
