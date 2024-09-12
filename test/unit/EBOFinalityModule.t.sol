@@ -167,7 +167,7 @@ contract EBOFinalityModule_Unit_AmendEpoch is EBOFinalityModule_Unit_BaseTest {
 
   modifier happyPath(address _arbitrator) {
     vm.mockCall(
-      address(arbitrable), abi.encodeWithSelector(IArbitrable.isArbitrator.selector, _arbitrator), abi.encode(true)
+      address(arbitrable), abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _arbitrator), abi.encode(true)
     );
     vm.startPrank(_arbitrator);
     _;
@@ -200,7 +200,7 @@ contract EBOFinalityModule_Unit_AmendEpoch is EBOFinalityModule_Unit_BaseTest {
 contract EBOFinalityModule_Unit_SetEBORequestCreator is EBOFinalityModule_Unit_BaseTest {
   modifier happyPath(address _arbitrator) {
     vm.mockCall(
-      address(arbitrable), abi.encodeWithSelector(IArbitrable.isArbitrator.selector, _arbitrator), abi.encode(true)
+      address(arbitrable), abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _arbitrator), abi.encode(true)
     );
     vm.startPrank(_arbitrator);
     _;

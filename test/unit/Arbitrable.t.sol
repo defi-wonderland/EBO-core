@@ -12,7 +12,7 @@ contract MockArbitrable is Arbitrable {
 
   // solhint-disable-next-line no-empty-blocks
   function mock_onlyArbitrator() external {
-    isArbitrator(msg.sender);
+    isValidArbitrator(msg.sender);
   }
 
   // solhint-disable-next-line no-empty-blocks

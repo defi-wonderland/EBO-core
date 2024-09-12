@@ -160,7 +160,7 @@ contract CouncilArbitrator_Unit_ResolveDispute is CouncilArbitrator_Unit_BaseTes
     councilArbitrator.mock_setResolutions(_params.disputeId, _params.resolutionData);
     vm.mockCall(
       address(arbitrable),
-      abi.encodeWithSelector(IArbitrable.isArbitrator.selector, _params.arbitrator),
+      abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _params.arbitrator),
       abi.encode(true)
     );
     vm.startPrank(_params.arbitrator);

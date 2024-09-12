@@ -54,7 +54,7 @@ contract Arbitrable is IArbitrable {
   }
 
   /// @inheritdoc IArbitrable
-  function isArbitrator(address _caller) public view {
+  function isValidArbitrator(address _caller) public view {
     if (_caller != _arbitrator) revert Arbitrable_OnlyArbitrator();
   }
 

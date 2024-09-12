@@ -72,7 +72,7 @@ interface IArbitrable {
   /**
    * @notice Checks that the caller is The Graph's Arbitrator
    */
-  function isArbitrator(address _caller) external view;
+  function isValidArbitrator(address _caller) external view;
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC

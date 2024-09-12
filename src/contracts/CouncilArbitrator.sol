@@ -62,7 +62,7 @@ contract CouncilArbitrator is ICouncilArbitrator {
 
   /// @inheritdoc ICouncilArbitrator
   function resolveDispute(bytes32 _disputeId, IOracle.DisputeStatus _status) external {
-    ARBITRABLE.isArbitrator(msg.sender);
+    ARBITRABLE.isValidArbitrator(msg.sender);
 
     ResolutionParameters memory _resolutionData = resolutions[_disputeId];
 
