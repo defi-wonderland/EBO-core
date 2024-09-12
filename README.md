@@ -5,7 +5,7 @@
 
 ## Overview
 
-EBO is a mechanism for clock syncronization in the multichain world. It allows The Graph to permissionlessly sync up clocks between the protocol chain (Arbitrum) and multiple other chains supported by them to pay rewards to indexers. 
+EBO is a mechanism for clock synchronization in the multichain world. It allows The Graph to permissionlessly sync up clocks between the protocol chain (Arbitrum) and multiple other chains supported by them to pay rewards to indexers. 
 
 ## Setup
 
@@ -34,7 +34,7 @@ Make sure to set `ARBITRUM_RPC` environment variable before running end-to-end t
 
 ## Design
 
-EBO uses [Prophet](https://github.com/defi-wonderland/prophet-core). A versatile and fully adaptable optimistic oracle solution that allows users to set custom modules to achieve the functionality they need. It works by implementing multiple modules to get the resulting block in other chains for an epoch in the protocol chain.
+EBO uses [Prophet](https://docs.prophet.tech/). A versatile and fully adaptable optimistic oracle solution that allows users to set custom modules to achieve the functionality they need. It works by implementing multiple modules to get the resulting block in other chains for an epoch in the protocol chain.
 
 ### Modules
 
@@ -53,17 +53,18 @@ Prophet's [BondEscalationModule](https://github.com/defi-wonderland/prophet-modu
 
 **ResolutionModule**
 
-[ArbitratorModule](https://github.com/defi-wonderland/prophet-modules/blob/dev/solidity/contracts/modules/resolution/ArbitratorModule.sol) allows an arbitrator apointed by The Graph's council to be the ultimate source of truth in case a dispute can't be closed by bond escalation.
+[ArbitratorModule](https://github.com/defi-wonderland/prophet-modules/blob/dev/solidity/contracts/modules/resolution/ArbitratorModule.sol) allows an arbitrator appointed by The Graph's council to be the ultimate source of truth in case a dispute can't be closed by bond escalation.
 
 **FinalityModule**
 
-Using a fork of Prophet's [CallbackModule](https://github.com/defi-wonderland/prophet-modules/blob/dev/solidity/contracts/modules/finality/CallbackModule.sol), EBO can emit events with the finalized data so it can be indexed by a subgraph.
+The new EBOFinalityModule emits events with the finalized data so it can be indexed by a subgraph.
+
+
+### Periphery
 
 **AccountingExtension**
 
 Provides integration with The Graph's [Horizon Staking](https://thegraph.com/blog/graph-horizon/) contract for bonding tokens. 
-
-### Periphery
 
 **EBORequestCreator**
 
@@ -157,7 +158,7 @@ Configure the `.env` variables.
 Import your private keys into Foundry's encrypted keystore:
 
 ```bash
-cast wallet import $ARBITRUM_DEPLOYER --interactive
+cast wallet import $ARBITRUM_DEPLOYER_NAME --interactive
 ```
 
 ### Arbitrum
