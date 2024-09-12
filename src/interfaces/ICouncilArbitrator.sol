@@ -6,11 +6,13 @@ import {IArbitrator} from '@defi-wonderland/prophet-modules/solidity/interfaces/
 import {IArbitratorModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 
+import {IArbitrable} from 'interfaces/IArbitrable.sol';
+
 /**
  * @title CouncilArbitrator
  * @notice Resolves disputes by arbitration by The Graph
  */
-interface ICouncilArbitrator is IArbitrator {
+interface ICouncilArbitrator is IArbitrator, IArbitrable {
   /*///////////////////////////////////////////////////////////////
                               STRUCTS
   //////////////////////////////////////////////////////////////*/

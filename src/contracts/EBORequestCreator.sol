@@ -4,6 +4,8 @@ pragma solidity 0.8.26;
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 import {IBondEscalationModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
+import {IArbitratorModule} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 import {IBondedResponseModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
@@ -13,7 +15,7 @@ import {Arbitrable} from 'contracts/Arbitrable.sol';
 import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
-contract EBORequestCreator is IEBORequestCreator, Arbitrable {
+contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   /// @inheritdoc IEBORequestCreator
@@ -55,11 +57,11 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function createRequests(uint256 _epoch, string[] calldata _chainIds) external {
+  function createRequest(uint256 _epoch, string calldata _chainId) external {
     if (_epoch > epochManager.currentEpoch() || START_EPOCH > _epoch) revert EBORequestCreator_InvalidEpoch();
 
-    bytes32 _encodedChainId;
-    bytes32 _requestId;
+    bytes32 _encodedChainId = _encodeChainId(_chainId);
+    if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
 
     IOracle.Request memory _requestData = requestData;
 
@@ -68,28 +70,22 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
 
     _requestModuleData.epoch = _epoch;
 
-    for (uint256 _i; _i < _chainIds.length; _i++) {
-      _encodedChainId = _encodeChainId(_chainIds[_i]);
-      if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
+    bytes32 _requestId = requestIdPerChainAndEpoch[_chainId][_epoch];
 
-      _requestId = requestIdPerChainAndEpoch[_chainIds[_i]][_epoch];
+    if (
+      _requestId != bytes32(0)
+        && (ORACLE.finalizedAt(_requestId) == 0 || ORACLE.finalizedResponseId(_requestId) != bytes32(0))
+    ) revert EBORequestCreator_RequestAlreadyCreated();
 
-      if (
-        _requestId == bytes32(0)
-          || (ORACLE.finalizedAt(_requestId) > 0 && ORACLE.finalizedResponseId(_requestId) == bytes32(0))
-      ) {
-        _requestModuleData.chainId = _chainIds[_i];
-        //TODO: REWARDS
+    _requestModuleData.chainId = _chainId;
 
-        _requestData.requestModuleData = abi.encode(_requestModuleData);
+    _requestData.requestModuleData = abi.encode(_requestModuleData);
 
-        _requestId = ORACLE.createRequest(_requestData, bytes32(0));
+    _requestId = ORACLE.createRequest(_requestData, bytes32(0));
 
-        requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] = _requestId;
+    requestIdPerChainAndEpoch[_chainId][_epoch] = _requestId;
 
-        emit RequestCreated(_requestId, _epoch, _chainIds[_i]);
-      }
-    }
+    emit RequestCreated(_requestId, _epoch, _chainId);
   }
 
   /// @inheritdoc IEBORequestCreator
@@ -145,18 +141,19 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
     emit DisputeModuleDataSet(_disputeModule, _disputeModuleData);
   }
 
-  // TODO: Change module data to the specific interface when we have
   /// @inheritdoc IEBORequestCreator
   function setResolutionModuleData(
     address _resolutionModule,
-    bytes calldata _resolutionModuleData
+    IArbitratorModule.RequestParameters calldata _resolutionModuleData
   ) external onlyArbitrator {
     requestData.resolutionModule = _resolutionModule;
-    requestData.resolutionModuleData = _resolutionModuleData;
+    requestData.resolutionModuleData = abi.encode(_resolutionModuleData);
 
     emit ResolutionModuleDataSet(_resolutionModule, _resolutionModuleData);
   }
 
+  // TODO: Why set finality module data?
+  // TODO: Change module data to the specific interface when we have
   /// @inheritdoc IEBORequestCreator
   function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external onlyArbitrator {
     requestData.finalityModule = _finalityModule;
@@ -168,6 +165,11 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   /// @inheritdoc IEBORequestCreator
   function setEpochManager(IEpochManager _epochManager) external onlyArbitrator {
     _setEpochManager(_epochManager);
+  }
+
+  /// @inheritdoc IEBORequestCreator
+  function getRequestData() external view returns (IOracle.Request memory _requestData) {
+    _requestData = requestData;
   }
 
   /**

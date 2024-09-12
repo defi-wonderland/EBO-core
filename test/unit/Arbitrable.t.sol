@@ -7,23 +7,23 @@ import {Arbitrable} from 'contracts/Arbitrable.sol';
 
 import 'forge-std/Test.sol';
 
-contract ArbitrableMock is Arbitrable {
+contract MockArbitrable is Arbitrable {
   constructor(address _arbitrator, address _council) Arbitrable(_arbitrator, _council) {}
 
   // solhint-disable-next-line no-empty-blocks
-  function mockOnlyArbitrator() external onlyArbitrator {}
+  function mock_onlyArbitrator() external onlyArbitrator {}
 
   // solhint-disable-next-line no-empty-blocks
-  function mockOnlyCouncil() external onlyCouncil {}
+  function mock_onlyCouncil() external onlyCouncil {}
 
   // solhint-disable-next-line no-empty-blocks
-  function mockOnlyPendingCouncil() external onlyPendingCouncil {}
+  function mock_onlyPendingCouncil() external onlyPendingCouncil {}
 }
 
 contract Arbitrable_Unit_BaseTest is Test {
   using stdStorage for StdStorage;
 
-  ArbitrableMock public arbitrable;
+  MockArbitrable public arbitrable;
 
   address public arbitrator;
   address public council;
@@ -38,7 +38,7 @@ contract Arbitrable_Unit_BaseTest is Test {
     council = makeAddr('Council');
     pendingCouncil = makeAddr('PendingCouncil');
 
-    arbitrable = new ArbitrableMock(arbitrator, council);
+    arbitrable = new MockArbitrable(arbitrator, council);
   }
 
   function _mockPendingCouncil(address _pendingCouncil) internal {
@@ -48,7 +48,7 @@ contract Arbitrable_Unit_BaseTest is Test {
 
 contract Arbitrable_Unit_Constructor is Arbitrable_Unit_BaseTest {
   function test_setArbitrator(address _arbitrator, address _council) public {
-    arbitrable = new ArbitrableMock(_arbitrator, _council);
+    arbitrable = new MockArbitrable(_arbitrator, _council);
 
     assertEq(arbitrable.arbitrator(), _arbitrator);
   }
@@ -56,11 +56,11 @@ contract Arbitrable_Unit_Constructor is Arbitrable_Unit_BaseTest {
   function test_emitSetArbitrator(address _arbitrator, address _council) public {
     vm.expectEmit();
     emit SetArbitrator(_arbitrator);
-    new ArbitrableMock(_arbitrator, _council);
+    new MockArbitrable(_arbitrator, _council);
   }
 
   function test_setCouncil(address _arbitrator, address _council) public {
-    arbitrable = new ArbitrableMock(_arbitrator, _council);
+    arbitrable = new MockArbitrable(_arbitrator, _council);
 
     assertEq(arbitrable.council(), _council);
   }
@@ -68,7 +68,7 @@ contract Arbitrable_Unit_Constructor is Arbitrable_Unit_BaseTest {
   function test_emitSetCouncil(address _arbitrator, address _council) public {
     vm.expectEmit();
     emit SetCouncil(_council);
-    new ArbitrableMock(_arbitrator, _council);
+    new MockArbitrable(_arbitrator, _council);
   }
 }
 
@@ -78,8 +78,9 @@ contract Arbitrable_Unit_SetArbitrator is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyCouncil(address _arbitrator) public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyCouncil(address _arbitrator, address _caller) public happyPath {
+    vm.assume(_caller != council);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
     arbitrable.setArbitrator(_arbitrator);
@@ -104,8 +105,9 @@ contract Arbitrable_Unit_SetPendingCouncil is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyCouncil(address _pendingCouncil) public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyCouncil(address _pendingCouncil, address _caller) public happyPath {
+    vm.assume(_caller != council);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
     arbitrable.setPendingCouncil(_pendingCouncil);
@@ -132,8 +134,9 @@ contract Arbitrable_Unit_ConfirmCouncil is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyPendingCouncil() public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyPendingCouncil(address _caller) public happyPath {
+    vm.assume(_caller != pendingCouncil);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyPendingCouncil.selector);
     arbitrable.confirmCouncil();
@@ -164,15 +167,16 @@ contract Arbitrable_Unit_OnlyArbitrator is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyArbitrator() public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyArbitrator(address _caller) public happyPath {
+    vm.assume(_caller != arbitrator);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
-    arbitrable.mockOnlyArbitrator();
+    arbitrable.mock_onlyArbitrator();
   }
 
   function test_onlyArbitrator() public happyPath {
-    arbitrable.mockOnlyArbitrator();
+    arbitrable.mock_onlyArbitrator();
   }
 }
 
@@ -182,15 +186,16 @@ contract Arbitrable_Unit_OnlyCouncil is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyCouncil() public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyCouncil(address _caller) public happyPath {
+    vm.assume(_caller != council);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyCouncil.selector);
-    arbitrable.mockOnlyCouncil();
+    arbitrable.mock_onlyCouncil();
   }
 
   function test_onlyCouncil() public happyPath {
-    arbitrable.mockOnlyCouncil();
+    arbitrable.mock_onlyCouncil();
   }
 }
 
@@ -202,14 +207,15 @@ contract Arbitrable_Unit_OnlyPendingCouncil is Arbitrable_Unit_BaseTest {
     _;
   }
 
-  function test_revertOnlyPendingCouncil() public happyPath {
-    vm.stopPrank();
+  function test_revertOnlyPendingCouncil(address _caller) public happyPath {
+    vm.assume(_caller != pendingCouncil);
+    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyPendingCouncil.selector);
-    arbitrable.mockOnlyPendingCouncil();
+    arbitrable.mock_onlyPendingCouncil();
   }
 
   function test_onlyPendingCouncil() public happyPath {
-    arbitrable.mockOnlyPendingCouncil();
+    arbitrable.mock_onlyPendingCouncil();
   }
 }

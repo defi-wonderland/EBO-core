@@ -4,13 +4,16 @@ pragma solidity 0.8.26;
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 import {IBondEscalationModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
+import {IArbitratorModule} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 import {IBondedResponseModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
+import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
-interface IEBORequestCreator {
+interface IEBORequestCreator is IArbitrable {
   /*///////////////////////////////////////////////////////////////
                             EVENTS
   //////////////////////////////////////////////////////////////*/
@@ -65,7 +68,9 @@ interface IEBORequestCreator {
    * @param _resolutionModule The resolution module
    * @param _resolutionModuleData The resolution module data
    */
-  event ResolutionModuleDataSet(address indexed _resolutionModule, bytes _resolutionModuleData);
+  event ResolutionModuleDataSet(
+    address indexed _resolutionModule, IArbitratorModule.RequestParameters _resolutionModuleData
+  );
 
   /**
    * @notice Emitted when the finality data module is set
@@ -92,6 +97,11 @@ interface IEBORequestCreator {
    * @notice Thrown when the chain is already added
    */
   error EBORequestCreator_ChainAlreadyAdded();
+
+  /**
+   * @notice Thrown when the request is already created
+   */
+  error EBORequestCreator_RequestAlreadyCreated();
 
   /**
    * @notice Thrown when the chain is not added
@@ -174,11 +184,11 @@ interface IEBORequestCreator {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Create requests
+   * @notice Create request
    * @param _epoch The epoch of the request
-   * @param _chainIds The chain ids to update
+   * @param _chainId The chain id to update
    */
-  function createRequests(uint256 _epoch, string[] calldata _chainIds) external;
+  function createRequest(uint256 _epoch, string calldata _chainId) external;
 
   /**
    * @notice Add a chain to the allowed chains which can be updated
@@ -227,7 +237,10 @@ interface IEBORequestCreator {
    * @param _resolutionModule The resolution module
    * @param _resolutionModuleData The resolution module data
    */
-  function setResolutionModuleData(address _resolutionModule, bytes calldata _resolutionModuleData) external;
+  function setResolutionModuleData(
+    address _resolutionModule,
+    IArbitratorModule.RequestParameters calldata _resolutionModuleData
+  ) external;
 
   /**
    * @notice Set the finality data module
@@ -241,4 +254,10 @@ interface IEBORequestCreator {
    * @param _epochManager The epoch manager
    */
   function setEpochManager(IEpochManager _epochManager) external;
+
+  /**
+   * @notice Get the request data
+   * @return _requestData The request data
+   */
+  function getRequestData() external view returns (IOracle.Request memory _requestData);
 }
