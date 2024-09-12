@@ -99,6 +99,11 @@ interface IEBORequestCreator is IArbitrable {
   error EBORequestCreator_ChainAlreadyAdded();
 
   /**
+   * @notice Thrown when the request is already created
+   */
+  error EBORequestCreator_RequestAlreadyCreated();
+
+  /**
    * @notice Thrown when the chain is not added
    */
   error EBORequestCreator_ChainNotAdded();
@@ -179,11 +184,11 @@ interface IEBORequestCreator is IArbitrable {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Create requests
+   * @notice Create request
    * @param _epoch The epoch of the request
-   * @param _chainIds The chain ids to update
+   * @param _chainId The chain id to update
    */
-  function createRequests(uint256 _epoch, string[] calldata _chainIds) external;
+  function createRequest(uint256 _epoch, string calldata _chainId) external;
 
   /**
    * @notice Add a chain to the allowed chains which can be updated

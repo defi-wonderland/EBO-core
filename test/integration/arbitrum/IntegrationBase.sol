@@ -56,10 +56,8 @@ contract IntegrationBase is Deploy, Test {
     _requestId = _requestData._getId();
     _requests[_requestId] = _requestData;
 
-    string[] memory _chainIds = _getChainIds();
-
     vm.prank(_requester);
-    eboRequestCreator.createRequests(_currentEpoch, _chainIds);
+    eboRequestCreator.createRequest(_currentEpoch, _chainId);
   }
 
   function _proposeResponse(bytes32 _requestId) internal returns (bytes32 _responseId) {
