@@ -1,36 +1,85 @@
-<img src="https://raw.githubusercontent.com/defi-wonderland/brand/v1.0.0/external/solidity-foundry-boilerplate-banner.png" alt="wonderland banner" align="center" />
-<br />
+# EBO - Epoch Block Oracle
 
-<div align="center"><strong>Start your next Solidity project with Foundry in seconds</strong></div>
-<div align="center">A highly scalable foundation focused on DX and best practices</div>
+> [!CAUTION]  
+> The code has not been audited yet, tread with caution.
 
-<br />
+## Overview
 
-## Features
+EBO is a mechanism for clock synchronization in the multichain world. It allows The Graph to permissionlessly sync up clocks between the protocol chain (Arbitrum) and multiple other chains supported by them to pay rewards to indexers. 
 
-<dl>
-  <dt>Sample contracts</dt>
-  <dd>Basic Greeter contract with an external interface.</dd>
+## Setup
 
-  <dt>Foundry setup</dt>
-  <dd>Foundry configuration with multiple custom profiles and remappings.</dd>
+This project uses [Foundry](https://book.getfoundry.sh/). To build it locally, run:
 
-  <dt>Deployment scripts</dt>
-  <dd>Sample scripts to deploy contracts on both mainnet and testnet.</dd>
+```sh
+git clone git@github.com:defi-wonderland/EBO-core.git
+cd EBO-core
+yarn install
+yarn build
+```
 
-  <dt>Sample Integration, Unit, Property-based fuzzed and symbolic tests</dt>
-  <dd>Example tests showcasing mocking, assertions and configuration for mainnet forking. As well it includes everything needed in order to check code coverage.</dd>
-  <dd>Unit tests are built based on the <a href="https://twitter.com/PaulRBerg/status/1682346315806539776">Branched-Tree Technique</a>, using <a href="https://github.com/alexfertel/bulloak">Bulloak</a>.
-  <dd>Formal verification and property-based fuzzing are achieved with <a href="https://github.com/a16z/halmos">Halmos</a> and <a href="https://github.com/crytic/echidna">Echidna</a> (resp.).
+### Available Commands
 
-  <dt>Linter</dt>
-  <dd>Simple and fast solidity linting thanks to forge fmt.</dd>
-  <dd>Find missing natspec automatically.</dd>
+Make sure to set `ARBITRUM_RPC` environment variable before running end-to-end tests.
 
-  <dt>Github workflows CI</dt>
-  <dd>Run all tests and see the coverage as you push your changes.</dd>
-  <dd>Export your Solidity interfaces and contracts as packages, and publish them to NPM.</dd>
-</dl>
+| Yarn Command            | Description                                                |
+| ----------------------- | ---------------------------------------------------------- |
+| `yarn build`            | Compile all contracts.                                     |
+| `yarn coverage`         | See `forge coverage` report.                               |
+| `yarn deploy:arbitrum`  | Deploy the contracts to Arbitrum mainnet.                  |
+| `yarn test`             | Run all unit and integration tests.                        |
+| `yarn test:unit`        | Run unit tests.                                            |
+| `yarn test:deep`        | Run unit tests with 5000 fuzz runs.                        |
+| `yarn test:integration` | Run integration tests.                                     |
+
+## Design
+
+EBO uses [Prophet](https://docs.prophet.tech/). A versatile and fully adaptable optimistic oracle solution that allows users to set custom modules to achieve the functionality they need. It works by implementing multiple modules to get the resulting block in other chains for an epoch in the protocol chain.
+
+### Modules
+
+**RequestModule**
+
+The custom EBORequestModule holds the parameters for the request. Including the epoch and the requested chain to fetch the data.
+
+**ResponseModule**
+
+EBO uses the [BondedResponseModule](https://github.com/defi-wonderland/prophet-modules/blob/dev/solidity/contracts/modules/response/BondedResponseModule.sol) built for Prophet which allows users to respond to a request by locking a bond.
+
+
+**DisputeModule**
+
+Prophet's [BondEscalationModule](https://github.com/defi-wonderland/prophet-modules/blob/dev/solidity/contracts/modules/dispute/BondEscalationModule.sol) is used to solve disputes by starting a bond escalation process.
+
+**ResolutionModule**
+
+[ArbitratorModule](https://github.com/defi-wonderland/prophet-modules/blob/dev/solidity/contracts/modules/resolution/ArbitratorModule.sol) allows an arbitrator appointed by The Graph's council to be the ultimate source of truth in case a dispute can't be closed by bond escalation.
+
+**FinalityModule**
+
+The new EBOFinalityModule emits events with the finalized data so it can be indexed by a subgraph.
+
+
+### Periphery
+
+**AccountingExtension**
+
+Provides integration with The Graph's [Horizon Staking](https://thegraph.com/blog/graph-horizon/) contract for bonding tokens. 
+
+**EBORequestCreator**
+
+Simplifies request creation and validates requested data. 
+
+> [!WARNING]  
+> Only allows one pair of epoch-chainId request to be active at a time.  
+
+**CouncilArbitrator**
+
+Simplifies the interaction by The Graph's arbitrator with the ResolutionModule by doing multiple actions in one transaction.
+
+### Flows
+
+![Alt text](EBO_flows.png?raw=true)
 
 ## Setup
 
@@ -106,6 +155,12 @@ yarn coverage
 
 Configure the `.env` variables.
 
+Import your private keys into Foundry's encrypted keystore:
+
+```bash
+cast wallet import $ARBITRUM_DEPLOYER_NAME --interactive
+```
+
 ### Arbitrum
 
 ```bash
@@ -116,39 +171,13 @@ The deployments are stored in ./broadcast
 
 See the [Foundry Book for available options](https://book.getfoundry.sh/reference/forge/forge-create.html).
 
-## Export And Publish
-
-Export TypeScript interfaces from Solidity contracts and interfaces providing compatibility with TypeChain. Publish the exported packages to NPM.
-
-To enable this feature, make sure you've set the `NPM_TOKEN` on your org's secrets. Then set the job's conditional to `true`:
-
-```yaml
-jobs:
-  export:
-    name: Generate Interfaces And Contracts
-    # Remove the following line if you wish to export your Solidity contracts and interfaces and publish them to NPM
-    if: true
-    ...
-```
-
-Also, remember to update the `package_name` param to your package name:
-
-```yaml
-- name: Export Solidity - ${{ matrix.export_type }}
-  uses: defi-wonderland/solidity-exporter-action@1dbf5371c260add4a354e7a8d3467e5d3b9580b8
-  with:
-    # Update package_name with your package name
-    package_name: "my-cool-project"
-    ...
-
-
-- name: Publish to NPM - ${{ matrix.export_type }}
-  # Update `my-cool-project` with your package name
-  run: cd export/my-cool-project-${{ matrix.export_type }} && npm publish --access public
-  ...
-```
-
-You can take a look at our [solidity-exporter-action](https://github.com/defi-wonderland/solidity-exporter-action) repository for more information and usage examples.
-
 ## Licensing
-The primary license for the boilerplate is MIT, see [`LICENSE`](https://github.com/defi-wonderland/solidity-foundry-boilerplate/blob/main/LICENSE)
+TODO
+
+## Contributors
+
+EBO was built with ❤️ by [Wonderland](https://defi.sucks).
+
+Wonderland is a team of top Web3 researchers, developers, and operators who believe that the future needs to be open-source, permissionless, and decentralized.
+
+[DeFi sucks](https://defi.sucks), but Wonderland is here to make it better.
