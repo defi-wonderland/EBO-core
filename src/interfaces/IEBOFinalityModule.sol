@@ -14,6 +14,31 @@ import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
  */
 interface IEBOFinalityModule is IFinalityModule, IArbitrable {
   /*///////////////////////////////////////////////////////////////
+                              STRUCTS
+  //////////////////////////////////////////////////////////////*/
+  /**
+   * @notice Parameters of the request in the module
+   * @param target The target address for the callback
+   * @param data The calldata forwarded to the _target
+   */
+  struct RequestParameters {
+    address target;
+    bytes data;
+  }
+
+  /**
+   * @notice Parameters of the response in the module
+   * @param epoch The epoch of the response
+   * @param chainId The chain ID of the response
+   * @param block The block number of the response
+   */
+  struct ResponseParameters {
+    uint256 epoch;
+    string chainId;
+    uint256 block;
+  }
+
+  /*///////////////////////////////////////////////////////////////
                               EVENTS
   //////////////////////////////////////////////////////////////*/
 
@@ -95,4 +120,11 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
   function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
+
+  /**
+   * @notice Decodes the response data
+   * @param _data The response data
+   * @return _params The decoded response parameters
+   */
+  function decodeResponseData(bytes calldata _data) external pure returns (ResponseParameters memory _params);
 }

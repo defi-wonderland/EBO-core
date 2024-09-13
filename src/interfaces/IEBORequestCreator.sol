@@ -11,6 +11,8 @@ import {IBondedResponseModule} from
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
+
+import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
 interface IEBORequestCreator is IArbitrable {
@@ -77,7 +79,9 @@ interface IEBORequestCreator is IArbitrable {
    * @param _finalityModule The finality module
    * @param _finalityModuleData The finality module data
    */
-  event FinalityModuleDataSet(address indexed _finalityModule, bytes _finalityModuleData);
+  event FinalityModuleDataSet(
+    address indexed _finalityModule, IEBOFinalityModule.RequestParameters _finalityModuleData
+  );
 
   /**
    * @notice Emitted when the epoch manager is set
@@ -247,7 +251,10 @@ interface IEBORequestCreator is IArbitrable {
    * @param _finalityModule The finality module
    * @param _finalityModuleData The finality module data
    */
-  function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external;
+  function setFinalityModuleData(
+    address _finalityModule,
+    IEBOFinalityModule.RequestParameters calldata _finalityModuleData
+  ) external;
 
   /**
    * @notice Set the epoch manager

@@ -12,6 +12,8 @@ import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
+
+import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
 import {EBORequestCreator, IEBORequestCreator} from 'contracts/EBORequestCreator.sol';
@@ -59,7 +61,9 @@ abstract contract EBORequestCreator_Unit_BaseTest is Test {
   event ResolutionModuleDataSet(
     address indexed _resolutionModule, IArbitratorModule.RequestParameters _resolutionModuleData
   );
-  event FinalityModuleDataSet(address indexed _finalityModule, bytes _finalityModuleData);
+  event FinalityModuleDataSet(
+    address indexed _finalityModule, IEBOFinalityModule.RequestParameters _finalityModuleData
+  );
   event EpochManagerSet(IEpochManager indexed _epochManager);
 
   /// Contracts
@@ -580,7 +584,7 @@ contract EBORequestCreator_Unit_SetResolutionModuleData is EBORequestCreator_Uni
 }
 
 contract EBORequestCreator_Unit_SetFinalityModuleData is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(address _finalityModule, bytes calldata _finalityModuleData) {
+  modifier happyPath(address _finalityModule, IEBOFinalityModule.RequestParameters calldata _finalityModuleData) {
     vm.startPrank(arbitrator);
     _;
   }
@@ -590,7 +594,7 @@ contract EBORequestCreator_Unit_SetFinalityModuleData is EBORequestCreator_Unit_
    */
   function test_revertIfNotArbitrator(
     address _finalityModule,
-    bytes calldata _finalityModuleData,
+    IEBOFinalityModule.RequestParameters calldata _finalityModuleData,
     address _caller
   ) external {
     vm.assume(_caller != arbitrator);
@@ -605,7 +609,7 @@ contract EBORequestCreator_Unit_SetFinalityModuleData is EBORequestCreator_Unit_
    */
   function test_emitFinalityModuleDataSet(
     address _finalityModule,
-    bytes calldata _finalityModuleData
+    IEBOFinalityModule.RequestParameters calldata _finalityModuleData
   ) external happyPath(_finalityModule, _finalityModuleData) {
     vm.expectEmit();
     emit FinalityModuleDataSet(_finalityModule, _finalityModuleData);

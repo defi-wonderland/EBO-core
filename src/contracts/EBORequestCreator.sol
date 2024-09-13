@@ -1,19 +1,21 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
-import {IBondEscalationModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
-import {IArbitratorModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
-import {IBondedResponseModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
 import {Arbitrable} from 'contracts/Arbitrable.sol';
-import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
-import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
+
+import {
+  IArbitratorModule,
+  IBondEscalationModule,
+  IBondedResponseModule,
+  IBondedResponseModule,
+  IEBOFinalityModule,
+  IEBORequestCreator,
+  IEBORequestModule,
+  IEpochManager,
+  IOracle
+} from 'interfaces/IEBORequestCreator.sol';
 
 contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -63,13 +65,6 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
     bytes32 _encodedChainId = _encodeChainId(_chainId);
     if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
 
-    IOracle.Request memory _requestData = requestData;
-
-    IEBORequestModule.RequestParameters memory _requestModuleData =
-      IEBORequestModule(_requestData.requestModule).decodeRequestData(_requestData.requestModuleData);
-
-    _requestModuleData.epoch = _epoch;
-
     bytes32 _requestId = requestIdPerChainAndEpoch[_chainId][_epoch];
 
     if (
@@ -77,9 +72,35 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
         && (ORACLE.finalizedAt(_requestId) == 0 || ORACLE.finalizedResponseId(_requestId) != bytes32(0))
     ) revert EBORequestCreator_RequestAlreadyCreated();
 
-    _requestModuleData.chainId = _chainId;
+    // Request data
+    IOracle.Request memory _requestData = requestData;
 
+    // Request module data
+    IEBORequestModule.RequestParameters memory _requestModuleData =
+      IEBORequestModule(_requestData.requestModule).decodeRequestData(_requestData.requestModuleData);
+
+    _requestModuleData.chainId = _chainId;
+    _requestModuleData.epoch = _epoch;
     _requestData.requestModuleData = abi.encode(_requestModuleData);
+
+    // Response module data
+    IBondedResponseModule.RequestParameters memory _responseModuleData =
+      IBondedResponseModule(_requestData.responseModule).decodeRequestData(_requestData.responseModuleData);
+
+    // Deadline is relative to the current block timestamp
+    _responseModuleData.deadline = block.timestamp + _responseModuleData.deadline;
+    _requestData.responseModuleData = abi.encode(_responseModuleData);
+
+    // Dispute module data
+    IBondEscalationModule.RequestParameters memory _disputeModuleData =
+      IBondEscalationModule(_requestData.disputeModule).decodeRequestData(_requestData.disputeModuleData);
+
+    // Bond escalation deadline is relative to the deadline
+    _disputeModuleData.disputeWindow = _responseModuleData.deadline + _disputeModuleData.disputeWindow;
+    _disputeModuleData.bondEscalationDeadline =
+      _disputeModuleData.disputeWindow + _disputeModuleData.bondEscalationDeadline;
+    _disputeModuleData.tyingBuffer = _disputeModuleData.bondEscalationDeadline + _disputeModuleData.tyingBuffer;
+    _requestData.disputeModuleData = abi.encode(_disputeModuleData);
 
     _requestId = ORACLE.createRequest(_requestData, bytes32(0));
 
@@ -155,9 +176,12 @@ contract EBORequestCreator is Arbitrable, IEBORequestCreator {
   // TODO: Why set finality module data?
   // TODO: Change module data to the specific interface when we have
   /// @inheritdoc IEBORequestCreator
-  function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external onlyArbitrator {
+  function setFinalityModuleData(
+    address _finalityModule,
+    IEBOFinalityModule.RequestParameters calldata _finalityModuleData
+  ) external onlyArbitrator {
     requestData.finalityModule = _finalityModule;
-    requestData.finalityModuleData = _finalityModuleData;
+    requestData.finalityModuleData = abi.encode(_finalityModuleData);
 
     emit FinalityModuleDataSet(_finalityModule, _finalityModuleData);
   }

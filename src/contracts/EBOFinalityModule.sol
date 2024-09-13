@@ -43,8 +43,8 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
     if (_request.requester != address(eboRequestCreator)) revert EBOFinalityModule_InvalidRequester();
 
     if (_response.requestId != 0) {
-      // TODO: Redeclare the `Response` struct
-      // emit NewEpoch(_response.epoch, _response.chainId, _response.block);
+      ResponseParameters memory _params = decodeResponseData(_response.response);
+      emit NewEpoch(_params.epoch, _params.chainId, _params.block);
     }
 
     emit RequestFinalized(_response.requestId, _response, _finalizer);
@@ -67,6 +67,11 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
   /// @inheritdoc IEBOFinalityModule
   function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external onlyArbitrator {
     _setEBORequestCreator(_eboRequestCreator);
+  }
+
+  /// @inheritdoc IEBOFinalityModule
+  function decodeResponseData(bytes calldata _data) public pure returns (ResponseParameters memory _params) {
+    _params = abi.decode(_data, (ResponseParameters));
   }
 
   /// @inheritdoc IModule
