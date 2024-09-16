@@ -4,9 +4,6 @@ pragma solidity 0.8.26;
 import './IntegrationBase.sol';
 
 contract IntegrationDisputeResponse is IntegrationBase {
-  using ValidatorLib for IOracle.Request;
-  using ValidatorLib for IOracle.Response;
-
   function setUp() public override {
     super.setUp();
 
@@ -53,14 +50,17 @@ contract IntegrationDisputeResponse is IntegrationBase {
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
+    // Assert Oracle::disputeResponse
     assertEq(uint8(oracle.disputeStatus(_disputeId)), uint8(IOracle.DisputeStatus.Active));
     assertEq(oracle.disputeOf(_responseId), _disputeId);
     assertEq(oracle.disputeCreatedAt(_disputeId), block.number);
-    assertEq(bondEscalationAccounting.bondedAmountOf(_disputer, graphToken, _requestId), disputeBondSize);
-
+    // Assert BondEscalationModule::disputeResponse
     IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
-    assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.Active));
     assertEq(_escalation.disputeId, _disputeId);
+    assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.Active));
+    // Assert BondEscalationAccounting::bond
+    assertEq(bondEscalationAccounting.bondedAmountOf(_disputer, graphToken, _requestId), disputeBondSize);
+    assertEq(bondEscalationAccounting.balanceOf(_disputer, graphToken), 0);
 
     // Revert if the response has already been disputed
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_ResponseAlreadyDisputed.selector, _responseId));

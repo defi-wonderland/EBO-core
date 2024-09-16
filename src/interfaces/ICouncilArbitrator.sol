@@ -18,7 +18,7 @@ interface ICouncilArbitrator is IArbitrator, IArbitrable {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Parameters of the resolution as stored in the module
+   * @notice Parameters of the resolution as stored in the contract
    * @param request The request data
    * @param response The response data
    * @param dispute The dispute data
@@ -92,7 +92,7 @@ interface ICouncilArbitrator is IArbitrator, IArbitrable {
   function ARBITRATOR_MODULE() external view returns (IArbitratorModule _arbitratorModule);
 
   /**
-   * @notice Returns the resolution data for a dispute
+   * @notice Returns the resolution parameters for a dispute
    * @param _disputeId The ID of the dispute
    * @return _request The request data
    * @return _response The response data
@@ -102,6 +102,13 @@ interface ICouncilArbitrator is IArbitrator, IArbitrable {
     external
     view
     returns (IOracle.Request memory _request, IOracle.Response memory _response, IOracle.Dispute memory _dispute);
+
+  /**
+   * @notice Returns the resolution parameters for a dispute
+   * @param _disputeId The ID of the dispute
+   * @return _resolutionParams The resolution parameters
+   */
+  function getResolution(bytes32 _disputeId) external view returns (ResolutionParameters memory _resolutionParams);
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC
