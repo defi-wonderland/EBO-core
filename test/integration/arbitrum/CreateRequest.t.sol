@@ -15,6 +15,14 @@ contract IntegrationCreateRequest is IntegrationBase {
   }
 
   function test_CreateRequest() public {
+    IOracle.Request memory _requestData = _instantiateRequestData();
+
+    // Should revert if the requester is not the EBORequestCreator
+    vm.expectRevert(IEBORequestModule.EBORequestModule_InvalidRequester.selector);
+    vm.prank(_requester);
+    _requestData.requester = _requester;
+    oracle.createRequest(_requestData, '');
+
     // Should revert if the epoch is invalid
     vm.expectRevert(IEBORequestCreator.EBORequestCreator_InvalidEpoch.selector);
     vm.prank(_requester);
@@ -32,9 +40,8 @@ contract IntegrationCreateRequest is IntegrationBase {
     IEBORequestModule.RequestParameters memory _requestParams = _instantiateRequestParams();
     _requestParams.epoch = _currentEpoch;
     _requestParams.chainId = _chainId;
-
-    IOracle.Request memory _requestData = _instantiateRequestData();
     _requestData.requestModuleData = abi.encode(_requestParams);
+    _requestData.requester = address(eboRequestCreator);
 
     // Expect the oracle to create the request
     vm.expectCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector, _requestData, bytes32(0)));

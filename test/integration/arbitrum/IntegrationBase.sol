@@ -53,43 +53,44 @@ contract IntegrationBase is Deploy, Test {
     IOracle.Request memory _requestData = _instantiateRequestData();
     _requestData.requestModuleData = abi.encode(_requestParams);
 
-    _requestId = _requestData._getId();
-    _requests[_requestId] = _requestData;
-
     vm.prank(_requester);
     eboRequestCreator.createRequest(_currentEpoch, _chainId);
+
+    _requestId = _requestData._getId();
+    _requests[_requestId] = _requestData;
   }
 
   function _proposeResponse(bytes32 _requestId) internal returns (bytes32 _responseId) {
     IOracle.Request memory _requestData = _requests[_requestId];
 
-    IOracle.Response memory _responseData;
-    _responseData.proposer = _proposer;
-    _responseData.requestId = _requestId;
-    _responseData.response = abi.encode(''); // TODO: Populate response
-
-    _responseId = _responseData._getId();
-    _responses[_responseId] = _responseData;
+    IOracle.Response memory _responseData = _instantiateResponseData(_requestId);
 
     vm.prank(_proposer);
     oracle.proposeResponse(_requestData, _responseData);
+
+    _responseId = _responseData._getId();
+    _responses[_responseId] = _responseData;
   }
 
   function _disputeResponse(bytes32 _requestId, bytes32 _responseId) internal returns (bytes32 _disputeId) {
     IOracle.Request memory _requestData = _requests[_requestId];
     IOracle.Response memory _responseData = _responses[_responseId];
 
-    IOracle.Dispute memory _disputeData;
-    _disputeData.disputer = _disputer;
-    _disputeData.proposer = _proposer;
-    _disputeData.responseId = _responseId;
-    _disputeData.requestId = _requestId;
-
-    _disputeId = _disputeData._getId();
-    _disputes[_disputeId] = _disputeData;
+    IOracle.Dispute memory _disputeData = _instantiateDisputeData(_requestId, _responseId);
 
     vm.prank(_disputer);
     oracle.disputeResponse(_requestData, _responseData, _disputeData);
+
+    _disputeId = _disputeData._getId();
+    _disputes[_disputeId] = _disputeData;
+  }
+
+  function _escalateDispute(bytes32 _requestId, bytes32 _responseId, bytes32 _disputeId) internal {
+    IOracle.Request memory _requestData = _requests[_requestId];
+    IOracle.Response memory _responseData = _responses[_responseId];
+    IOracle.Dispute memory _disputeData = _disputes[_disputeId];
+
+    oracle.escalateDispute(_requestData, _responseData, _disputeData);
   }
 
   function _setRequestModuleData() internal {
@@ -157,6 +158,22 @@ contract IntegrationBase is Deploy, Test {
       eboRequestCreator.addChain(_chainIds[_i]);
     }
     vm.stopPrank();
+  }
+
+  function _instantiateResponseData(bytes32 _requestId) internal view returns (IOracle.Response memory _responseData) {
+    _responseData.proposer = _proposer;
+    _responseData.requestId = _requestId;
+    _responseData.response = abi.encode(''); // TODO: Populate response
+  }
+
+  function _instantiateDisputeData(
+    bytes32 _requestId,
+    bytes32 _responseId
+  ) internal view returns (IOracle.Dispute memory _disputeData) {
+    _disputeData.disputer = _disputer;
+    _disputeData.proposer = _proposer;
+    _disputeData.responseId = _responseId;
+    _disputeData.requestId = _requestId;
   }
 
   function _getChainIds() internal view returns (string[] memory _chainIds) {

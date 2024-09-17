@@ -169,6 +169,12 @@ interface IEBORequestCreator is IArbitrable {
     );
 
   /**
+   * @notice The request data
+   * @return _requestData The request data
+   */
+  function getRequestData() external view returns (IOracle.Request memory _requestData);
+
+  /**
    * @notice The request id per chain and epoch
    * @param _chainId The chain id
    * @param _epoch The epoch
@@ -254,10 +260,4 @@ interface IEBORequestCreator is IArbitrable {
    * @param _epochManager The epoch manager
    */
   function setEpochManager(IEpochManager _epochManager) external;
-
-  /**
-   * @notice Get the request data
-   * @return _requestData The request data
-   */
-  function getRequestData() external view returns (IOracle.Request memory _requestData);
 }
