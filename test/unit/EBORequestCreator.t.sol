@@ -41,6 +41,10 @@ contract EBORequestCreatorForTest is EBORequestCreator {
     requestData.requestModule = _requestModule;
     requestData.requestModuleData = _requestModuleData;
   }
+
+  function encodeChainIdForTest(string calldata _chainId) external pure returns (bytes32 _encodedChainId) {
+    return _encodeChainId(_chainId);
+  }
 }
 
 abstract contract EBORequestCreator_Unit_BaseTest is Test {
@@ -640,5 +644,28 @@ contract EBORequestCreator_Unit_SetEpochManager is EBORequestCreator_Unit_BaseTe
     emit EpochManagerSet(_epochManager);
 
     eboRequestCreator.setEpochManager(_epochManager);
+  }
+}
+
+contract EBORequestCreator_Unit_GetAllowedChains is EBORequestCreator_Unit_BaseTest {
+  /**
+   * @notice Test returns the correct chain ids
+   */
+  function test_getChains() external {
+    string[] memory _chainsToAdd = new string[](3);
+    _chainsToAdd[0] = '1';
+    _chainsToAdd[1] = '2';
+    _chainsToAdd[2] = '3';
+
+    for (uint256 i = 0; i < _chainsToAdd.length; i++) {
+      eboRequestCreator.setChainIdForTest(_chainsToAdd[i]);
+    }
+
+    bytes32[] memory _allowedChains = eboRequestCreator.getAllowedChainIds();
+    assertEq(_allowedChains.length, _chainsToAdd.length);
+
+    for (uint256 i = 0; i < _allowedChains.length; i++) {
+      assertEq(_allowedChains[i], eboRequestCreator.encodeChainIdForTest(_chainsToAdd[i]));
+    }
   }
 }
