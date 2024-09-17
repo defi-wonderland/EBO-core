@@ -14,8 +14,6 @@ import {
 
 import {Validator} from '@defi-wonderland/prophet-core/solidity/contracts/Validator.sol';
 
-import 'forge-std/console.sol';
-
 contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
@@ -30,7 +28,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   uint256 public immutable MIN_THAWING_PERIOD;
 
   /// @inheritdoc IHorizonAccountingExtension
-  uint256 public immutable MAX_VERIFIER_CUT;
+  uint256 public constant MAX_VERIFIER_CUT = 1_000_000;
 
   // TODO: Validate what the correct magic numbers should be
   uint256 public constant MAX_SLASHING_USERS = 4;
@@ -69,19 +67,16 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
    * @param _oracle The address of the Oracle
    * @param _grt The address of the GRT token
    * @param _minThawingPeriod The minimum thawing period for the staking
-   * @param _maxVerifierCut The maximum verifier cut
    */
   constructor(
     IHorizonStaking _horizonStaking,
     IOracle _oracle,
     IERC20 _grt,
-    uint256 _minThawingPeriod,
-    uint256 _maxVerifierCut
+    uint256 _minThawingPeriod
   ) Validator(_oracle) {
     HORIZON_STAKING = _horizonStaking;
     GRT = _grt;
     MIN_THAWING_PERIOD = _minThawingPeriod;
-    MAX_VERIFIER_CUT = _maxVerifierCut;
   }
 
   /**
@@ -198,10 +193,9 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       _numberOfPledges = _result.bondEscalationModule.pledgesForDispute(_requestId, _pledger)
         + _result.bondEscalationModule.pledgesAgainstDispute(_requestId, _pledger);
 
+      // If no resolution, pledge amount and claim amount are the same
       _pledgeAmount = _result.bondSize * _numberOfPledges;
       _claimAmount = _amountPerPledger * _numberOfPledges;
-
-      _unbond(_pledger, _pledgeAmount);
     } else {
       _numberOfPledges = _status == IOracle.DisputeStatus.Won
         ? _result.bondEscalationModule.pledgesForDispute(_requestId, _pledger)
@@ -209,7 +203,6 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
       // Release the winning pledges to the user
       _pledgeAmount = _result.bondSize * _numberOfPledges;
-      _unbond(_pledger, _pledgeAmount);
 
       _claimAmount = _amountPerPledger * _numberOfPledges;
 
@@ -227,6 +220,8 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       // Send the user the amount they won by participating in the dispute
       GRT.safeTransfer(_pledger, _rewardAmount);
     }
+
+    _unbond(_pledger, _pledgeAmount);
 
     pledgerClaimed[_requestId][_pledger] = true;
 
@@ -275,7 +270,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     bondedForRequest[_payer][_requestId] -= _amount;
 
     // Discout the payer totalBonded
-    totalBonded[_payer] -= _amount;
+    _unbond(_payer, _amount);
 
     // Increase the receiver bond
     HORIZON_STAKING.slash(_payer, _amount, _amount, _receiver);
@@ -404,7 +399,6 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     IOracle.DisputeStatus _status
   ) internal view returns (uint256 _slashAmount) {
     bytes32 _requestId = _result.requestId;
-    if (pledgerClaimed[_requestId][_pledger]) revert HorizonAccountingExtension_AlreadyClaimed();
 
     uint256 _numberOfPledges;
 

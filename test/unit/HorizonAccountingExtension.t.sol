@@ -25,9 +25,8 @@ contract HorizonAccountingExtensionForTest is HorizonAccountingExtension {
     IHorizonStaking _horizonStaking,
     IOracle _oracle,
     IERC20 _grt,
-    uint256 _minThawingPeriod,
-    uint256 _maxVerifierCut
-  ) HorizonAccountingExtension(_horizonStaking, _oracle, _grt, _minThawingPeriod, _maxVerifierCut) {}
+    uint256 _minThawingPeriod
+  ) HorizonAccountingExtension(_horizonStaking, _oracle, _grt, _minThawingPeriod) {}
 
   function approveModuleForTest(address _user, address _module) public {
     _approvals[_user].add(_module);
@@ -92,6 +91,10 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
   /// Addresses
   address public user;
 
+  /// Constants
+  uint32 public constant MAX_VERIFIER_CUT = 1_000_000;
+  uint64 public constant MIN_THAWING_PERIOD = 30 days;
+
   /// Events
   event Paid(bytes32 indexed _requestId, address indexed _beneficiary, address indexed _payer, uint256 _amount);
   event Bonded(bytes32 indexed _requestId, address indexed _bonder, uint256 _amount);
@@ -121,7 +124,7 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
 
     user = makeAddr('User');
 
-    horizonAccountingExtension = new HorizonAccountingExtensionForTest(horizonStaking, oracle, grt, 30 days, 1_000_000);
+    horizonAccountingExtension = new HorizonAccountingExtensionForTest(horizonStaking, oracle, grt, MIN_THAWING_PERIOD);
   }
 }
 
@@ -139,11 +142,7 @@ contract HorizonAccountingExtension_Unit_Constructor is HorizonAccountingExtensi
   }
 
   function test_setMinThawingPeriod() public view {
-    assertEq(horizonAccountingExtension.MIN_THAWING_PERIOD(), 30 days);
-  }
-
-  function test_setMaxVerifierCut() public view {
-    assertEq(horizonAccountingExtension.MAX_VERIFIER_CUT(), 1_000_000);
+    assertEq(horizonAccountingExtension.MIN_THAWING_PERIOD(), MIN_THAWING_PERIOD);
   }
 }
 
@@ -247,7 +246,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
   function test_invalidThawingPeriod(address _pledger, uint256 _amount) public {
     vm.assume(_amount > 0);
 
-    _provisionData.maxVerifierCut = 1_000_000;
+    _provisionData.maxVerifierCut = MAX_VERIFIER_CUT;
 
     _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_mockDisputeId)), abi.encode(1));
 
@@ -276,8 +275,8 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
   function test_insufficientTokens(address _pledger, uint256 _amount) public {
     vm.assume(_amount > 0);
 
-    _provisionData.thawingPeriod = 30 days;
-    _provisionData.maxVerifierCut = 1_000_000;
+    _provisionData.thawingPeriod = MIN_THAWING_PERIOD;
+    _provisionData.maxVerifierCut = MAX_VERIFIER_CUT;
 
     _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_mockDisputeId)), abi.encode(1));
 
@@ -315,8 +314,8 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
     horizonAccountingExtension.setBondedTokensForTest(_pledger, _tokens);
 
     _provisionData.tokens = _tokens;
-    _provisionData.thawingPeriod = 30 days;
-    _provisionData.maxVerifierCut = 1_000_000;
+    _provisionData.thawingPeriod = MIN_THAWING_PERIOD;
+    _provisionData.maxVerifierCut = MAX_VERIFIER_CUT;
 
     _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_mockDisputeId)), abi.encode(1));
 
@@ -540,40 +539,6 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     uint256 _amount
   ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _bondSize, _amount) {
     horizonAccountingExtension.setPledgerClaimedForTest(_mockRequestId, _pledger, true);
-
-    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_AlreadyClaimed.selector);
-    horizonAccountingExtension.claimEscalationReward(_mockDisputeId, _pledger);
-  }
-
-  function test_revertIfAlreadyClaimedSlashedUser(
-    address _pledger,
-    address _slashedUser,
-    uint256 _pledgesForDispute,
-    uint256 _pledgesAgainstDispute,
-    uint256 _bondSize,
-    uint256 _amount
-  ) public happyPath(_pledgesForDispute, _pledgesAgainstDispute, _bondSize, _amount) {
-    vm.assume(_pledger != _slashedUser);
-
-    // Mock and expect the call to oracle checking the dispute status
-    _mockAndExpect(
-      address(oracle),
-      abi.encodeWithSelector(IOracle.disputeStatus.selector, _mockDisputeId),
-      abi.encode(IOracle.DisputeStatus.Won)
-    );
-
-    _mockAndExpect(
-      address(bondEscalationModule),
-      abi.encodeWithSelector(IBondEscalationModule.pledgesForDispute.selector, _mockRequestId, _pledger),
-      abi.encode(_pledgesForDispute)
-    );
-
-    vm.mockCall(address(grt), abi.encodeWithSelector(IERC20.balanceOf.selector), abi.encode(0));
-
-    horizonAccountingExtension.setBondedTokensForTest(_pledger, _bondSize * _pledgesForDispute);
-
-    horizonAccountingExtension.setPledgersForTest(_mockDisputeId, _slashedUser);
-    horizonAccountingExtension.setPledgerClaimedForTest(_mockRequestId, _slashedUser, true);
 
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_AlreadyClaimed.selector);
     horizonAccountingExtension.claimEscalationReward(_mockDisputeId, _pledger);
@@ -1481,28 +1446,6 @@ contract HorizonAccountingExtension_Unit_Slash is HorizonAccountingExtension_Uni
     horizonAccountingExtension.setPledgersForTest(_mockDisputeId, _pledger);
     // Check: does it revert if the module is not allowed?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NoEscalationResult.selector);
-
-    horizonAccountingExtension.slash(_mockDisputeId, _usersToSlash, _maxUsersToCheck);
-  }
-
-  function test_revertIfAlreadyClaimed(uint256 _usersToSlash, uint256 _maxUsersToCheck, address _pledger) public {
-    vm.assume(_usersToSlash > 0 && _usersToSlash < type(uint16).max);
-    vm.assume(_maxUsersToCheck > 0 && _maxUsersToCheck < type(uint16).max);
-
-    horizonAccountingExtension.setPledgersForTest(_mockDisputeId, _pledger);
-    horizonAccountingExtension.setEscalationResultForTest(
-      _mockDisputeId, _mockRequestId, 0, 0, IBondEscalationModule(address(0))
-    );
-    horizonAccountingExtension.setPledgerClaimedForTest(_mockRequestId, _pledger, true);
-
-    _mockAndExpect(
-      address(oracle),
-      abi.encodeWithSelector(IOracle.disputeStatus.selector, _mockDisputeId),
-      abi.encode(IOracle.DisputeStatus.Won)
-    );
-
-    // Check: does it revert if the module is not allowed?
-    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_AlreadyClaimed.selector);
 
     horizonAccountingExtension.slash(_mockDisputeId, _usersToSlash, _maxUsersToCheck);
   }
