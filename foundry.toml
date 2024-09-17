@@ -31,4 +31,4 @@ runs = 1000
 arbitrum = "${ARBITRUM_RPC}"
 
 [etherscan]
-arbitrum = { key = "${ARBISCAN_API_KEY}", chain = "arbitrum" }
+arbitrum = { key = "${ARBISCAN_API_KEY}" }
