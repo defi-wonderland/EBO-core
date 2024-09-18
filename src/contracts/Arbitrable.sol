@@ -5,20 +5,12 @@ import {IArbitrable} from 'interfaces/IArbitrable.sol';
 
 /**
  * @title Arbitrable
- * @notice Makes a contract subject to arbitration by The Graph
+ * @notice Arbitrable contract for The Graph to manage arbitrator and council
  */
-abstract contract Arbitrable is IArbitrable {
+contract Arbitrable is IArbitrable {
   address private _arbitrator;
   address private _council;
   address private _pendingCouncil;
-
-  /**
-   * @notice Checks that the caller is The Graph's Arbitrator
-   */
-  modifier onlyArbitrator() {
-    if (msg.sender != _arbitrator) revert Arbitrable_OnlyArbitrator();
-    _;
-  }
 
   /**
    * @notice Checks that the caller is The Graph's Council
@@ -59,6 +51,11 @@ abstract contract Arbitrable is IArbitrable {
   /// @inheritdoc IArbitrable
   function pendingCouncil() public view returns (address __pendingCouncil) {
     __pendingCouncil = _pendingCouncil;
+  }
+
+  /// @inheritdoc IArbitrable
+  function validateArbitrator(address _caller) public view {
+    if (_caller != _arbitrator) revert Arbitrable_OnlyArbitrator();
   }
 
   /// @inheritdoc IArbitrable

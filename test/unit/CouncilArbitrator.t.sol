@@ -8,6 +8,8 @@ import {IArbitrator} from '@defi-wonderland/prophet-modules/solidity/interfaces/
 import {IArbitratorModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 
+import {Helpers} from 'test/utils/Helpers.sol';
+
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {ICouncilArbitrator} from 'interfaces/ICouncilArbitrator.sol';
 
@@ -18,9 +20,8 @@ import 'forge-std/Test.sol';
 contract MockCouncilArbitrator is CouncilArbitrator {
   constructor(
     IArbitratorModule _arbitratorModule,
-    address _arbitrator,
-    address _council
-  ) CouncilArbitrator(_arbitratorModule, _arbitrator, _council) {}
+    IArbitrable _arbitrable
+  ) CouncilArbitrator(_arbitratorModule, _arbitrable) {}
 
   // solhint-disable-next-line no-empty-blocks
   function mock_onlyArbitratorModule() external onlyArbitratorModule {}
@@ -33,33 +34,30 @@ contract MockCouncilArbitrator is CouncilArbitrator {
   }
 }
 
-contract CouncilArbitrator_Unit_BaseTest is Test {
+contract CouncilArbitrator_Unit_BaseTest is Test, Helpers {
   using stdStorage for StdStorage;
 
   MockCouncilArbitrator public councilArbitrator;
 
   IOracle public oracle;
   IArbitratorModule public arbitratorModule;
-  address public arbitrator;
-  address public council;
+  IArbitrable public arbitrable;
 
   event ResolutionStarted(
     bytes32 indexed _disputeId, IOracle.Request _request, IOracle.Response _response, IOracle.Dispute _dispute
   );
   event DisputeResolved(bytes32 indexed _disputeId, IOracle.DisputeStatus _status);
-  event SetArbitrator(address indexed _arbitrator);
-  event SetCouncil(address indexed _council);
 
   function setUp() public {
     oracle = IOracle(makeAddr('Oracle'));
     vm.etch(address(oracle), '0x0');
+    arbitrable = IArbitrable(makeAddr('Arbitrable'));
+    vm.etch(address(arbitrable), '0x0');
     arbitratorModule = IArbitratorModule(makeAddr('ArbitratorModule'));
-    arbitrator = makeAddr('Arbitrator');
-    council = makeAddr('Council');
 
     vm.mockCall(address(arbitratorModule), abi.encodeCall(IValidator.ORACLE, ()), abi.encode(oracle));
 
-    councilArbitrator = new MockCouncilArbitrator(arbitratorModule, arbitrator, council);
+    councilArbitrator = new MockCouncilArbitrator(arbitratorModule, arbitrable);
   }
 
   function _mockGetAnswer(bytes32 _disputeId, IOracle.DisputeStatus _status) internal {
@@ -72,8 +70,7 @@ contract CouncilArbitrator_Unit_BaseTest is Test {
 contract CouncilArbitrator_Unit_Constructor is CouncilArbitrator_Unit_BaseTest {
   struct ConstructorParams {
     IArbitratorModule arbitratorModule;
-    address arbitrator;
-    address council;
+    IArbitrable arbitrable;
     IOracle oracle;
   }
 
@@ -83,40 +80,22 @@ contract CouncilArbitrator_Unit_Constructor is CouncilArbitrator_Unit_BaseTest {
     _;
   }
 
-  function test_setArbitrator(ConstructorParams calldata _params) public happyPath(_params) {
-    councilArbitrator = new MockCouncilArbitrator(_params.arbitratorModule, _params.arbitrator, _params.council);
-
-    assertEq(councilArbitrator.arbitrator(), _params.arbitrator);
-  }
-
-  function test_emitSetArbitrator(ConstructorParams calldata _params) public happyPath(_params) {
-    vm.expectEmit();
-    emit SetArbitrator(_params.arbitrator);
-    new MockCouncilArbitrator(_params.arbitratorModule, _params.arbitrator, _params.council);
-  }
-
-  function test_setCouncil(ConstructorParams calldata _params) public happyPath(_params) {
-    councilArbitrator = new MockCouncilArbitrator(_params.arbitratorModule, _params.arbitrator, _params.council);
-
-    assertEq(councilArbitrator.council(), _params.council);
-  }
-
-  function test_emitSetCouncil(ConstructorParams calldata _params) public happyPath(_params) {
-    vm.expectEmit();
-    emit SetCouncil(_params.council);
-    new MockCouncilArbitrator(_params.arbitratorModule, _params.arbitrator, _params.council);
-  }
-
   function test_setOracle(ConstructorParams calldata _params) public happyPath(_params) {
-    councilArbitrator = new MockCouncilArbitrator(_params.arbitratorModule, _params.arbitrator, _params.council);
+    councilArbitrator = new MockCouncilArbitrator(_params.arbitratorModule, _params.arbitrable);
 
     assertEq(address(councilArbitrator.ORACLE()), address(_params.oracle));
   }
 
   function test_setArbitratorModule(ConstructorParams calldata _params) public happyPath(_params) {
-    councilArbitrator = new MockCouncilArbitrator(_params.arbitratorModule, _params.arbitrator, _params.council);
+    councilArbitrator = new MockCouncilArbitrator(_params.arbitratorModule, _params.arbitrable);
 
     assertEq(address(councilArbitrator.ARBITRATOR_MODULE()), address(_params.arbitratorModule));
+  }
+
+  function test_setArbitrable(ConstructorParams calldata _params) public happyPath(_params) {
+    councilArbitrator = new MockCouncilArbitrator(_params.arbitratorModule, _params.arbitrable);
+
+    assertEq(address(councilArbitrator.ARBITRABLE()), address(_params.arbitrable));
   }
 }
 
@@ -166,6 +145,7 @@ contract CouncilArbitrator_Unit_ResolveDispute is CouncilArbitrator_Unit_BaseTes
     uint8 status;
     ICouncilArbitrator.ResolutionParameters resolutionData;
     uint8 answer;
+    address arbitrator;
   }
 
   modifier happyPath(ResolveDisputeParams memory _params) {
@@ -179,16 +159,11 @@ contract CouncilArbitrator_Unit_ResolveDispute is CouncilArbitrator_Unit_BaseTes
 
     councilArbitrator.mock_setResolutions(_params.disputeId, _params.resolutionData);
 
-    vm.startPrank(arbitrator);
+    _mockAndExpect(
+      address(arbitrable), abi.encodeCall(IArbitrable.validateArbitrator, (_params.arbitrator)), abi.encode(true)
+    );
+    vm.startPrank(_params.arbitrator);
     _;
-  }
-
-  function test_revertOnlyArbitrator(ResolveDisputeParams memory _params, address _caller) public happyPath(_params) {
-    vm.assume(_caller != arbitrator);
-    changePrank(_caller);
-
-    vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
-    councilArbitrator.resolveDispute(_params.disputeId, IOracle.DisputeStatus(_params.status));
   }
 
   function test_revertInvalidResolution(ResolveDisputeParams memory _params) public happyPath(_params) {

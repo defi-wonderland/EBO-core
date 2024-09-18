@@ -20,21 +20,17 @@ contract EBORequestModule_Unit_BaseTest is Test {
 
   IOracle public oracle;
   IEBORequestCreator public eboRequestCreator;
-  address public arbitrator;
-  address public council;
+  IArbitrable public arbitrable;
 
   event SetEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
   event RequestFinalized(bytes32 indexed _requestId, IOracle.Response _response, address _finalizer);
-  event SetArbitrator(address indexed _arbitrator);
-  event SetCouncil(address indexed _council);
 
   function setUp() public {
     oracle = IOracle(makeAddr('Oracle'));
     eboRequestCreator = IEBORequestCreator(makeAddr('EBORequestCreator'));
-    arbitrator = makeAddr('Arbitrator');
-    council = makeAddr('Council');
+    arbitrable = IArbitrable(makeAddr('Arbitrable'));
 
-    eboRequestModule = new EBORequestModule(oracle, eboRequestCreator, arbitrator, council);
+    eboRequestModule = new EBORequestModule(oracle, eboRequestCreator, arbitrable);
   }
 }
 
@@ -42,46 +38,23 @@ contract EBORequestModule_Unit_Constructor is EBORequestModule_Unit_BaseTest {
   struct ConstructorParams {
     IOracle oracle;
     IEBORequestCreator eboRequestCreator;
-    address arbitrator;
-    address council;
+    IArbitrable arbitrable;
   }
 
   function test_setOracle(ConstructorParams calldata _params) public {
-    eboRequestModule =
-      new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
+    eboRequestModule = new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrable);
 
     assertEq(address(eboRequestModule.ORACLE()), address(_params.oracle));
   }
 
-  function test_setArbitrator(ConstructorParams calldata _params) public {
-    eboRequestModule =
-      new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
+  function test_setArbitrable(ConstructorParams calldata _params) public {
+    eboRequestModule = new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrable);
 
-    assertEq(eboRequestModule.arbitrator(), _params.arbitrator);
-  }
-
-  function test_emitSetArbitrator(ConstructorParams calldata _params) public {
-    vm.expectEmit();
-    emit SetArbitrator(_params.arbitrator);
-    new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
-  }
-
-  function test_setCouncil(ConstructorParams calldata _params) public {
-    eboRequestModule =
-      new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
-
-    assertEq(eboRequestModule.council(), _params.council);
-  }
-
-  function test_emitSetCouncil(ConstructorParams calldata _params) public {
-    vm.expectEmit();
-    emit SetCouncil(_params.council);
-    new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
+    assertEq(address(eboRequestModule.ARBITRABLE()), address(_params.arbitrable));
   }
 
   function test_setEBORequestCreator(ConstructorParams calldata _params) public {
-    eboRequestModule =
-      new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
+    eboRequestModule = new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrable);
 
     assertEq(address(eboRequestModule.eboRequestCreator()), address(_params.eboRequestCreator));
   }
@@ -89,7 +62,7 @@ contract EBORequestModule_Unit_Constructor is EBORequestModule_Unit_BaseTest {
   function test_emitSetEBORequestCreator(ConstructorParams calldata _params) public {
     vm.expectEmit();
     emit SetEBORequestCreator(_params.eboRequestCreator);
-    new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrator, _params.council);
+    new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrable);
   }
 }
 
@@ -191,26 +164,29 @@ contract EBORequestModule_Unit_FinalizeRequest is EBORequestModule_Unit_BaseTest
 }
 
 contract EBORequestModule_Unit_SetEBORequestCreator is EBORequestModule_Unit_BaseTest {
-  modifier happyPath() {
-    vm.startPrank(arbitrator);
+  modifier happyPath(address _arbitrator) {
+    vm.mockCall(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
     _;
   }
 
-  function test_revertOnlyArbitrator(IEBORequestCreator _eboRequestCreator, address _caller) public happyPath {
-    vm.assume(_caller != arbitrator);
-    changePrank(_caller);
-
-    vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
-    eboRequestModule.setEBORequestCreator(_eboRequestCreator);
-  }
-
-  function test_setEBORequestCreator(IEBORequestCreator _eboRequestCreator) public happyPath {
+  function test_setEBORequestCreator(
+    IEBORequestCreator _eboRequestCreator,
+    address _arbitrator
+  ) public happyPath(_arbitrator) {
     eboRequestModule.setEBORequestCreator(_eboRequestCreator);
 
     assertEq(address(eboRequestModule.eboRequestCreator()), address(_eboRequestCreator));
   }
 
-  function test_emitSetEBORequestCreator(IEBORequestCreator _eboRequestCreator) public happyPath {
+  function test_emitSetEBORequestCreator(
+    IEBORequestCreator _eboRequestCreator,
+    address _arbitrator
+  ) public happyPath(_arbitrator) {
     vm.expectEmit();
     emit SetEBORequestCreator(_eboRequestCreator);
     eboRequestModule.setEBORequestCreator(_eboRequestCreator);
