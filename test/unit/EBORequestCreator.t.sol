@@ -24,10 +24,9 @@ contract EBORequestCreatorForTest is EBORequestCreator {
   constructor(
     IOracle _oracle,
     IEpochManager _epochManager,
-    address _arbitrator,
-    address _council,
+    IArbitrable _arbitrable,
     IOracle.Request memory _requestData
-  ) EBORequestCreator(_oracle, _epochManager, _arbitrator, _council, _requestData) {}
+  ) EBORequestCreator(_oracle, _epochManager, _arbitrable, _requestData) {}
 
   function setChainIdForTest(string calldata _chainId) external returns (bool _added) {
     _added = _chainIdsAllowed.add(_encodeChainId(_chainId));
@@ -67,44 +66,33 @@ abstract contract EBORequestCreator_Unit_BaseTest is Test {
   IOracle public oracle;
   IEpochManager public epochManager;
   IEBORequestModule public eboRequestModule;
-
-  /// EOAs
-  address public arbitrator;
-  address public council;
+  IArbitrable public arbitrable;
 
   /// Variables
   IOracle.Request public requestData;
   uint256 public startEpoch;
 
   function setUp() external {
-    council = makeAddr('Council');
-    arbitrator = makeAddr('Arbitrator');
     oracle = IOracle(makeAddr('Oracle'));
     epochManager = IEpochManager(makeAddr('EpochManager'));
     eboRequestModule = IEBORequestModule(makeAddr('EBORequestModule'));
+    arbitrable = IArbitrable(makeAddr('Arbitrable'));
 
     vm.mockCall(address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(100));
 
     requestData.nonce = 0;
     startEpoch = 100;
 
-    eboRequestCreator = new EBORequestCreatorForTest(oracle, epochManager, arbitrator, council, requestData);
+    eboRequestCreator = new EBORequestCreatorForTest(oracle, epochManager, arbitrable, requestData);
   }
 }
 
 contract EBORequestCreator_Unit_Constructor is EBORequestCreator_Unit_BaseTest {
   /**
-   * @notice Test arbitrator set in the constructor
+   * @notice Test arbitrable set in the constructor
    */
-  function test_arbitratorSet() external view {
-    assertEq(eboRequestCreator.arbitrator(), arbitrator);
-  }
-
-  /**
-   * @notice Test council set in the constructor
-   */
-  function test_councilSet() external view {
-    assertEq(eboRequestCreator.council(), council);
+  function test_arbitrableSet() external view {
+    assertEq(address(eboRequestCreator.ARBITRABLE()), address(arbitrable));
   }
 
   /**
@@ -139,7 +127,7 @@ contract EBORequestCreator_Unit_Constructor is EBORequestCreator_Unit_BaseTest {
     vm.expectEmit();
     emit EpochManagerSet(epochManager);
 
-    new EBORequestCreatorForTest(oracle, epochManager, arbitrator, council, requestData);
+    new EBORequestCreatorForTest(oracle, epochManager, arbitrable, requestData);
   }
 
   /**
@@ -150,14 +138,14 @@ contract EBORequestCreator_Unit_Constructor is EBORequestCreator_Unit_BaseTest {
 
     _requestData.nonce = _nonce;
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_InvalidNonce.selector));
-    new EBORequestCreator(oracle, epochManager, arbitrator, council, _requestData);
+    new EBORequestCreator(oracle, epochManager, arbitrable, _requestData);
   }
 }
 
 contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest {
   IEBORequestModule.RequestParameters internal _params;
 
-  modifier happyPath(uint256 _epoch, string memory _chainId) {
+  modifier happyPath(uint256 _epoch, string memory _chainId, address _arbitrator) {
     vm.assume(_epoch > startEpoch);
 
     vm.mockCall(address(epochManager), abi.encodeWithSelector(IEpochManager.currentEpoch.selector), abi.encode(_epoch));
@@ -172,7 +160,12 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
       abi.encode(_params)
     );
 
-    vm.startPrank(arbitrator);
+    vm.mockCall(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
     _;
   }
 
@@ -228,8 +221,9 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
   function test_revertIfRequestIdExists(
     uint256 _epoch,
     string calldata _chainId,
-    bytes32 _requestId
-  ) external happyPath(_epoch, _chainId) {
+    bytes32 _requestId,
+    address _arbitrator
+  ) external happyPath(_epoch, '', _arbitrator) {
     vm.assume(_requestId != bytes32(0));
     eboRequestCreator.setChainIdForTest(_chainId);
     eboRequestCreator.setRequestIdPerChainAndEpochForTest(_chainId, _epoch, _requestId);
@@ -250,8 +244,9 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     uint256 _epoch,
     string calldata _chainId,
     bytes32 _requestId,
-    uint96 _finalizedAt
-  ) external happyPath(_epoch, _chainId) {
+    uint96 _finalizedAt,
+    address _arbitrator
+  ) external happyPath(_epoch, '', _arbitrator) {
     vm.assume(_finalizedAt > 0);
     vm.assume(_requestId != bytes32(0));
     eboRequestCreator.setChainIdForTest(_chainId);
@@ -281,8 +276,9 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     uint256 _epoch,
     string calldata _chainId,
     bytes32 _requestId,
-    uint96 _finalizedAt
-  ) external happyPath(_epoch, _chainId) {
+    uint96 _finalizedAt,
+    address _arbitrator
+  ) external happyPath(_epoch, '', _arbitrator) {
     vm.assume(_finalizedAt == 0);
     vm.assume(_requestId != bytes32(0));
     eboRequestCreator.setChainIdForTest(_chainId);
@@ -307,8 +303,9 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
   function test_emitCreateRequest(
     uint256 _epoch,
     string calldata _chainId,
-    bytes32 _requestId
-  ) external happyPath(_epoch, _chainId) {
+    bytes32 _requestId,
+    address _arbitrator
+  ) external happyPath(_epoch, _chainId, _arbitrator) {
     vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), abi.encode(_requestId));
     vm.expectEmit();
     emit RequestCreated(_requestId, _epoch, _chainId);
@@ -323,8 +320,9 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     uint256 _epoch,
     string calldata _chainId,
     bytes32 _requestId,
-    uint96 _finalizedAt
-  ) external happyPath(_epoch, _chainId) {
+    uint96 _finalizedAt,
+    address _arbitrator
+  ) external happyPath(_epoch, '', _arbitrator) {
     vm.assume(_finalizedAt > 0);
     vm.assume(_requestId != bytes32(0));
     eboRequestCreator.setChainIdForTest(_chainId);
@@ -348,26 +346,20 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
 }
 
 contract EBORequestCreator_Unit_AddChain is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath() {
-    vm.startPrank(arbitrator);
+  modifier happyPath(address _arbitrator) {
+    vm.mockCall(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
     _;
-  }
-
-  /**
-   * @notice Test the revert if the caller is not the arbitrator
-   */
-  function test_revertIfNotArbitrator(string calldata _chainId, address _caller) external {
-    vm.assume(_caller != arbitrator);
-    changePrank(_caller);
-
-    vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
-    eboRequestCreator.addChain(_chainId);
   }
 
   /**
    * @notice Test the revert if the chain is already added
    */
-  function test_revertIfChainAdded(string calldata _chainId) external happyPath {
+  function test_revertIfChainAdded(string calldata _chainId, address _arbitrator) external happyPath(_arbitrator) {
     eboRequestCreator.setChainIdForTest(_chainId);
 
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_ChainAlreadyAdded.selector));
@@ -377,7 +369,7 @@ contract EBORequestCreator_Unit_AddChain is EBORequestCreator_Unit_BaseTest {
   /**
    * @notice Test the emit chain added
    */
-  function test_emitChainAdded(string calldata _chainId) external happyPath {
+  function test_emitChainAdded(string calldata _chainId, address _arbitrator) external happyPath(_arbitrator) {
     vm.expectEmit();
     emit ChainAdded(_chainId);
 
@@ -386,37 +378,40 @@ contract EBORequestCreator_Unit_AddChain is EBORequestCreator_Unit_BaseTest {
 }
 
 contract EBORequestCreator_Unit_RemoveChain is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(string calldata _chainId) {
+  modifier happyPath(string calldata _chainId, address _arbitrator) {
     eboRequestCreator.setChainIdForTest(_chainId);
-    vm.startPrank(arbitrator);
+    vm.mockCall(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
     _;
-  }
-
-  /**
-   * @notice Test the revert if the caller is not the arbitrator
-   */
-  function test_revertIfNotArbitrator(string calldata _chainId, address _caller) external {
-    vm.assume(_caller != arbitrator);
-    changePrank(_caller);
-
-    vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
-    eboRequestCreator.removeChain(_chainId);
   }
 
   /**
    * @notice Test the revert if the chain is not added
    */
-  function test_revertIfChainNotAdded(string calldata _chainId) external {
+  function test_revertIfChainNotAdded(string calldata _chainId, address _arbitrator) external {
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector));
 
-    vm.prank(arbitrator);
+    vm.mockCall(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
+
     eboRequestCreator.removeChain(_chainId);
   }
 
   /**
    * @notice Test the emit chain removed
    */
-  function test_emitChainRemoved(string calldata _chainId) external happyPath(_chainId) {
+  function test_emitChainRemoved(
+    string calldata _chainId,
+    address _arbitrator
+  ) external happyPath(_chainId, _arbitrator) {
     vm.expectEmit();
     emit ChainRemoved(_chainId);
 
@@ -425,24 +420,14 @@ contract EBORequestCreator_Unit_RemoveChain is EBORequestCreator_Unit_BaseTest {
 }
 
 contract EBORequestCreator_Unit_SetRequestModuleData is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(address _requestModule, IEBORequestModule.RequestParameters calldata _requestModuleData) {
-    vm.startPrank(arbitrator);
+  modifier happyPath(address _arbitrator) {
+    vm.mockCall(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
     _;
-  }
-
-  /**
-   * @notice Test the revert if the caller is not the arbitrator
-   */
-  function test_revertIfNotArbitrator(
-    address _requestModule,
-    IEBORequestModule.RequestParameters calldata _requestModuleData,
-    address _caller
-  ) external {
-    vm.assume(_caller != arbitrator);
-    changePrank(_caller);
-
-    vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
-    eboRequestCreator.setRequestModuleData(_requestModule, _requestModuleData);
   }
 
   // TODO: IF WE USE THIS TEST, WE HAVE TO CHANGE THE SETTINGS TO USE --VIA-IR BECAUSE WE HAVE TO CREATE A LOT OF VARIABLES
@@ -464,8 +449,9 @@ contract EBORequestCreator_Unit_SetRequestModuleData is EBORequestCreator_Unit_B
    */
   function test_emitRequestModuleDataSet(
     address _requestModule,
-    IEBORequestModule.RequestParameters calldata _requestModuleData
-  ) external happyPath(_requestModule, _requestModuleData) {
+    IEBORequestModule.RequestParameters calldata _requestModuleData,
+    address _arbitrator
+  ) external happyPath(_arbitrator) {
     vm.expectEmit();
 
     emit RequestModuleDataSet(_requestModule, _requestModuleData);
@@ -475,24 +461,14 @@ contract EBORequestCreator_Unit_SetRequestModuleData is EBORequestCreator_Unit_B
 }
 
 contract EBORequestCreator_Unit_SetResponseModuleData is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(address _responseModule, IBondedResponseModule.RequestParameters calldata _responseModuleData) {
-    vm.startPrank(arbitrator);
+  modifier happyPath(address _arbitrator) {
+    vm.mockCall(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
     _;
-  }
-
-  /**
-   * @notice Test the revert if the caller is not the arbitrator
-   */
-  function test_revertIfNotArbitrator(
-    address _responseModule,
-    IBondedResponseModule.RequestParameters calldata _responseModuleData,
-    address _caller
-  ) external {
-    vm.assume(_caller != arbitrator);
-    changePrank(_caller);
-
-    vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
-    eboRequestCreator.setResponseModuleData(_responseModule, _responseModuleData);
   }
 
   /**
@@ -500,8 +476,9 @@ contract EBORequestCreator_Unit_SetResponseModuleData is EBORequestCreator_Unit_
    */
   function test_emitResponseModuleDataSet(
     address _responseModule,
-    IBondedResponseModule.RequestParameters calldata _responseModuleData
-  ) external happyPath(_responseModule, _responseModuleData) {
+    IBondedResponseModule.RequestParameters calldata _responseModuleData,
+    address _arbitrator
+  ) external happyPath(_arbitrator) {
     vm.expectEmit();
     emit ResponseModuleDataSet(_responseModule, _responseModuleData);
 
@@ -510,24 +487,14 @@ contract EBORequestCreator_Unit_SetResponseModuleData is EBORequestCreator_Unit_
 }
 
 contract EBORequestCreator_Unit_SetDisputeModuleData is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(address _disputeModule, IBondEscalationModule.RequestParameters calldata _disputeModuleData) {
-    vm.startPrank(arbitrator);
+  modifier happyPath(address _arbitrator) {
+    vm.mockCall(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
     _;
-  }
-
-  /**
-   * @notice Test the revert if the caller is not the arbitrator
-   */
-  function test_revertIfNotArbitrator(
-    address _disputeModule,
-    IBondEscalationModule.RequestParameters calldata _disputeModuleData,
-    address _caller
-  ) external {
-    vm.assume(_caller != arbitrator);
-    changePrank(_caller);
-
-    vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
-    eboRequestCreator.setDisputeModuleData(_disputeModule, _disputeModuleData);
   }
 
   /**
@@ -535,8 +502,9 @@ contract EBORequestCreator_Unit_SetDisputeModuleData is EBORequestCreator_Unit_B
    */
   function test_emitDisputeModuleDataSet(
     address _disputeModule,
-    IBondEscalationModule.RequestParameters calldata _disputeModuleData
-  ) external happyPath(_disputeModule, _disputeModuleData) {
+    IBondEscalationModule.RequestParameters calldata _disputeModuleData,
+    address _arbitrator
+  ) external happyPath(_arbitrator) {
     vm.expectEmit();
     emit DisputeModuleDataSet(_disputeModule, _disputeModuleData);
 
@@ -545,24 +513,14 @@ contract EBORequestCreator_Unit_SetDisputeModuleData is EBORequestCreator_Unit_B
 }
 
 contract EBORequestCreator_Unit_SetResolutionModuleData is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(address _resolutionModule, IArbitratorModule.RequestParameters calldata _resolutionModuleData) {
-    vm.startPrank(arbitrator);
+  modifier happyPath(address _arbitrator) {
+    vm.mockCall(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
     _;
-  }
-
-  /**
-   * @notice Test the revert if the caller is not the arbitrator
-   */
-  function test_revertIfNotArbitrator(
-    address _resolutionModule,
-    IArbitratorModule.RequestParameters calldata _resolutionModuleData,
-    address _caller
-  ) external {
-    vm.assume(_caller != arbitrator);
-    changePrank(_caller);
-
-    vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
-    eboRequestCreator.setResolutionModuleData(_resolutionModule, _resolutionModuleData);
   }
 
   /**
@@ -570,8 +528,9 @@ contract EBORequestCreator_Unit_SetResolutionModuleData is EBORequestCreator_Uni
    */
   function test_emitResolutionModuleDataSet(
     address _resolutionModule,
-    IArbitratorModule.RequestParameters calldata _resolutionModuleData
-  ) external happyPath(_resolutionModule, _resolutionModuleData) {
+    IArbitratorModule.RequestParameters calldata _resolutionModuleData,
+    address _arbitrator
+  ) external happyPath(_arbitrator) {
     vm.expectEmit();
     emit ResolutionModuleDataSet(_resolutionModule, _resolutionModuleData);
 
@@ -580,24 +539,14 @@ contract EBORequestCreator_Unit_SetResolutionModuleData is EBORequestCreator_Uni
 }
 
 contract EBORequestCreator_Unit_SetFinalityModuleData is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(address _finalityModule, bytes calldata _finalityModuleData) {
-    vm.startPrank(arbitrator);
+  modifier happyPath(address _arbitrator) {
+    vm.mockCall(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
     _;
-  }
-
-  /**
-   * @notice Test the revert if the caller is not the arbitrator
-   */
-  function test_revertIfNotArbitrator(
-    address _finalityModule,
-    bytes calldata _finalityModuleData,
-    address _caller
-  ) external {
-    vm.assume(_caller != arbitrator);
-    changePrank(_caller);
-
-    vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
-    eboRequestCreator.setFinalityModuleData(_finalityModule, _finalityModuleData);
   }
 
   /**
@@ -605,8 +554,9 @@ contract EBORequestCreator_Unit_SetFinalityModuleData is EBORequestCreator_Unit_
    */
   function test_emitFinalityModuleDataSet(
     address _finalityModule,
-    bytes calldata _finalityModuleData
-  ) external happyPath(_finalityModule, _finalityModuleData) {
+    bytes calldata _finalityModuleData,
+    address _arbitrator
+  ) external happyPath(_arbitrator) {
     vm.expectEmit();
     emit FinalityModuleDataSet(_finalityModule, _finalityModuleData);
 
@@ -615,27 +565,25 @@ contract EBORequestCreator_Unit_SetFinalityModuleData is EBORequestCreator_Unit_
 }
 
 contract EBORequestCreator_Unit_SetEpochManager is EBORequestCreator_Unit_BaseTest {
-  modifier happyPath(IEpochManager _epochManager) {
+  modifier happyPath(IEpochManager _epochManager, address _arbitrator) {
     vm.assume(address(_epochManager) != address(0));
-    vm.startPrank(arbitrator);
+
+    vm.mockCall(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
     _;
-  }
-
-  /**
-   * @notice Test the revert if the caller is not the arbitrator
-   */
-  function test_revertIfNotArbitrator(IEpochManager _epochManager, address _caller) external {
-    vm.assume(_caller != arbitrator);
-    changePrank(_caller);
-
-    vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
-    eboRequestCreator.setEpochManager(_epochManager);
   }
 
   /**
    * @notice Test the emit epoch manager set
    */
-  function test_emitEpochManagerSet(IEpochManager _epochManager) external happyPath(_epochManager) {
+  function test_emitEpochManagerSet(
+    IEpochManager _epochManager,
+    address _arbitrator
+  ) external happyPath(_epochManager, _arbitrator) {
     vm.expectEmit();
     emit EpochManagerSet(_epochManager);
 

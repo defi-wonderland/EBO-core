@@ -109,12 +109,11 @@ contract UnitDeploy is Test {
 
     // it should deploy `EBORequestModule` with correct args
     EBORequestModule _eboRequestModule =
-      new EBORequestModule(deploy.oracle(), deploy.eboRequestCreator(), deploy.arbitrator(), deploy.council());
+      new EBORequestModule(deploy.oracle(), deploy.eboRequestCreator(), deploy.arbitrable());
     assertEq(address(deploy.eboRequestModule()).code, address(_eboRequestModule).code);
     assertEq(address(deploy.eboRequestModule().ORACLE()), address(deploy.oracle()));
     assertEq(address(deploy.eboRequestModule().eboRequestCreator()), address(deploy.eboRequestCreator()));
-    assertEq(address(deploy.eboRequestModule().arbitrator()), address(deploy.arbitrator()));
-    assertEq(address(deploy.eboRequestModule().council()), address(deploy.council()));
+    assertEq(address(deploy.eboRequestModule().ARBITRABLE()), address(deploy.arbitrable()));
 
     // it should deploy `BondedResponseModule` with correct args
     BondedResponseModule _bondedResponseModule = new BondedResponseModule(deploy.oracle());
@@ -133,12 +132,11 @@ contract UnitDeploy is Test {
 
     // it should deploy `EBOFinalityModule` with correct args
     EBOFinalityModule _eboFinalityModule =
-      new EBOFinalityModule(deploy.oracle(), deploy.eboRequestCreator(), deploy.arbitrator(), deploy.council());
+      new EBOFinalityModule(deploy.oracle(), deploy.eboRequestCreator(), deploy.arbitrable());
     assertEq(address(deploy.eboFinalityModule()).code, address(_eboFinalityModule).code);
     assertEq(address(deploy.eboFinalityModule().ORACLE()), address(deploy.oracle()));
     assertEq(address(deploy.eboFinalityModule().eboRequestCreator()), address(deploy.eboRequestCreator()));
-    assertEq(address(deploy.eboFinalityModule().arbitrator()), address(deploy.arbitrator()));
-    assertEq(address(deploy.eboFinalityModule().council()), address(deploy.council()));
+    assertEq(address(deploy.eboFinalityModule().ARBITRABLE()), address(deploy.arbitrable()));
 
     // it should deploy `BondEscalationAccounting` with correct args
     BondEscalationAccounting _bondEscalationAccounting = new BondEscalationAccounting(deploy.oracle());
@@ -148,21 +146,18 @@ contract UnitDeploy is Test {
     // it should deploy `EBORequestCreator` with correct args
     IOracle.Request memory _requestData = _instantiateRequestData();
     EBORequestCreator _eboRequestCreator =
-      new EBORequestCreator(deploy.oracle(), deploy.epochManager(), deploy.arbitrator(), deploy.council(), _requestData);
+      new EBORequestCreator(deploy.oracle(), deploy.epochManager(), deploy.arbitrable(), _requestData);
     assertEq(address(deploy.eboRequestCreator()).code, address(_eboRequestCreator).code);
     assertEq(address(deploy.eboRequestCreator().ORACLE()), address(deploy.oracle()));
     assertEq(address(deploy.eboRequestCreator().epochManager()), address(deploy.epochManager()));
-    assertEq(address(deploy.eboRequestCreator().arbitrator()), address(deploy.arbitrator()));
-    assertEq(address(deploy.eboRequestCreator().council()), address(deploy.council()));
+    assertEq(address(deploy.eboRequestCreator().ARBITRABLE()), address(deploy.arbitrable()));
     assertEq(abi.encode(deploy.eboRequestCreator().getRequestData()), abi.encode(_requestData));
 
     // it should deploy `CouncilArbitrator` with correct args
-    CouncilArbitrator _councilArbitrator =
-      new CouncilArbitrator(deploy.arbitratorModule(), deploy.arbitrator(), deploy.council());
+    CouncilArbitrator _councilArbitrator = new CouncilArbitrator(deploy.arbitratorModule(), deploy.arbitrable());
     assertEq(address(deploy.councilArbitrator()).code, address(_councilArbitrator).code);
     assertEq(address(deploy.councilArbitrator().ARBITRATOR_MODULE()), address(deploy.arbitratorModule()));
-    assertEq(address(deploy.councilArbitrator().arbitrator()), address(deploy.arbitrator()));
-    assertEq(address(deploy.councilArbitrator().council()), address(deploy.council()));
+    assertEq(address(deploy.councilArbitrator().ARBITRABLE()), address(deploy.arbitrable()));
   }
 
   function _instantiateRequestData() internal view returns (IOracle.Request memory _requestData) {

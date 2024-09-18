@@ -13,7 +13,7 @@ import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
  * @title EBORequestModule
  * @notice Module allowing users to create a request for RPC data for a specific epoch
  */
-interface IEBORequestModule is IRequestModule, IArbitrable {
+interface IEBORequestModule is IRequestModule {
   /*///////////////////////////////////////////////////////////////
                               STRUCTS
   //////////////////////////////////////////////////////////////*/
@@ -54,6 +54,12 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
   /*///////////////////////////////////////////////////////////////
                               VARIABLES
   //////////////////////////////////////////////////////////////*/
+
+  /**
+   * @notice Returns the address of the arbitrable contract
+   * @return _ARBITRABLE The address of the arbitrable contract
+   */
+  function ARBITRABLE() external view returns (IArbitrable _ARBITRABLE);
 
   /**
    * @notice Returns the address of the EBORequestCreator
