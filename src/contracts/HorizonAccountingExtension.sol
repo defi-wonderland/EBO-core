@@ -273,6 +273,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     _unbond(_payer, _amount);
 
     // Slash a payer to pay the receiver
+    // TODO: Check if will provision that amount or we will send it directly
     HORIZON_STAKING.slash(_payer, _amount, _amount, _receiver);
 
     emit Paid({_requestId: _requestId, _beneficiary: _receiver, _payer: _payer, _amount: _amount});
