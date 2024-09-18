@@ -74,6 +74,11 @@ contract CouncilArbitrator is Arbitrable, ICouncilArbitrator {
     getAnswer[_disputeId] = _award;
 
     ORACLE.resolveDispute(_resolutionParams.request, _resolutionParams.response, _resolutionParams.dispute);
+
+    if (_award != IOracle.DisputeStatus.Lost) {
+      _resolutionParams.response.requestId = 0;
+    }
+
     ORACLE.finalize(_resolutionParams.request, _resolutionParams.response);
 
     emit DisputeArbitrated(_disputeId, _award);

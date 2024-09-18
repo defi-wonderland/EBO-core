@@ -231,7 +231,20 @@ contract CouncilArbitrator_Unit_ArbitrateDispute is CouncilArbitrator_Unit_BaseT
     councilArbitrator.arbitrateDispute(_params.disputeId, IOracle.DisputeStatus(_params.award));
   }
 
-  function test_callOracleFinalize(ArbitrateDisputeParams memory _params) public happyPath(_params) {
+  function test_callOracleFinalizeWithResponse(ArbitrateDisputeParams memory _params) public happyPath(_params) {
+    _params.award = uint8(IOracle.DisputeStatus.Lost);
+
+    vm.expectCall(
+      address(oracle),
+      abi.encodeCall(IOracle.finalize, (_params.resolutionParams.request, _params.resolutionParams.response))
+    );
+    councilArbitrator.arbitrateDispute(_params.disputeId, IOracle.DisputeStatus(_params.award));
+  }
+
+  function test_callOracleFinalizeWithoutResponse(ArbitrateDisputeParams memory _params) public happyPath(_params) {
+    vm.assume(_params.award != uint8(IOracle.DisputeStatus.Lost));
+    _params.resolutionParams.response.requestId = 0;
+
     vm.expectCall(
       address(oracle),
       abi.encodeCall(IOracle.finalize, (_params.resolutionParams.request, _params.resolutionParams.response))
