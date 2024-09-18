@@ -5,15 +5,17 @@ import {Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.so
 import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 
-import {Arbitrable} from 'contracts/Arbitrable.sol';
 import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
-import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
+import {IArbitrable, IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
 /**
  * @title EBORequestModule
  * @notice Module allowing users to create a request for RPC data for a specific epoch
  */
-contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
+contract EBORequestModule is Module, IEBORequestModule {
+  /// @inheritdoc IEBORequestModule
+  IArbitrable public immutable ARBITRABLE;
+
   /// @inheritdoc IEBORequestModule
   IEBORequestCreator public eboRequestCreator;
 
@@ -21,16 +23,11 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
    * @notice Constructor
    * @param _oracle The address of the Oracle
    * @param _eboRequestCreator The address of the EBORequestCreator
-   * @param _arbitrator The address of The Graph's Arbitrator
-   * @param _council The address of The Graph's Council
+   * @param _arbitrable The address of the Arbitrable contract
    */
-  constructor(
-    IOracle _oracle,
-    IEBORequestCreator _eboRequestCreator,
-    address _arbitrator,
-    address _council
-  ) Module(_oracle) Arbitrable(_arbitrator, _council) {
+  constructor(IOracle _oracle, IEBORequestCreator _eboRequestCreator, IArbitrable _arbitrable) Module(_oracle) {
     _setEBORequestCreator(_eboRequestCreator);
+    ARBITRABLE = _arbitrable;
   }
 
   /// @inheritdoc IEBORequestModule
@@ -61,7 +58,8 @@ contract EBORequestModule is Module, Arbitrable, IEBORequestModule {
   }
 
   /// @inheritdoc IEBORequestModule
-  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external onlyArbitrator {
+  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
     _setEBORequestCreator(_eboRequestCreator);
   }
 

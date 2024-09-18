@@ -12,7 +12,7 @@ import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
  * @notice Module allowing users to index data into the subgraph
  * as a result of a request being finalized
  */
-interface IEBOFinalityModule is IFinalityModule, IArbitrable {
+interface IEBOFinalityModule is IFinalityModule {
   /*///////////////////////////////////////////////////////////////
                               EVENTS
   //////////////////////////////////////////////////////////////*/
@@ -56,6 +56,12 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
   /*///////////////////////////////////////////////////////////////
                               VARIABLES
   //////////////////////////////////////////////////////////////*/
+
+  /**
+   * @notice Returns the address of the arbitrable contract
+   * @return _ARBITRABLE The address of the arbitrable contract
+   */
+  function ARBITRABLE() external view returns (IArbitrable _ARBITRABLE);
 
   /**
    * @notice Returns the address of the EBORequestCreator

@@ -11,9 +11,6 @@ contract MockArbitrable is Arbitrable {
   constructor(address _arbitrator, address _council) Arbitrable(_arbitrator, _council) {}
 
   // solhint-disable-next-line no-empty-blocks
-  function mock_onlyArbitrator() external onlyArbitrator {}
-
-  // solhint-disable-next-line no-empty-blocks
   function mock_onlyCouncil() external onlyCouncil {}
 
   // solhint-disable-next-line no-empty-blocks
@@ -161,25 +158,6 @@ contract Arbitrable_Unit_ConfirmCouncil is Arbitrable_Unit_BaseTest {
   }
 }
 
-contract Arbitrable_Unit_OnlyArbitrator is Arbitrable_Unit_BaseTest {
-  modifier happyPath() {
-    vm.startPrank(arbitrator);
-    _;
-  }
-
-  function test_revertOnlyArbitrator(address _caller) public happyPath {
-    vm.assume(_caller != arbitrator);
-    changePrank(_caller);
-
-    vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
-    arbitrable.mock_onlyArbitrator();
-  }
-
-  function test_onlyArbitrator() public happyPath {
-    arbitrable.mock_onlyArbitrator();
-  }
-}
-
 contract Arbitrable_Unit_OnlyCouncil is Arbitrable_Unit_BaseTest {
   modifier happyPath() {
     vm.startPrank(council);
@@ -217,5 +195,18 @@ contract Arbitrable_Unit_OnlyPendingCouncil is Arbitrable_Unit_BaseTest {
 
   function test_onlyPendingCouncil() public happyPath {
     arbitrable.mock_onlyPendingCouncil();
+  }
+}
+
+contract Arbitrable_Unit_ValidateArbitrator is Arbitrable_Unit_BaseTest {
+  function test_revertOnlyArbitrator(address _caller) public {
+    vm.assume(_caller != arbitrator);
+
+    vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
+    arbitrable.validateArbitrator(_caller);
+  }
+
+  function test_validateArbitrator() public {
+    arbitrable.validateArbitrator(arbitrator);
   }
 }

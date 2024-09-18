@@ -7,20 +7,21 @@ import {IArbitrator} from '@defi-wonderland/prophet-modules/solidity/interfaces/
 import {IArbitratorModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 
-import {Arbitrable} from 'contracts/Arbitrable.sol';
-import {ICouncilArbitrator} from 'interfaces/ICouncilArbitrator.sol';
+import {IArbitrable, ICouncilArbitrator} from 'interfaces/ICouncilArbitrator.sol';
 
 /**
  * @title CouncilArbitrator
  * @notice Resolves disputes by arbitration by The Graph
  */
-contract CouncilArbitrator is Arbitrable, ICouncilArbitrator {
+contract CouncilArbitrator is ICouncilArbitrator {
   using ValidatorLib for IOracle.Dispute;
 
   /// @inheritdoc ICouncilArbitrator
   IOracle public immutable ORACLE;
   /// @inheritdoc ICouncilArbitrator
   IArbitratorModule public immutable ARBITRATOR_MODULE;
+  /// @inheritdoc ICouncilArbitrator
+  IArbitrable public immutable ARBITRABLE;
 
   /// @inheritdoc ICouncilArbitrator
   mapping(bytes32 _disputeId => ResolutionParameters _resolutionParams) public resolutions;
@@ -38,16 +39,12 @@ contract CouncilArbitrator is Arbitrable, ICouncilArbitrator {
   /**
    * @notice Constructor
    * @param _arbitratorModule The address of the Arbitrator Module
-   * @param _arbitrator The address of The Graph's Arbitrator
-   * @param _council The address of The Graph's Council
+   * @param _arbitrable The address of the Arbitrable contract
    */
-  constructor(
-    IArbitratorModule _arbitratorModule,
-    address _arbitrator,
-    address _council
-  ) Arbitrable(_arbitrator, _council) {
+  constructor(IArbitratorModule _arbitratorModule, IArbitrable _arbitrable) {
     ORACLE = _arbitratorModule.ORACLE();
     ARBITRATOR_MODULE = _arbitratorModule;
+    ARBITRABLE = _arbitrable;
   }
 
   /// @inheritdoc IArbitrator
@@ -64,7 +61,9 @@ contract CouncilArbitrator is Arbitrable, ICouncilArbitrator {
   }
 
   /// @inheritdoc ICouncilArbitrator
-  function arbitrateDispute(bytes32 _disputeId, IOracle.DisputeStatus _award) external onlyArbitrator {
+  function arbitrateDispute(bytes32 _disputeId, IOracle.DisputeStatus _award) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
+
     ResolutionParameters memory _resolutionParams = resolutions[_disputeId];
 
     if (_resolutionParams.dispute.disputer == address(0)) revert CouncilArbitrator_InvalidDispute();

@@ -5,8 +5,7 @@ import {Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.so
 import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 
-import {Arbitrable} from 'contracts/Arbitrable.sol';
-import {IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
+import {IArbitrable, IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
 import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
 
 /**
@@ -14,7 +13,10 @@ import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
  * @notice Module allowing users to index data into the subgraph
  * as a result of a request being finalized
  */
-contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
+contract EBOFinalityModule is Module, IEBOFinalityModule {
+  /// @inheritdoc IEBOFinalityModule
+  IArbitrable public immutable ARBITRABLE;
+
   /// @inheritdoc IEBOFinalityModule
   IEBORequestCreator public eboRequestCreator;
 
@@ -22,16 +24,11 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
    * @notice Constructor
    * @param _oracle The address of the Oracle
    * @param _eboRequestCreator The address of the EBORequestCreator
-   * @param _arbitrator The address of The Graph's Arbitrator
-   * @param _council The address of The Graph's Council
+   * @param _arbitrable The address of the Arbitrable contract
    */
-  constructor(
-    IOracle _oracle,
-    IEBORequestCreator _eboRequestCreator,
-    address _arbitrator,
-    address _council
-  ) Module(_oracle) Arbitrable(_arbitrator, _council) {
+  constructor(IOracle _oracle, IEBORequestCreator _eboRequestCreator, IArbitrable _arbitrable) Module(_oracle) {
     _setEBORequestCreator(_eboRequestCreator);
+    ARBITRABLE = _arbitrable;
   }
 
   /// @inheritdoc IEBOFinalityModule
@@ -51,11 +48,9 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
   }
 
   /// @inheritdoc IEBOFinalityModule
-  function amendEpoch(
-    uint256 _epoch,
-    string[] calldata _chainIds,
-    uint256[] calldata _blockNumbers
-  ) external onlyArbitrator {
+  function amendEpoch(uint256 _epoch, string[] calldata _chainIds, uint256[] calldata _blockNumbers) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
+
     uint256 _length = _chainIds.length;
     if (_length != _blockNumbers.length) revert EBOFinalityModule_LengthMismatch();
 
@@ -65,7 +60,8 @@ contract EBOFinalityModule is Module, Arbitrable, IEBOFinalityModule {
   }
 
   /// @inheritdoc IEBOFinalityModule
-  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external onlyArbitrator {
+  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
     _setEBORequestCreator(_eboRequestCreator);
   }
 

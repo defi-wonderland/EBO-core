@@ -21,6 +21,7 @@ import {
 import {IERC20} from '@openzeppelin/contracts/interfaces/IERC20.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
+import {Arbitrable, IArbitrable} from 'contracts/Arbitrable.sol';
 import {CouncilArbitrator, ICouncilArbitrator} from 'contracts/CouncilArbitrator.sol';
 import {EBOFinalityModule, IEBOFinalityModule} from 'contracts/EBOFinalityModule.sol';
 import {EBORequestCreator, IEBORequestCreator} from 'contracts/EBORequestCreator.sol';
@@ -31,11 +32,14 @@ import {_ARBITRATOR, _COUNCIL, _EPOCH_MANAGER, _GRAPH_TOKEN} from './Constants.s
 import 'forge-std/Script.sol';
 
 contract Deploy is Script {
-  uint256 public constant DEPLOYMENT_COUNT = 9;
+  uint256 public constant DEPLOYMENT_COUNT = 10;
   uint256 public constant OFFSET_EBO_REQUEST_CREATOR = DEPLOYMENT_COUNT - 1;
 
   // Oracle
   IOracle public oracle;
+
+  // Arbitrable
+  IArbitrable public arbitrable;
 
   // Modules
   IEBORequestModule public eboRequestModule;
@@ -104,8 +108,12 @@ contract Deploy is Script {
     oracle = new Oracle();
     console.log('`Oracle` deployed at:', address(oracle));
 
+    // Deploy `Arbitrable`
+    arbitrable = new Arbitrable(_ARBITRATOR, _COUNCIL);
+    console.log('`Arbitrable` deployed at:', address(arbitrable));
+
     // Deploy `EBORequestModule`
-    eboRequestModule = new EBORequestModule(oracle, _precomputedEBORequestCreator, arbitrator, council);
+    eboRequestModule = new EBORequestModule(oracle, _precomputedEBORequestCreator, arbitrable);
     console.log('`EBORequestModule` deployed at:', address(eboRequestModule));
 
     // Deploy `BondedResponseModule`
@@ -121,7 +129,7 @@ contract Deploy is Script {
     console.log('`ArbitratorModule` deployed at:', address(arbitratorModule));
 
     // Deploy `EBOFinalityModule`
-    eboFinalityModule = new EBOFinalityModule(oracle, _precomputedEBORequestCreator, arbitrator, council);
+    eboFinalityModule = new EBOFinalityModule(oracle, _precomputedEBORequestCreator, arbitrable);
     console.log('`EBOFinalityModule` deployed at:', address(eboFinalityModule));
 
     // Deploy `BondEscalationAccounting`
@@ -129,12 +137,12 @@ contract Deploy is Script {
     console.log('`BondEscalationAccounting` deployed at:', address(bondEscalationAccounting));
 
     // Deploy `CouncilArbitrator`
-    councilArbitrator = new CouncilArbitrator(arbitratorModule, arbitrator, council);
+    councilArbitrator = new CouncilArbitrator(arbitratorModule, arbitrable);
     console.log('`CouncilArbitrator` deployed at:', address(councilArbitrator));
 
     // Deploy `EBORequestCreator`
     IOracle.Request memory _requestData = _instantiateRequestData();
-    eboRequestCreator = new EBORequestCreator(oracle, epochManager, arbitrator, council, _requestData);
+    eboRequestCreator = new EBORequestCreator(oracle, epochManager, arbitrable, _requestData);
     console.log('`EBORequestCreator` deployed at:', address(eboRequestCreator));
 
     // Assert that `EBORequestCreator` was deployed at the precomputed address
