@@ -101,9 +101,9 @@ contract IntegrationBase is Deploy, Test {
     oracle.resolveDispute(_requestData, _responseData, _disputeData);
   }
 
-  function _arbitrateDispute(bytes32 _disputeId, IOracle.DisputeStatus _status) internal {
+  function _arbitrateDispute(bytes32 _disputeId, IOracle.DisputeStatus _award) internal {
     vm.prank(arbitrator);
-    councilArbitrator.resolveDispute(_disputeId, _status);
+    councilArbitrator.arbitrateDispute(_disputeId, _award);
   }
 
   function _setRequestModuleData() internal {

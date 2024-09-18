@@ -3,7 +3,7 @@ pragma solidity 0.8.26;
 
 import './IntegrationBase.sol';
 
-contract IntegrationResolveDispute is IntegrationBase {
+contract IntegrationArbitrateDispute is IntegrationBase {
   function setUp() public override {
     super.setUp();
 
@@ -21,7 +21,7 @@ contract IntegrationResolveDispute is IntegrationBase {
     _addChains();
   }
 
-  function test_ResolveDispute_Won() public {
+  function test_ArbitrateDispute_Won() public {
     // Create the request
     bytes32 _requestId = _createRequest();
     // Propose the response
@@ -30,7 +30,7 @@ contract IntegrationResolveDispute is IntegrationBase {
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
     // Revert if the dispute has not been escalated
-    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidResolution.selector);
+    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidDispute.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
     vm.expectRevert(IArbitratorModule.ArbitratorModule_InvalidDisputeId.selector);
     _resolveDispute(_requestId, _responseId, _disputeId);
@@ -46,7 +46,7 @@ contract IntegrationResolveDispute is IntegrationBase {
     _resolveDispute(_requestId, _responseId, _disputeId);
 
     // Revert if the arbitration award is invalid
-    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidResolutionStatus.selector);
+    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidAward.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
 
     // TODO: Do not revert with `Oracle_InvalidFinalizedResponse` if the arbitration award is `Won`
@@ -54,7 +54,7 @@ contract IntegrationResolveDispute is IntegrationBase {
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Won);
   }
 
-  function test_ResolveDispute_Lost() public {
+  function test_ArbitrateDispute_Lost() public {
     // Create the request
     bytes32 _requestId = _createRequest();
     // Propose the response
@@ -63,7 +63,7 @@ contract IntegrationResolveDispute is IntegrationBase {
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
     // Revert if the dispute has not been escalated
-    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidResolution.selector);
+    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidDispute.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
     vm.expectRevert(IArbitratorModule.ArbitratorModule_InvalidDisputeId.selector);
     _resolveDispute(_requestId, _responseId, _disputeId);
@@ -79,7 +79,7 @@ contract IntegrationResolveDispute is IntegrationBase {
     _resolveDispute(_requestId, _responseId, _disputeId);
 
     // Revert if the arbitration award is invalid
-    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidResolutionStatus.selector);
+    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidAward.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
 
     // Revert if the request is finalized before the response deadline
@@ -122,7 +122,7 @@ contract IntegrationResolveDispute is IntegrationBase {
     assertEq(bondEscalationAccounting.balanceOf(_proposer, graphToken), responseBondSize + disputeBondSize);
 
     // Revert if the dispute has already been arbitrated
-    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_DisputeAlreadyResolved.selector);
+    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_DisputeAlreadyArbitrated.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Won);
 
     // Revert if the dispute has already been resolved
@@ -130,7 +130,7 @@ contract IntegrationResolveDispute is IntegrationBase {
     _resolveDispute(_requestId, _responseId, _disputeId);
   }
 
-  function test_ResolveDispute_NoResolution() public {
+  function test_ArbitrateDispute_NoResolution() public {
     // Create the request
     bytes32 _requestId = _createRequest();
     // Propose the response
@@ -139,7 +139,7 @@ contract IntegrationResolveDispute is IntegrationBase {
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
     // Revert if the dispute has not been escalated
-    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidResolution.selector);
+    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidDispute.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
     vm.expectRevert(IArbitratorModule.ArbitratorModule_InvalidDisputeId.selector);
     _resolveDispute(_requestId, _responseId, _disputeId);
@@ -155,7 +155,7 @@ contract IntegrationResolveDispute is IntegrationBase {
     _resolveDispute(_requestId, _responseId, _disputeId);
 
     // Revert if the arbitration award is invalid
-    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidResolutionStatus.selector);
+    vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidAward.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
 
     // TODO: Do not revert with `Oracle_InvalidFinalizedResponse` if the arbitration award is `NoResolution`
