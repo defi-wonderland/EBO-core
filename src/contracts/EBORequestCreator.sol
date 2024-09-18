@@ -20,6 +20,7 @@ contract EBORequestCreator is IEBORequestCreator {
   /// @inheritdoc IEBORequestCreator
   IOracle public immutable ORACLE;
 
+  /// @inheritdoc IEBORequestCreator
   IArbitrable public immutable ARBITRABLE;
 
   /// @inheritdoc IEBORequestCreator
@@ -92,7 +93,7 @@ contract EBORequestCreator is IEBORequestCreator {
 
   /// @inheritdoc IEBORequestCreator
   function addChain(string calldata _chainId) external {
-    ARBITRABLE.isValidArbitrator(msg.sender);
+    ARBITRABLE.validateArbitrator(msg.sender);
     bytes32 _encodedChainId = _encodeChainId(_chainId);
     if (!_chainIdsAllowed.add(_encodedChainId)) {
       revert EBORequestCreator_ChainAlreadyAdded();
@@ -103,7 +104,7 @@ contract EBORequestCreator is IEBORequestCreator {
 
   /// @inheritdoc IEBORequestCreator
   function removeChain(string calldata _chainId) external {
-    ARBITRABLE.isValidArbitrator(msg.sender);
+    ARBITRABLE.validateArbitrator(msg.sender);
     bytes32 _encodedChainId = _encodeChainId(_chainId);
     if (!_chainIdsAllowed.remove(_encodedChainId)) {
       revert EBORequestCreator_ChainNotAdded();
@@ -117,7 +118,7 @@ contract EBORequestCreator is IEBORequestCreator {
     address _requestModule,
     IEBORequestModule.RequestParameters calldata _requestModuleData
   ) external {
-    ARBITRABLE.isValidArbitrator(msg.sender);
+    ARBITRABLE.validateArbitrator(msg.sender);
     requestData.requestModule = _requestModule;
     requestData.requestModuleData = abi.encode(_requestModuleData);
 
@@ -129,7 +130,7 @@ contract EBORequestCreator is IEBORequestCreator {
     address _responseModule,
     IBondedResponseModule.RequestParameters calldata _responseModuleData
   ) external {
-    ARBITRABLE.isValidArbitrator(msg.sender);
+    ARBITRABLE.validateArbitrator(msg.sender);
     requestData.responseModule = _responseModule;
     requestData.responseModuleData = abi.encode(_responseModuleData);
 
@@ -141,7 +142,7 @@ contract EBORequestCreator is IEBORequestCreator {
     address _disputeModule,
     IBondEscalationModule.RequestParameters calldata _disputeModuleData
   ) external {
-    ARBITRABLE.isValidArbitrator(msg.sender);
+    ARBITRABLE.validateArbitrator(msg.sender);
     requestData.disputeModule = _disputeModule;
     requestData.disputeModuleData = abi.encode(_disputeModuleData);
 
@@ -153,7 +154,7 @@ contract EBORequestCreator is IEBORequestCreator {
     address _resolutionModule,
     IArbitratorModule.RequestParameters calldata _resolutionModuleData
   ) external {
-    ARBITRABLE.isValidArbitrator(msg.sender);
+    ARBITRABLE.validateArbitrator(msg.sender);
     requestData.resolutionModule = _resolutionModule;
     requestData.resolutionModuleData = abi.encode(_resolutionModuleData);
 
@@ -164,7 +165,7 @@ contract EBORequestCreator is IEBORequestCreator {
   // TODO: Change module data to the specific interface when we have
   /// @inheritdoc IEBORequestCreator
   function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external {
-    ARBITRABLE.isValidArbitrator(msg.sender);
+    ARBITRABLE.validateArbitrator(msg.sender);
     requestData.finalityModule = _finalityModule;
     requestData.finalityModuleData = _finalityModuleData;
 
@@ -173,7 +174,7 @@ contract EBORequestCreator is IEBORequestCreator {
 
   /// @inheritdoc IEBORequestCreator
   function setEpochManager(IEpochManager _epochManager) external {
-    ARBITRABLE.isValidArbitrator(msg.sender);
+    ARBITRABLE.validateArbitrator(msg.sender);
     _setEpochManager(_epochManager);
   }
 

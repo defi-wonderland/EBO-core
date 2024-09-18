@@ -24,7 +24,7 @@ contract CouncilArbitrator is ICouncilArbitrator {
   IArbitrable public immutable ARBITRABLE;
 
   /// @inheritdoc ICouncilArbitrator
-  mapping(bytes32 _disputeId => ResolutionParameters _resolutionData) public resolutions;
+  mapping(bytes32 _disputeId => ResolutionParameters _resolutionParams) public resolutions;
   /// @inheritdoc IArbitrator
   mapping(bytes32 _disputeId => IOracle.DisputeStatus _status) public getAnswer;
 
@@ -62,19 +62,24 @@ contract CouncilArbitrator is ICouncilArbitrator {
 
   /// @inheritdoc ICouncilArbitrator
   function resolveDispute(bytes32 _disputeId, IOracle.DisputeStatus _status) external {
-    ARBITRABLE.isValidArbitrator(msg.sender);
+    ARBITRABLE.validateArbitrator(msg.sender);
 
-    ResolutionParameters memory _resolutionData = resolutions[_disputeId];
+    ResolutionParameters memory _resolutionParams = resolutions[_disputeId];
 
-    if (_resolutionData.dispute.disputer == address(0)) revert CouncilArbitrator_InvalidResolution();
+    if (_resolutionParams.dispute.disputer == address(0)) revert CouncilArbitrator_InvalidResolution();
     if (_status <= IOracle.DisputeStatus.Escalated) revert CouncilArbitrator_InvalidResolutionStatus();
     if (getAnswer[_disputeId] != IOracle.DisputeStatus.None) revert CouncilArbitrator_DisputeAlreadyResolved();
 
     getAnswer[_disputeId] = _status;
 
-    ORACLE.resolveDispute(_resolutionData.request, _resolutionData.response, _resolutionData.dispute);
-    ORACLE.finalize(_resolutionData.request, _resolutionData.response);
+    ORACLE.resolveDispute(_resolutionParams.request, _resolutionParams.response, _resolutionParams.dispute);
+    ORACLE.finalize(_resolutionParams.request, _resolutionParams.response);
 
     emit DisputeResolved(_disputeId, _status);
+  }
+
+  /// @inheritdoc ICouncilArbitrator
+  function getResolution(bytes32 _disputeId) external view returns (ResolutionParameters memory _resolutionParams) {
+    _resolutionParams = resolutions[_disputeId];
   }
 }

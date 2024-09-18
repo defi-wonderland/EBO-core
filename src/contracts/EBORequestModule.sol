@@ -59,7 +59,7 @@ contract EBORequestModule is Module, IEBORequestModule {
 
   /// @inheritdoc IEBORequestModule
   function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
-    ARBITRABLE.isValidArbitrator(msg.sender);
+    ARBITRABLE.validateArbitrator(msg.sender);
     _setEBORequestCreator(_eboRequestCreator);
   }
 

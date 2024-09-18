@@ -5,7 +5,7 @@ import {IArbitrable} from 'interfaces/IArbitrable.sol';
 
 /**
  * @title Arbitrable
- * @notice Makes a contract subject to arbitration by The Graph
+ * @notice Arbitrable contract for The Graph to manage arbitrator and council
  */
 contract Arbitrable is IArbitrable {
   address private _arbitrator;
@@ -54,7 +54,7 @@ contract Arbitrable is IArbitrable {
   }
 
   /// @inheritdoc IArbitrable
-  function isValidArbitrator(address _caller) public view {
+  function validateArbitrator(address _caller) public view {
     if (_caller != _arbitrator) revert Arbitrable_OnlyArbitrator();
   }
 

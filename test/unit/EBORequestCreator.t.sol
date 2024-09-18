@@ -161,7 +161,9 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     );
 
     vm.mockCall(
-      address(arbitrable), abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _arbitrator), abi.encode(true)
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
     );
     vm.startPrank(_arbitrator);
     _;
@@ -346,7 +348,9 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
 contract EBORequestCreator_Unit_AddChain is EBORequestCreator_Unit_BaseTest {
   modifier happyPath(address _arbitrator) {
     vm.mockCall(
-      address(arbitrable), abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _arbitrator), abi.encode(true)
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
     );
     vm.startPrank(_arbitrator);
     _;
@@ -377,7 +381,9 @@ contract EBORequestCreator_Unit_RemoveChain is EBORequestCreator_Unit_BaseTest {
   modifier happyPath(string calldata _chainId, address _arbitrator) {
     eboRequestCreator.setChainIdForTest(_chainId);
     vm.mockCall(
-      address(arbitrable), abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _arbitrator), abi.encode(true)
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
     );
     vm.startPrank(_arbitrator);
     _;
@@ -390,7 +396,9 @@ contract EBORequestCreator_Unit_RemoveChain is EBORequestCreator_Unit_BaseTest {
     vm.expectRevert(abi.encodeWithSelector(IEBORequestCreator.EBORequestCreator_ChainNotAdded.selector));
 
     vm.mockCall(
-      address(arbitrable), abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _arbitrator), abi.encode(true)
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
     );
     vm.startPrank(_arbitrator);
 
@@ -414,7 +422,9 @@ contract EBORequestCreator_Unit_RemoveChain is EBORequestCreator_Unit_BaseTest {
 contract EBORequestCreator_Unit_SetRequestModuleData is EBORequestCreator_Unit_BaseTest {
   modifier happyPath(address _arbitrator) {
     vm.mockCall(
-      address(arbitrable), abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _arbitrator), abi.encode(true)
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
     );
     vm.startPrank(_arbitrator);
     _;
@@ -453,7 +463,9 @@ contract EBORequestCreator_Unit_SetRequestModuleData is EBORequestCreator_Unit_B
 contract EBORequestCreator_Unit_SetResponseModuleData is EBORequestCreator_Unit_BaseTest {
   modifier happyPath(address _arbitrator) {
     vm.mockCall(
-      address(arbitrable), abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _arbitrator), abi.encode(true)
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
     );
     vm.startPrank(_arbitrator);
     _;
@@ -477,7 +489,9 @@ contract EBORequestCreator_Unit_SetResponseModuleData is EBORequestCreator_Unit_
 contract EBORequestCreator_Unit_SetDisputeModuleData is EBORequestCreator_Unit_BaseTest {
   modifier happyPath(address _arbitrator) {
     vm.mockCall(
-      address(arbitrable), abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _arbitrator), abi.encode(true)
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
     );
     vm.startPrank(_arbitrator);
     _;
@@ -501,7 +515,9 @@ contract EBORequestCreator_Unit_SetDisputeModuleData is EBORequestCreator_Unit_B
 contract EBORequestCreator_Unit_SetResolutionModuleData is EBORequestCreator_Unit_BaseTest {
   modifier happyPath(address _arbitrator) {
     vm.mockCall(
-      address(arbitrable), abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _arbitrator), abi.encode(true)
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
     );
     vm.startPrank(_arbitrator);
     _;
@@ -525,7 +541,9 @@ contract EBORequestCreator_Unit_SetResolutionModuleData is EBORequestCreator_Uni
 contract EBORequestCreator_Unit_SetFinalityModuleData is EBORequestCreator_Unit_BaseTest {
   modifier happyPath(address _arbitrator) {
     vm.mockCall(
-      address(arbitrable), abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _arbitrator), abi.encode(true)
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
     );
     vm.startPrank(_arbitrator);
     _;
@@ -551,7 +569,9 @@ contract EBORequestCreator_Unit_SetEpochManager is EBORequestCreator_Unit_BaseTe
     vm.assume(address(_epochManager) != address(0));
 
     vm.mockCall(
-      address(arbitrable), abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _arbitrator), abi.encode(true)
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
     );
     vm.startPrank(_arbitrator);
     _;

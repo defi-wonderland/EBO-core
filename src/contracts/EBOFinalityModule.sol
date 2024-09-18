@@ -49,7 +49,7 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
 
   /// @inheritdoc IEBOFinalityModule
   function amendEpoch(uint256 _epoch, string[] calldata _chainIds, uint256[] calldata _blockNumbers) external {
-    ARBITRABLE.isValidArbitrator(msg.sender);
+    ARBITRABLE.validateArbitrator(msg.sender);
 
     uint256 _length = _chainIds.length;
     if (_length != _blockNumbers.length) revert EBOFinalityModule_LengthMismatch();
@@ -61,7 +61,7 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
 
   /// @inheritdoc IEBOFinalityModule
   function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
-    ARBITRABLE.isValidArbitrator(msg.sender);
+    ARBITRABLE.validateArbitrator(msg.sender);
     _setEBORequestCreator(_eboRequestCreator);
   }
 

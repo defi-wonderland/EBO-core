@@ -8,6 +8,8 @@ import {IArbitrator} from '@defi-wonderland/prophet-modules/solidity/interfaces/
 import {IArbitratorModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 
+import {Helpers} from 'test/utils/Helpers.sol';
+
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {ICouncilArbitrator} from 'interfaces/ICouncilArbitrator.sol';
 
@@ -32,7 +34,7 @@ contract MockCouncilArbitrator is CouncilArbitrator {
   }
 }
 
-contract CouncilArbitrator_Unit_BaseTest is Test {
+contract CouncilArbitrator_Unit_BaseTest is Test, Helpers {
   using stdStorage for StdStorage;
 
   MockCouncilArbitrator public councilArbitrator;
@@ -45,8 +47,6 @@ contract CouncilArbitrator_Unit_BaseTest is Test {
     bytes32 indexed _disputeId, IOracle.Request _request, IOracle.Response _response, IOracle.Dispute _dispute
   );
   event DisputeResolved(bytes32 indexed _disputeId, IOracle.DisputeStatus _status);
-  event SetArbitrator(address indexed _arbitrator);
-  event SetCouncil(address indexed _council);
 
   function setUp() public {
     oracle = IOracle(makeAddr('Oracle'));
@@ -158,10 +158,9 @@ contract CouncilArbitrator_Unit_ResolveDispute is CouncilArbitrator_Unit_BaseTes
     _params.answer = uint8(IOracle.DisputeStatus.None);
 
     councilArbitrator.mock_setResolutions(_params.disputeId, _params.resolutionData);
-    vm.mockCall(
-      address(arbitrable),
-      abi.encodeWithSelector(IArbitrable.isValidArbitrator.selector, _params.arbitrator),
-      abi.encode(true)
+
+    _mockAndExpect(
+      address(arbitrable), abi.encodeCall(IArbitrable.validateArbitrator, (_params.arbitrator)), abi.encode(true)
     );
     vm.startPrank(_params.arbitrator);
     _;
