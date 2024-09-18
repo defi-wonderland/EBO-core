@@ -214,10 +214,11 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
     });
   }
 
-  function test_invalidVerfierCut(address _pledger, uint256 _amount) public {
+  function test_invalidVerfierCut(address _pledger, uint256 _amount, uint32 _invalidVerfierCut) public {
     vm.assume(_amount > 0);
+    vm.assume(_invalidVerfierCut < MAX_VERIFIER_CUT);
 
-    _provisionData.maxVerifierCut = 1_000_001;
+    _provisionData.maxVerifierCut = _invalidVerfierCut;
 
     _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_mockDisputeId)), abi.encode(1));
 

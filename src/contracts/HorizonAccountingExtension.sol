@@ -272,7 +272,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     // Discout the payer totalBonded
     _unbond(_payer, _amount);
 
-    // Increase the receiver bond
+    // Slash a payer to pay the receiver
     HORIZON_STAKING.slash(_payer, _amount, _amount, _receiver);
 
     emit Paid({_requestId: _requestId, _beneficiary: _receiver, _payer: _payer, _amount: _amount});
@@ -366,7 +366,9 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     address _user;
     uint256 _slashAmount;
 
-    _maxUsersToCheck = _maxUsersToCheck > _users.length() ? _users.length() : _maxUsersToCheck;
+    uint256 _length = _users.length();
+
+    _maxUsersToCheck = _maxUsersToCheck > _length ? _length : _maxUsersToCheck;
 
     for (uint256 _i; _i < _maxUsersToCheck && _slashedUsers < _usersToSlash; _i++) {
       _user = _users.at(0);
@@ -420,8 +422,8 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   function _bond(address _bonder, uint256 _amount) internal {
     IHorizonStaking.Provision memory _provisionData = HORIZON_STAKING.getProvision(_bonder, address(this));
 
-    if (_provisionData.maxVerifierCut != MAX_VERIFIER_CUT) revert HorizonAccountingExtension_InvalidMaxVerifierCut();
-    if (_provisionData.thawingPeriod != MIN_THAWING_PERIOD) revert HorizonAccountingExtension_InvalidThawingPeriod();
+    if (_provisionData.maxVerifierCut < MAX_VERIFIER_CUT) revert HorizonAccountingExtension_InvalidMaxVerifierCut();
+    if (_provisionData.thawingPeriod < MIN_THAWING_PERIOD) revert HorizonAccountingExtension_InvalidThawingPeriod();
     if (_amount > _provisionData.tokens) revert HorizonAccountingExtension_InsufficientTokens();
 
     totalBonded[_bonder] += _amount;
