@@ -74,11 +74,14 @@ contract CouncilArbitrator is ICouncilArbitrator {
 
     ORACLE.resolveDispute(_resolutionParams.request, _resolutionParams.response, _resolutionParams.dispute);
 
-    if (_award != IOracle.DisputeStatus.Lost) {
-      _resolutionParams.response.requestId = 0;
+    // If the request was not finalized, finalize it
+    if (ORACLE.finalizedAt(_resolutionParams.dispute.requestId) == 0) {
+      // If the dispute was lost, finalize with response
+      if (_award != IOracle.DisputeStatus.Lost) {
+        _resolutionParams.response.requestId = 0;
+      }
+      ORACLE.finalize(_resolutionParams.request, _resolutionParams.response);
     }
-
-    ORACLE.finalize(_resolutionParams.request, _resolutionParams.response);
 
     emit DisputeArbitrated(_disputeId, _award);
   }

@@ -56,7 +56,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     // Pass the response deadline
     vm.roll(block.number + responseDeadline);
 
-    // Arbitrate and resolve the dispute, and finalize the request
+    // Arbitrate and resolve the dispute, and finalize the request without response
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Won);
 
     // Assert CouncilArbitrator::resolveDispute
@@ -134,7 +134,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     // Pass the dispute window
     vm.roll(block.number + responseDisputeWindow - responseDeadline);
 
-    // Arbitrate and resolve the dispute, and finalize the request
+    // Arbitrate and resolve the dispute, and finalize the request with response
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Lost);
 
     // Assert CouncilArbitrator::resolveDispute
@@ -203,7 +203,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     // Pass the response deadline
     vm.roll(block.number + responseDeadline);
 
-    // Arbitrate and resolve the dispute, and finalize the request
+    // Arbitrate and resolve the dispute, and finalize the request without response
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.NoResolution);
 
     // Assert CouncilArbitrator::resolveDispute

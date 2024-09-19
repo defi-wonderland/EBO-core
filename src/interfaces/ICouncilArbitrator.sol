@@ -121,7 +121,7 @@ interface ICouncilArbitrator is IArbitrator {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Publishes the arbitration award, resolves a dispute and finalizes a request
+   * @notice Publishes the arbitration award, resolves a dispute and, if applicable, finalizes a request
    * @dev Callable only by The Graph's Arbitrator
    * @param _disputeId The ID of the dispute
    * @param _award The result of the resolution for the dispute

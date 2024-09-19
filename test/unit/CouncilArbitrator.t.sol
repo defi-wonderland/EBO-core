@@ -145,6 +145,7 @@ contract CouncilArbitrator_Unit_ArbitrateDispute is CouncilArbitrator_Unit_BaseT
     uint8 award;
     address arbitrator;
     ICouncilArbitrator.ResolutionParameters resolutionParams;
+    uint128 finalizedAt;
   }
 
   modifier happyPath(ArbitrateDisputeParams memory _params) {
@@ -154,11 +155,17 @@ contract CouncilArbitrator_Unit_ArbitrateDispute is CouncilArbitrator_Unit_BaseT
         && _params.award <= uint8(IOracle.DisputeStatus.NoResolution)
     );
 
-    councilArbitrator.mock_setResolutions(_params.disputeId, _params.resolutionParams);
-
     _mockAndExpect(
       address(arbitrable), abi.encodeCall(IArbitrable.validateArbitrator, (_params.arbitrator)), abi.encode(true)
     );
+    vm.mockCall(
+      address(oracle),
+      abi.encodeCall(IOracle.finalizedAt, (_params.resolutionParams.dispute.requestId)),
+      abi.encode(_params.finalizedAt)
+    );
+
+    councilArbitrator.mock_setResolutions(_params.disputeId, _params.resolutionParams);
+
     vm.startPrank(_params.arbitrator);
     _;
   }
@@ -209,6 +216,10 @@ contract CouncilArbitrator_Unit_ArbitrateDispute is CouncilArbitrator_Unit_BaseT
   function test_callOracleFinalizeWithResponse(ArbitrateDisputeParams memory _params) public happyPath(_params) {
     _params.award = uint8(IOracle.DisputeStatus.Lost);
 
+    _mockAndExpect(
+      address(oracle), abi.encodeCall(IOracle.finalizedAt, (_params.resolutionParams.dispute.requestId)), abi.encode(0)
+    );
+
     vm.expectCall(
       address(oracle),
       abi.encodeCall(IOracle.finalize, (_params.resolutionParams.request, _params.resolutionParams.response))
@@ -220,10 +231,21 @@ contract CouncilArbitrator_Unit_ArbitrateDispute is CouncilArbitrator_Unit_BaseT
     vm.assume(_params.award != uint8(IOracle.DisputeStatus.Lost));
     _params.resolutionParams.response.requestId = 0;
 
+    _mockAndExpect(
+      address(oracle), abi.encodeCall(IOracle.finalizedAt, (_params.resolutionParams.dispute.requestId)), abi.encode(0)
+    );
+
     vm.expectCall(
       address(oracle),
       abi.encodeCall(IOracle.finalize, (_params.resolutionParams.request, _params.resolutionParams.response))
     );
+    councilArbitrator.arbitrateDispute(_params.disputeId, IOracle.DisputeStatus(_params.award));
+  }
+
+  function test_notCallOracleFinalize(ArbitrateDisputeParams memory _params) public happyPath(_params) {
+    vm.assume(_params.finalizedAt != 0);
+
+    vm.expectCall(address(oracle), abi.encodeWithSelector(IOracle.finalize.selector), 0);
     councilArbitrator.arbitrateDispute(_params.disputeId, IOracle.DisputeStatus(_params.award));
   }
 
