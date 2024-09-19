@@ -199,11 +199,14 @@ contract Arbitrable_Unit_OnlyPendingCouncil is Arbitrable_Unit_BaseTest {
 }
 
 contract Arbitrable_Unit_ValidateArbitrator is Arbitrable_Unit_BaseTest {
-  function test_revertInvalidArbitrator(address _caller) public {
+  function test_revertOnlyArbitrator(address _caller) public {
     vm.assume(_caller != arbitrator);
-    changePrank(_caller);
 
     vm.expectRevert(IArbitrable.Arbitrable_OnlyArbitrator.selector);
     arbitrable.validateArbitrator(_caller);
+  }
+
+  function test_validateArbitrator() public {
+    arbitrable.validateArbitrator(arbitrator);
   }
 }
