@@ -91,4 +91,27 @@ interface IHorizonStaking {
    * @return The ID of the thaw request
    */
   function thaw(address serviceProvider, address verifier, uint256 tokens) external returns (bytes32);
+
+  /**
+   * @notice Slash a service provider. This can only be called by a verifier to which
+   * the provider has provisioned stake, and up to the amount of tokens they have provisioned.
+   * If the service provider's stake is not enough, the associated delegation pool might be slashed
+   * depending on the value of the global delegation slashing flag.
+   *
+   * Part of the slashed tokens are sent to the `verifierDestination` as a reward.
+   *
+   * @dev Requirements:
+   * - `tokens` must be less than or equal to the amount of tokens provisioned by the service provider.
+   * - `tokensVerifier` must be less than the provision's tokens times the provision's maximum verifier cut.
+   *
+   * Emits a {ProvisionSlashed} and {VerifierTokensSent} events.
+   * Emits a {DelegationSlashed} or {DelegationSlashingSkipped} event depending on the global delegation slashing
+   * flag.
+   *
+   * @param serviceProvider The service provider to slash
+   * @param tokens The amount of tokens to slash
+   * @param tokensVerifier The amount of tokens to transfer instead of burning
+   * @param verifierDestination The address to transfer the verifier cut to
+   */
+  function slash(address serviceProvider, uint256 tokens, uint256 tokensVerifier, address verifierDestination) external;
 }
