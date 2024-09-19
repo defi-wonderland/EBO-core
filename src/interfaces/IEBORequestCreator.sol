@@ -191,6 +191,12 @@ interface IEBORequestCreator {
     uint256 _epoch
   ) external view returns (bytes32 _requestId);
 
+  /**
+   * @notice Returns the allowed chain ids
+   * @return _chainIds The allowed chain ids
+   */
+  function getAllowedChainIds() external view returns (bytes32[] memory _chainIds);
+
   /*///////////////////////////////////////////////////////////////
                             LOGIC
   //////////////////////////////////////////////////////////////*/

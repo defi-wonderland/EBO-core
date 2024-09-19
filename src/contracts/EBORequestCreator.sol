@@ -183,6 +183,11 @@ contract EBORequestCreator is IEBORequestCreator {
     _requestData = requestData;
   }
 
+  /// @inheritdoc IEBORequestCreator
+  function getAllowedChainIds() external view returns (bytes32[] memory _chainIds) {
+    _chainIds = _chainIdsAllowed.values();
+  }
+
   /**
    * @notice Set the epoch manager
    * @param _epochManager The epoch manager
