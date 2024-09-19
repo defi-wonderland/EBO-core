@@ -18,7 +18,7 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
   IArbitrable public immutable ARBITRABLE;
 
   /// @inheritdoc IEBOFinalityModule
-  IEBORequestCreator public eboRequestCreator;
+  mapping(IEBORequestCreator _eboRequestCreator => bool _enabled) public enabledEBORequestCreators;
 
   /**
    * @notice Constructor
@@ -37,11 +37,11 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     IOracle.Response calldata _response,
     address _finalizer
   ) external override(Module, IEBOFinalityModule) onlyOracle {
-    if (_request.requester != address(eboRequestCreator)) revert EBOFinalityModule_InvalidRequester();
+    if (!enabledEBORequestCreators[IEBORequestCreator(_request.requester)]) revert EBOFinalityModule_InvalidRequester();
 
     if (_response.requestId != 0) {
-      // TODO: Redeclare the `Response` struct
-      // emit NewEpoch(_response.epoch, _response.chainId, _response.block);
+      ResponseParameters memory _params = decodeResponseData(_response.response);
+      emit NewEpoch(_params.epoch, _params.chainId, _params.block);
     }
 
     emit RequestFinalized(_response.requestId, _response, _finalizer);
@@ -65,9 +65,20 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     _setEBORequestCreator(_eboRequestCreator);
   }
 
+  function removeEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
+    delete enabledEBORequestCreators[_eboRequestCreator];
+    emit RemoveEBORequestCreator(_eboRequestCreator);
+  }
+
   /// @inheritdoc IModule
   function moduleName() external pure returns (string memory _moduleName) {
     _moduleName = 'EBOFinalityModule';
+  }
+
+  /// @inheritdoc IEBOFinalityModule
+  function decodeResponseData(bytes calldata _data) public pure returns (ResponseParameters memory _params) {
+    _params = abi.decode(_data, (ResponseParameters));
   }
 
   /**
@@ -75,7 +86,7 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
   function _setEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
-    eboRequestCreator = _eboRequestCreator;
+    enabledEBORequestCreators[_eboRequestCreator] = true;
     emit SetEBORequestCreator(_eboRequestCreator);
   }
 }

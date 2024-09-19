@@ -14,6 +14,21 @@ import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
  */
 interface IEBOFinalityModule is IFinalityModule {
   /*///////////////////////////////////////////////////////////////
+                              STRUCTS
+  //////////////////////////////////////////////////////////////*/
+
+  /**
+   * @notice Parameters of the response in the module
+   * @param epoch The epoch of the response
+   * @param chainId The chain ID of the response
+   * @param block The block number of the response
+   */
+  struct ResponseParameters {
+    uint256 epoch;
+    string chainId;
+    uint256 block;
+  }
+  /*///////////////////////////////////////////////////////////////
                               EVENTS
   //////////////////////////////////////////////////////////////*/
 
@@ -38,6 +53,12 @@ interface IEBOFinalityModule is IFinalityModule {
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
   event SetEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
+
+  /**
+   * @notice Emitted when an EBORequestCreator is removed
+   * @param _eboRequestCreator The address of the EBORequestCreator
+   */
+  event RemoveEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
 
   /*///////////////////////////////////////////////////////////////
                               ERRORS
@@ -64,10 +85,11 @@ interface IEBOFinalityModule is IFinalityModule {
   function ARBITRABLE() external view returns (IArbitrable _ARBITRABLE);
 
   /**
-   * @notice Returns the address of the EBORequestCreator
-   * @return _eboRequestCreator The address of the EBORequestCreator
+   * @notice Returns if the EBORequestCreator is enabled
+   * @param _eboRequestCreator The address of the EBORequestCreator
+   * @return _enabled Whether the EBORequestCreator is enabled
    */
-  function eboRequestCreator() external view returns (IEBORequestCreator _eboRequestCreator);
+  function enabledEBORequestCreators(IEBORequestCreator _eboRequestCreator) external view returns (bool _enabled);
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC
@@ -101,4 +123,18 @@ interface IEBOFinalityModule is IFinalityModule {
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
   function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
+
+  /**
+   * @notice Removes the address of the EBORequestCreator
+   * @dev Callable only by The Graph's Arbitrator
+   * @param _eboRequestCreator The address of the EBORequestCreator
+   */
+  function removeEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
+
+  /**
+   * @notice Decodes the response data
+   * @param _data The response data
+   * @return _params The decoded response data
+   */
+  function decodeResponseData(bytes calldata _data) external pure returns (ResponseParameters memory _params);
 }
