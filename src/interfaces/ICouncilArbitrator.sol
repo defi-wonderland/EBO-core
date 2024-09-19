@@ -45,11 +45,11 @@ interface ICouncilArbitrator is IArbitrator {
   );
 
   /**
-   * @notice Emitted when a dispute is resolved by The Graph's Arbitrator
-   * @param _disputeId The ID of the dispute that was resolved
-   * @param _status The final result of the resolution
+   * @notice Emitted when a dispute is arbitrated by The Graph's Arbitrator
+   * @param _disputeId The ID of the dispute that was arbitrated
+   * @param _award The final result of the resolution
    */
-  event DisputeResolved(bytes32 indexed _disputeId, IOracle.DisputeStatus _status);
+  event DisputeArbitrated(bytes32 indexed _disputeId, IOracle.DisputeStatus _award);
 
   /*///////////////////////////////////////////////////////////////
                               ERRORS
@@ -61,19 +61,19 @@ interface ICouncilArbitrator is IArbitrator {
   error CouncilArbitrator_OnlyArbitratorModule();
 
   /**
-   * @notice Thrown when trying to resolve a dispute with no pending resolution
+   * @notice Thrown when trying to arbitrate a dispute with no pending resolution
    */
-  error CouncilArbitrator_InvalidResolution();
+  error CouncilArbitrator_InvalidDispute();
 
   /**
-   * @notice Thrown when trying to resolve a dispute with an invalid status
+   * @notice Thrown when trying to arbitrate a dispute with an invalid award
    */
-  error CouncilArbitrator_InvalidResolutionStatus();
+  error CouncilArbitrator_InvalidAward();
 
   /**
-   * @notice Thrown when trying to resolve a dispute that is already resolved
+   * @notice Thrown when trying to arbitrate a dispute that is already arbitrated
    */
-  error CouncilArbitrator_DisputeAlreadyResolved();
+  error CouncilArbitrator_DisputeAlreadyArbitrated();
 
   /*///////////////////////////////////////////////////////////////
                               VARIABLES
@@ -121,10 +121,10 @@ interface ICouncilArbitrator is IArbitrator {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Publishes the result, resolves a dispute and finalizes a request
+   * @notice Publishes the arbitration award, resolves a dispute and, if applicable, finalizes a request
    * @dev Callable only by The Graph's Arbitrator
    * @param _disputeId The ID of the dispute
-   * @param _status The result of the resolution for the dispute
+   * @param _award The result of the resolution for the dispute
    */
-  function resolveDispute(bytes32 _disputeId, IOracle.DisputeStatus _status) external;
+  function arbitrateDispute(bytes32 _disputeId, IOracle.DisputeStatus _award) external;
 }

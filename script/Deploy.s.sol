@@ -87,7 +87,7 @@ contract Deploy is Script {
     // TODO: Set production response module params
     responseBondSize = 0.5 ether;
     responseDeadline = block.timestamp + 5 days;
-    responseDisputeWindow = 1 weeks;
+    responseDisputeWindow = block.timestamp + 1 weeks;
 
     // TODO: Set production dispute module params
     disputeBondSize = 0.3 ether;

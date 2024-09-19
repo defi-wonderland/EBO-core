@@ -61,21 +61,29 @@ contract CouncilArbitrator is ICouncilArbitrator {
   }
 
   /// @inheritdoc ICouncilArbitrator
-  function resolveDispute(bytes32 _disputeId, IOracle.DisputeStatus _status) external {
+  function arbitrateDispute(bytes32 _disputeId, IOracle.DisputeStatus _award) external {
     ARBITRABLE.validateArbitrator(msg.sender);
 
     ResolutionParameters memory _resolutionParams = resolutions[_disputeId];
 
-    if (_resolutionParams.dispute.disputer == address(0)) revert CouncilArbitrator_InvalidResolution();
-    if (_status <= IOracle.DisputeStatus.Escalated) revert CouncilArbitrator_InvalidResolutionStatus();
-    if (getAnswer[_disputeId] != IOracle.DisputeStatus.None) revert CouncilArbitrator_DisputeAlreadyResolved();
+    if (_resolutionParams.dispute.disputer == address(0)) revert CouncilArbitrator_InvalidDispute();
+    if (_award <= IOracle.DisputeStatus.Escalated) revert CouncilArbitrator_InvalidAward();
+    if (getAnswer[_disputeId] != IOracle.DisputeStatus.None) revert CouncilArbitrator_DisputeAlreadyArbitrated();
 
-    getAnswer[_disputeId] = _status;
+    getAnswer[_disputeId] = _award;
 
     ORACLE.resolveDispute(_resolutionParams.request, _resolutionParams.response, _resolutionParams.dispute);
-    ORACLE.finalize(_resolutionParams.request, _resolutionParams.response);
 
-    emit DisputeResolved(_disputeId, _status);
+    // If the request was not finalized, finalize it
+    if (ORACLE.finalizedAt(_resolutionParams.dispute.requestId) == 0) {
+      // If the dispute was lost, finalize with response
+      if (_award != IOracle.DisputeStatus.Lost) {
+        _resolutionParams.response.requestId = 0;
+      }
+      ORACLE.finalize(_resolutionParams.request, _resolutionParams.response);
+    }
+
+    emit DisputeArbitrated(_disputeId, _award);
   }
 
   /// @inheritdoc ICouncilArbitrator

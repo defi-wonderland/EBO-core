@@ -93,6 +93,19 @@ contract IntegrationBase is Deploy, Test {
     oracle.escalateDispute(_requestData, _responseData, _disputeData);
   }
 
+  function _resolveDispute(bytes32 _requestId, bytes32 _responseId, bytes32 _disputeId) internal {
+    IOracle.Request memory _requestData = _requests[_requestId];
+    IOracle.Response memory _responseData = _responses[_responseId];
+    IOracle.Dispute memory _disputeData = _disputes[_disputeId];
+
+    oracle.resolveDispute(_requestData, _responseData, _disputeData);
+  }
+
+  function _arbitrateDispute(bytes32 _disputeId, IOracle.DisputeStatus _award) internal {
+    vm.prank(arbitrator);
+    councilArbitrator.arbitrateDispute(_disputeId, _award);
+  }
+
   function _setRequestModuleData() internal {
     IEBORequestModule.RequestParameters memory _requestParams = _instantiateRequestParams();
 
