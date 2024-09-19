@@ -5,6 +5,8 @@ import {Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.so
 import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+
 import {IArbitrable, IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
 import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
 
@@ -14,11 +16,15 @@ import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
  * as a result of a request being finalized
  */
 contract EBOFinalityModule is Module, IEBOFinalityModule {
+  using EnumerableSet for EnumerableSet.AddressSet;
+
   /// @inheritdoc IEBOFinalityModule
   IArbitrable public immutable ARBITRABLE;
 
-  /// @inheritdoc IEBOFinalityModule
-  mapping(IEBORequestCreator _eboRequestCreator => bool _enabled) public enabledEBORequestCreators;
+  /**
+   * @notice The set of EBORequestCreators allowed
+   */
+  EnumerableSet.AddressSet internal _eboRequestCreatorsAllowed;
 
   /**
    * @notice Constructor
@@ -37,7 +43,7 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     IOracle.Response calldata _response,
     address _finalizer
   ) external override(Module, IEBOFinalityModule) onlyOracle {
-    if (!enabledEBORequestCreators[IEBORequestCreator(_request.requester)]) revert EBOFinalityModule_InvalidRequester();
+    if (!_eboRequestCreatorsAllowed.contains(address(_request.requester))) revert EBOFinalityModule_InvalidRequester();
 
     if (_response.requestId != 0) {
       ResponseParameters memory _params = decodeResponseData(_response.response);
@@ -65,15 +71,12 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     _setEBORequestCreator(_eboRequestCreator);
   }
 
+  /// @inheritdoc IEBOFinalityModule
   function removeEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
     ARBITRABLE.validateArbitrator(msg.sender);
-    delete enabledEBORequestCreators[_eboRequestCreator];
-    emit RemoveEBORequestCreator(_eboRequestCreator);
-  }
-
-  /// @inheritdoc IModule
-  function moduleName() external pure returns (string memory _moduleName) {
-    _moduleName = 'EBOFinalityModule';
+    if (_eboRequestCreatorsAllowed.remove(address(_eboRequestCreator))) {
+      emit RemoveEBORequestCreator(_eboRequestCreator);
+    }
   }
 
   /// @inheritdoc IEBOFinalityModule
@@ -81,12 +84,23 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     _params = abi.decode(_data, (ResponseParameters));
   }
 
+  /// @inheritdoc IEBOFinalityModule
+  function getAllowedEBORequestCreators() external view returns (address[] memory _eboRequestCreators) {
+    _eboRequestCreators = _eboRequestCreatorsAllowed.values();
+  }
+
+  /// @inheritdoc IModule
+  function moduleName() external pure returns (string memory _moduleName) {
+    _moduleName = 'EBOFinalityModule';
+  }
+
   /**
    * @notice Sets the address of the EBORequestCreator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
   function _setEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
-    enabledEBORequestCreators[_eboRequestCreator] = true;
-    emit SetEBORequestCreator(_eboRequestCreator);
+    if (_eboRequestCreatorsAllowed.add(address(_eboRequestCreator))) {
+      emit SetEBORequestCreator(_eboRequestCreator);
+    }
   }
 }

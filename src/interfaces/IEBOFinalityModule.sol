@@ -85,11 +85,10 @@ interface IEBOFinalityModule is IFinalityModule {
   function ARBITRABLE() external view returns (IArbitrable _ARBITRABLE);
 
   /**
-   * @notice Returns if the EBORequestCreator is enabled
-   * @param _eboRequestCreator The address of the EBORequestCreator
-   * @return _enabled Whether the EBORequestCreator is enabled
+   * @notice Returns the EBORequestCreators allowed
+   * @return _eboRequestCreators The EBORequestCreators allowed
    */
-  function enabledEBORequestCreators(IEBORequestCreator _eboRequestCreator) external view returns (bool _enabled);
+  function getAllowedEBORequestCreators() external view returns (address[] memory _eboRequestCreators);
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC
