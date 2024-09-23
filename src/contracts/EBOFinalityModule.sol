@@ -46,8 +46,9 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     if (!_eboRequestCreatorsAllowed.contains(address(_request.requester))) revert EBOFinalityModule_InvalidRequester();
 
     if (_response.requestId != 0) {
-      ResponseParameters memory _params = decodeResponseData(_response.response);
-      emit NewEpoch(_params.epoch, _params.chainId, _params.block);
+      ResponseParameters memory _responseParams = decodeResponseData(_response.response);
+      RequestParameters memory _requestParams = decodeRequestData(_request.requestModuleData);
+      emit NewEpoch(_requestParams.epoch, _requestParams.chainId, _responseParams.block);
     }
 
     emit RequestFinalized(_response.requestId, _response, _finalizer);
@@ -77,6 +78,11 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     if (_eboRequestCreatorsAllowed.remove(address(_eboRequestCreator))) {
       emit RemoveEBORequestCreator(_eboRequestCreator);
     }
+  }
+
+  /// @inheritdoc IEBOFinalityModule
+  function decodeRequestData(bytes calldata _data) public pure returns (RequestParameters memory _params) {
+    _params = abi.decode(_data, (RequestParameters));
   }
 
   /// @inheritdoc IEBOFinalityModule

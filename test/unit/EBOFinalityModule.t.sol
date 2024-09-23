@@ -116,6 +116,7 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
     address finalizer;
     uint128 responseCreatedAt;
     bool finalizeWithResponse;
+    IEBOFinalityModule.RequestParameters requestParams;
     IEBOFinalityModule.ResponseParameters responseParams;
   }
 
@@ -134,6 +135,7 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
       );
 
       _params.response.response = abi.encode(_params.responseParams);
+      _params.request.requestModuleData = abi.encode(_params.requestParams);
     } else {
       _params.response.requestId = 0;
     }
@@ -163,11 +165,14 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
 
   function test_emitNewEpoch(FinalizeRequestParams memory _params) public happyPath(_params) {
     vm.assume(_params.finalizeWithResponse);
+    IEBOFinalityModule.RequestParameters memory _requestParams =
+      abi.decode(_params.request.requestModuleData, (IEBOFinalityModule.RequestParameters));
+
     IEBOFinalityModule.ResponseParameters memory _responseParams =
       abi.decode(_params.response.response, (IEBOFinalityModule.ResponseParameters));
 
     vm.expectEmit();
-    emit NewEpoch(_responseParams.epoch, _responseParams.chainId, _responseParams.block);
+    emit NewEpoch(_requestParams.epoch, _requestParams.chainId, _responseParams.block);
     eboFinalityModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
   }
 
@@ -307,14 +312,23 @@ contract EBOFinalityModule_Unit_ModuleName is EBOFinalityModule_Unit_BaseTest {
   }
 }
 
-contract EBOFinalityModule_Unit_DecodeResponseData is EBOFinalityModule_Unit_BaseTest {
-  function test_decodeResponseData(uint256 _epoch, string memory _chainId, uint256 _block) public view {
-    bytes memory _data = abi.encode(IEBOFinalityModule.ResponseParameters(_epoch, _chainId, _block));
+contract EBOFinalityModule_Unit_DecodeRequestData is EBOFinalityModule_Unit_BaseTest {
+  function test_decodeRequestData(uint256 _epoch, string memory _chainId) public view {
+    bytes memory _data = abi.encode(IEBOFinalityModule.RequestParameters(_epoch, _chainId));
 
-    IEBOFinalityModule.ResponseParameters memory _params = eboFinalityModule.decodeResponseData(_data);
+    IEBOFinalityModule.RequestParameters memory _params = eboFinalityModule.decodeRequestData(_data);
 
     assertEq(_params.epoch, _epoch);
     assertEq(_params.chainId, _chainId);
+  }
+}
+
+contract EBOFinalityModule_Unit_DecodeResponseData is EBOFinalityModule_Unit_BaseTest {
+  function test_decodeResponseData(uint256 _block) public view {
+    bytes memory _data = abi.encode(IEBOFinalityModule.ResponseParameters(_block));
+
+    IEBOFinalityModule.ResponseParameters memory _params = eboFinalityModule.decodeResponseData(_data);
+
     assertEq(_params.block, _block);
   }
 }

@@ -18,14 +18,20 @@ interface IEBOFinalityModule is IFinalityModule {
   //////////////////////////////////////////////////////////////*/
 
   /**
+   * @notice Parameters of the request in the module
+   * @param epoch The epoch to resolve
+   * @param chainId The chain ID to resolve
+   */
+  struct RequestParameters {
+    uint256 epoch;
+    string chainId;
+  }
+
+  /**
    * @notice Parameters of the response in the module
-   * @param epoch The epoch of the response
-   * @param chainId The chain ID of the response
    * @param block The block number of the response
    */
   struct ResponseParameters {
-    uint256 epoch;
-    string chainId;
     uint256 block;
   }
   /*///////////////////////////////////////////////////////////////
@@ -129,6 +135,13 @@ interface IEBOFinalityModule is IFinalityModule {
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
   function removeEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
+
+  /**
+   * @notice Decodes the request data
+   * @param _data The request data
+   * @return _params The decoded request data
+   */
+  function decodeRequestData(bytes calldata _data) external pure returns (RequestParameters memory _params);
 
   /**
    * @notice Decodes the response data

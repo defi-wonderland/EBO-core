@@ -180,8 +180,7 @@ contract IntegrationBase is Deploy, Test {
   function _instantiateResponseData(bytes32 _requestId) internal view returns (IOracle.Response memory _responseData) {
     _responseData.proposer = _proposer;
     _responseData.requestId = _requestId;
-    IEBOFinalityModule.ResponseParameters memory _responseParams =
-      IEBOFinalityModule.ResponseParameters(_currentEpoch, _chainId, _blockNumber);
+    IEBOFinalityModule.ResponseParameters memory _responseParams = IEBOFinalityModule.ResponseParameters(_blockNumber);
     _responseData.response = abi.encode(_responseParams);
   }
 
