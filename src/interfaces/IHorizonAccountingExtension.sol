@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {IHorizonStaking} from './external/IHorizonStaking.sol';
-
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IValidator} from '@defi-wonderland/prophet-core/solidity/interfaces/IValidator.sol';
 import {IBondEscalationModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
+import {IHorizonStaking} from 'interfaces/external/IHorizonStaking.sol';
 
-interface IHorizonAccountingExtension {
+interface IHorizonAccountingExtension is IValidator {
   /*///////////////////////////////////////////////////////////////
                               EVENTS
   //////////////////////////////////////////////////////////////*/

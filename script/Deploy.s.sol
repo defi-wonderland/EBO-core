@@ -3,10 +3,6 @@ pragma solidity 0.8.26;
 
 import {IOracle, Oracle} from '@defi-wonderland/prophet-core/solidity/contracts/Oracle.sol';
 import {
-  BondEscalationAccounting,
-  IBondEscalationAccounting
-} from '@defi-wonderland/prophet-modules/solidity/contracts/extensions/BondEscalationAccounting.sol';
-import {
   BondEscalationModule,
   IBondEscalationModule
 } from '@defi-wonderland/prophet-modules/solidity/contracts/modules/dispute/BondEscalationModule.sol';
@@ -18,16 +14,29 @@ import {
   BondedResponseModule,
   IBondedResponseModule
 } from '@defi-wonderland/prophet-modules/solidity/contracts/modules/response/BondedResponseModule.sol';
+import {
+  IAccountingExtension,
+  IBondEscalationAccounting
+} from '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IBondEscalationAccounting.sol';
 import {IERC20} from '@openzeppelin/contracts/interfaces/IERC20.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
+import {IHorizonStaking} from 'interfaces/external/IHorizonStaking.sol';
 
 import {Arbitrable, IArbitrable} from 'contracts/Arbitrable.sol';
 import {CouncilArbitrator, ICouncilArbitrator} from 'contracts/CouncilArbitrator.sol';
 import {EBOFinalityModule, IEBOFinalityModule} from 'contracts/EBOFinalityModule.sol';
 import {EBORequestCreator, IEBORequestCreator} from 'contracts/EBORequestCreator.sol';
 import {EBORequestModule, IEBORequestModule} from 'contracts/EBORequestModule.sol';
+import {HorizonAccountingExtension, IHorizonAccountingExtension} from 'contracts/HorizonAccountingExtension.sol';
 
-import {_ARBITRATOR, _COUNCIL, _EPOCH_MANAGER, _GRAPH_TOKEN} from './Constants.sol';
+import {
+  _ARBITRATOR,
+  _ARBITRUM_SEPOLIA_EPOCH_MANAGER,
+  _ARBITRUM_SEPOLIA_GRAPH_TOKEN,
+  _ARBITRUM_SEPOLIA_HORIZON_STAKING,
+  _COUNCIL,
+  _MIN_THAWING_PERIOD
+} from 'script/Constants.sol';
 
 import 'forge-std/Script.sol';
 
@@ -50,6 +59,7 @@ contract Deploy is Script {
 
   // Extensions
   IBondEscalationAccounting public bondEscalationAccounting;
+  IHorizonAccountingExtension public horizonAccountingExtension;
 
   // Periphery
   IEBORequestCreator public eboRequestCreator;
@@ -57,6 +67,7 @@ contract Deploy is Script {
 
   // The Graph
   IERC20 public graphToken;
+  IHorizonStaking public horizonStaking;
   IEpochManager public epochManager;
   address public arbitrator;
   address public council;
@@ -76,8 +87,9 @@ contract Deploy is Script {
 
   function setUp() public virtual {
     // Define The Graph accounts
-    graphToken = IERC20(_GRAPH_TOKEN);
-    epochManager = IEpochManager(_EPOCH_MANAGER);
+    graphToken = IERC20(_ARBITRUM_SEPOLIA_GRAPH_TOKEN);
+    horizonStaking = IHorizonStaking(_ARBITRUM_SEPOLIA_HORIZON_STAKING);
+    epochManager = IEpochManager(_ARBITRUM_SEPOLIA_EPOCH_MANAGER);
     arbitrator = _ARBITRATOR;
     council = _COUNCIL;
 
@@ -109,7 +121,7 @@ contract Deploy is Script {
     console.log('`Oracle` deployed at:', address(oracle));
 
     // Deploy `Arbitrable`
-    arbitrable = new Arbitrable(_ARBITRATOR, _COUNCIL);
+    arbitrable = new Arbitrable(arbitrator, council);
     console.log('`Arbitrable` deployed at:', address(arbitrable));
 
     // Deploy `EBORequestModule`
@@ -132,9 +144,9 @@ contract Deploy is Script {
     eboFinalityModule = new EBOFinalityModule(oracle, _precomputedEBORequestCreator, arbitrable);
     console.log('`EBOFinalityModule` deployed at:', address(eboFinalityModule));
 
-    // Deploy `BondEscalationAccounting`
-    bondEscalationAccounting = new BondEscalationAccounting(oracle);
-    console.log('`BondEscalationAccounting` deployed at:', address(bondEscalationAccounting));
+    // Deploy `HorizonAccountingExtension`
+    horizonAccountingExtension = new HorizonAccountingExtension(horizonStaking, oracle, graphToken, _MIN_THAWING_PERIOD);
+    console.log('`HorizonAccountingExtension` deployed at:', address(horizonAccountingExtension));
 
     // Deploy `CouncilArbitrator`
     councilArbitrator = new CouncilArbitrator(arbitratorModule, arbitrable);
@@ -179,7 +191,7 @@ contract Deploy is Script {
     view
     returns (IEBORequestModule.RequestParameters memory _requestParams)
   {
-    _requestParams.accountingExtension = bondEscalationAccounting;
+    _requestParams.accountingExtension = IAccountingExtension(address(horizonAccountingExtension));
     _requestParams.paymentAmount = paymentAmount;
   }
 
@@ -188,7 +200,7 @@ contract Deploy is Script {
     view
     returns (IBondedResponseModule.RequestParameters memory _responseParams)
   {
-    _responseParams.accountingExtension = bondEscalationAccounting;
+    _responseParams.accountingExtension = IAccountingExtension(address(horizonAccountingExtension));
     _responseParams.bondToken = graphToken;
     _responseParams.bondSize = responseBondSize;
     _responseParams.deadline = responseDeadline;
@@ -200,7 +212,7 @@ contract Deploy is Script {
     view
     returns (IBondEscalationModule.RequestParameters memory _disputeParams)
   {
-    _disputeParams.accountingExtension = bondEscalationAccounting;
+    _disputeParams.accountingExtension = IBondEscalationAccounting(address(horizonAccountingExtension));
     _disputeParams.bondToken = graphToken;
     _disputeParams.bondSize = disputeBondSize;
     _disputeParams.maxNumberOfEscalations = maxNumberOfEscalations;

@@ -12,7 +12,8 @@ contract IntegrationBase is Deploy, Test {
   using ValidatorLib for IOracle.Response;
   using ValidatorLib for IOracle.Dispute;
 
-  uint256 internal constant _FORK_BLOCK = 240_000_000;
+  uint256 internal constant _ARBITRUM_MAINNET_FORK_BLOCK = 240_000_000;
+  uint256 internal constant _ARBITRUM_SEPOLIA_FORK_BLOCK = 83_000_000;
 
   // Users
   address internal _requester;
@@ -27,7 +28,7 @@ contract IntegrationBase is Deploy, Test {
   uint256 internal _currentEpoch;
 
   function setUp() public virtual override {
-    vm.createSelectFork(vm.rpcUrl('arbitrum'), _FORK_BLOCK);
+    vm.createSelectFork(vm.rpcUrl('arbitrum'), _ARBITRUM_SEPOLIA_FORK_BLOCK);
 
     // Run deployment script
     super.setUp();
