@@ -23,6 +23,7 @@ contract EBORequestModule_Unit_BaseTest is Test {
   IArbitrable public arbitrable;
 
   event SetEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
+  event RemoveEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
   event RequestFinalized(bytes32 indexed _requestId, IOracle.Response _response, address _finalizer);
 
   function setUp() public {
@@ -56,7 +57,7 @@ contract EBORequestModule_Unit_Constructor is EBORequestModule_Unit_BaseTest {
   function test_setEBORequestCreator(ConstructorParams calldata _params) public {
     eboRequestModule = new EBORequestModule(_params.oracle, _params.eboRequestCreator, _params.arbitrable);
 
-    assertEq(address(eboRequestModule.eboRequestCreator()), address(_params.eboRequestCreator));
+    assertEq(eboRequestModule.getAllowedEBORequestCreators()[0], address(_params.eboRequestCreator));
   }
 
   function test_emitSetEBORequestCreator(ConstructorParams calldata _params) public {
@@ -164,7 +165,8 @@ contract EBORequestModule_Unit_FinalizeRequest is EBORequestModule_Unit_BaseTest
 }
 
 contract EBORequestModule_Unit_SetEBORequestCreator is EBORequestModule_Unit_BaseTest {
-  modifier happyPath(address _arbitrator) {
+  modifier happyPath(IEBORequestCreator _eboRequestCreator, address _arbitrator) {
+    vm.assume(address(_eboRequestCreator) != address(eboRequestCreator));
     vm.mockCall(
       address(arbitrable),
       abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
@@ -177,19 +179,50 @@ contract EBORequestModule_Unit_SetEBORequestCreator is EBORequestModule_Unit_Bas
   function test_setEBORequestCreator(
     IEBORequestCreator _eboRequestCreator,
     address _arbitrator
-  ) public happyPath(_arbitrator) {
+  ) public happyPath(_eboRequestCreator, _arbitrator) {
     eboRequestModule.setEBORequestCreator(_eboRequestCreator);
 
-    assertEq(address(eboRequestModule.eboRequestCreator()), address(_eboRequestCreator));
+    assertEq(eboRequestModule.getAllowedEBORequestCreators()[1], address(_eboRequestCreator));
   }
 
   function test_emitSetEBORequestCreator(
     IEBORequestCreator _eboRequestCreator,
     address _arbitrator
-  ) public happyPath(_arbitrator) {
+  ) public happyPath(_eboRequestCreator, _arbitrator) {
     vm.expectEmit();
     emit SetEBORequestCreator(_eboRequestCreator);
     eboRequestModule.setEBORequestCreator(_eboRequestCreator);
+  }
+}
+
+contract EBORequestModule_Unit_RemoveEBORequestCreator is EBORequestModule_Unit_BaseTest {
+  modifier happyPath(address _arbitrator) {
+    vm.mockCall(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
+    _;
+  }
+
+  function test_removeEBORequestCreator(address _arbitrator) public happyPath(_arbitrator) {
+    eboRequestModule.removeEBORequestCreator(eboRequestCreator);
+
+    assertEq(eboRequestModule.getAllowedEBORequestCreators().length, 0);
+  }
+
+  function test_emitRemoveEBORequestCreator(address _arbitrator) public happyPath(_arbitrator) {
+    vm.expectEmit();
+    emit RemoveEBORequestCreator(eboRequestCreator);
+    eboRequestModule.removeEBORequestCreator(eboRequestCreator);
+  }
+}
+
+contract EBORequestModule_Unit_GetAllowedEBORequestCreators is EBORequestModule_Unit_BaseTest {
+  function test_returnAllowedEBORequestCreators() public {
+    assertEq(eboRequestModule.getAllowedEBORequestCreators()[0], address(eboRequestCreator));
+    assertEq(eboRequestModule.getAllowedEBORequestCreators().length, 1);
   }
 }
 

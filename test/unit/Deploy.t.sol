@@ -112,7 +112,7 @@ contract UnitDeploy is Test {
       new EBORequestModule(deploy.oracle(), deploy.eboRequestCreator(), deploy.arbitrable());
     assertEq(address(deploy.eboRequestModule()).code, address(_eboRequestModule).code);
     assertEq(address(deploy.eboRequestModule().ORACLE()), address(deploy.oracle()));
-    assertEq(address(deploy.eboRequestModule().eboRequestCreator()), address(deploy.eboRequestCreator()));
+    assertEq(address(deploy.eboRequestModule().getAllowedEBORequestCreators()[0]), address(deploy.eboRequestCreator()));
     assertEq(address(deploy.eboRequestModule().ARBITRABLE()), address(deploy.arbitrable()));
 
     // it should deploy `BondedResponseModule` with correct args
