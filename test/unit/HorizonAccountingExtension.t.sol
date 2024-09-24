@@ -25,7 +25,7 @@ contract HorizonAccountingExtensionForTest is HorizonAccountingExtension {
     IHorizonStaking _horizonStaking,
     IOracle _oracle,
     IERC20 _grt,
-    uint256 _minThawingPeriod
+    uint64 _minThawingPeriod
   ) HorizonAccountingExtension(_horizonStaking, _oracle, _grt, _minThawingPeriod) {}
 
   function approveModuleForTest(address _user, address _module) public {
@@ -216,7 +216,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
 
   function test_invalidVerfierCut(address _pledger, uint256 _amount, uint32 _invalidVerfierCut) public {
     vm.assume(_amount > 0);
-    vm.assume(_invalidVerfierCut < MAX_VERIFIER_CUT);
+    vm.assume(_invalidVerfierCut != MAX_VERIFIER_CUT);
 
     _provisionData.maxVerifierCut = _invalidVerfierCut;
 

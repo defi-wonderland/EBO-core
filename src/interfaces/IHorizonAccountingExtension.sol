@@ -204,13 +204,13 @@ interface IHorizonAccountingExtension is IValidator {
    * @notice The minimum thawing period
    * @return _MIN_THAWING_PERIOD The minimum thawing period
    */
-  function MIN_THAWING_PERIOD() external view returns (uint256 _MIN_THAWING_PERIOD);
+  function MIN_THAWING_PERIOD() external view returns (uint64 _MIN_THAWING_PERIOD);
 
   /**
    * @notice The maximum verifier cut
    * @return _MAX_VERIFIER_CUT The maximum verifier cut
    */
-  function MAX_VERIFIER_CUT() external view returns (uint256 _MAX_VERIFIER_CUT);
+  function MAX_VERIFIER_CUT() external view returns (uint32 _MAX_VERIFIER_CUT);
 
   /**
    * @notice The total bonded tokens for a user

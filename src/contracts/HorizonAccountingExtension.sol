@@ -25,10 +25,10 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   IERC20 public immutable GRT;
 
   /// @inheritdoc IHorizonAccountingExtension
-  uint256 public immutable MIN_THAWING_PERIOD;
+  uint64 public immutable MIN_THAWING_PERIOD;
 
   /// @inheritdoc IHorizonAccountingExtension
-  uint256 public constant MAX_VERIFIER_CUT = 1_000_000;
+  uint32 public constant MAX_VERIFIER_CUT = 1_000_000;
 
   // TODO: Validate what the correct magic numbers should be
   uint256 public constant MAX_SLASHING_USERS = 4;
@@ -72,7 +72,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     IHorizonStaking _horizonStaking,
     IOracle _oracle,
     IERC20 _grt,
-    uint256 _minThawingPeriod
+    uint64 _minThawingPeriod
   ) Validator(_oracle) {
     HORIZON_STAKING = _horizonStaking;
     GRT = _grt;
@@ -423,7 +423,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   function _bond(address _bonder, uint256 _amount) internal {
     IHorizonStaking.Provision memory _provisionData = HORIZON_STAKING.getProvision(_bonder, address(this));
 
-    if (_provisionData.maxVerifierCut < MAX_VERIFIER_CUT) revert HorizonAccountingExtension_InvalidMaxVerifierCut();
+    if (_provisionData.maxVerifierCut != MAX_VERIFIER_CUT) revert HorizonAccountingExtension_InvalidMaxVerifierCut();
     if (_provisionData.thawingPeriod < MIN_THAWING_PERIOD) revert HorizonAccountingExtension_InvalidThawingPeriod();
     if (_amount > _provisionData.tokens) revert HorizonAccountingExtension_InsufficientTokens();
 
