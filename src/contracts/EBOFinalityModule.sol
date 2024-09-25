@@ -1,14 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.sol';
-import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IModule, Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.sol';
 
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
-import {IArbitrable, IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
-import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
+import {
+  IArbitrable,
+  IEBOFinalityModule,
+  IEBORequestCreator,
+  IEBORequestModule,
+  IOracle
+} from 'interfaces/IEBOFinalityModule.sol';
 
 /**
  * @title EBOFinalityModule
@@ -33,7 +36,7 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
    * @param _arbitrable The address of the Arbitrable contract
    */
   constructor(IOracle _oracle, IEBORequestCreator _eboRequestCreator, IArbitrable _arbitrable) Module(_oracle) {
-    _setEBORequestCreator(_eboRequestCreator);
+    _addEBORequestCreator(_eboRequestCreator);
     ARBITRABLE = _arbitrable;
   }
 
@@ -46,8 +49,9 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     if (!_eboRequestCreatorsAllowed.contains(address(_request.requester))) revert EBOFinalityModule_InvalidRequester();
 
     if (_response.requestId != 0) {
+      IEBORequestModule.RequestParameters memory _requestParams = decodeRequestData(_request.requestModuleData);
       ResponseParameters memory _responseParams = decodeResponseData(_response.response);
-      RequestParameters memory _requestParams = decodeRequestData(_request.requestModuleData);
+
       emit NewEpoch(_requestParams.epoch, _requestParams.chainId, _responseParams.block);
     }
 
@@ -67,9 +71,9 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
   }
 
   /// @inheritdoc IEBOFinalityModule
-  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
+  function addEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
     ARBITRABLE.validateArbitrator(msg.sender);
-    _setEBORequestCreator(_eboRequestCreator);
+    _addEBORequestCreator(_eboRequestCreator);
   }
 
   /// @inheritdoc IEBOFinalityModule
@@ -81,8 +85,12 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
   }
 
   /// @inheritdoc IEBOFinalityModule
-  function decodeRequestData(bytes calldata _data) public pure returns (RequestParameters memory _params) {
-    _params = abi.decode(_data, (RequestParameters));
+  function decodeRequestData(bytes calldata _data)
+    public
+    pure
+    returns (IEBORequestModule.RequestParameters memory _params)
+  {
+    _params = abi.decode(_data, (IEBORequestModule.RequestParameters));
   }
 
   /// @inheritdoc IEBOFinalityModule
@@ -101,12 +109,12 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
   }
 
   /**
-   * @notice Sets the address of the EBORequestCreator
+   * @notice Adds the address of the EBORequestCreator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function _setEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
+  function _addEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
     if (_eboRequestCreatorsAllowed.add(address(_eboRequestCreator))) {
-      emit SetEBORequestCreator(_eboRequestCreator);
+      emit AddEBORequestCreator(_eboRequestCreator);
     }
   }
 }
