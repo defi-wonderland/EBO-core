@@ -2,9 +2,8 @@
 pragma solidity 0.8.26;
 
 import {ValidatorLib} from '@defi-wonderland/prophet-core/solidity/libraries/ValidatorLib.sol';
-import {IController} from 'interfaces/external/IController.sol';
 
-import {_ARBITRUM_SEPOLIA_CONTROLLER, _ARBITRUM_SEPOLIA_GOVERNOR} from 'script/Constants.sol';
+import {_ARBITRUM_SEPOLIA_GOVERNOR} from 'script/Constants.sol';
 
 import 'script/Deploy.s.sol';
 
@@ -16,11 +15,10 @@ contract IntegrationBase is Deploy, Test {
   using ValidatorLib for IOracle.Dispute;
 
   uint256 internal constant _ARBITRUM_MAINNET_FORK_BLOCK = 240_000_000;
-  uint256 internal constant _ARBITRUM_SEPOLIA_FORK_BLOCK = 83_000_000;
+  uint256 internal constant _ARBITRUM_SEPOLIA_FORK_BLOCK = 83_750_000;
 
   // The Graph
-  IController internal _controller;
-  address internal _governor;
+  address internal _governor; // TODO: Remove if unused
 
   // Users
   address internal _requester;
@@ -42,7 +40,6 @@ contract IntegrationBase is Deploy, Test {
     run();
 
     // Define The Graph accounts
-    _controller = IController(_ARBITRUM_SEPOLIA_CONTROLLER);
     _governor = _ARBITRUM_SEPOLIA_GOVERNOR;
 
     // Set user accounts
@@ -55,13 +52,6 @@ contract IntegrationBase is Deploy, Test {
 
     // Fetch current epoch
     _currentEpoch = epochManager.currentEpoch();
-
-    vm.startPrank(_governor);
-    // Unpause Graph Horizon
-    _controller.setPaused(false);
-    // Set max thawing period
-    horizonStaking.setMaxThawingPeriod(_MIN_THAWING_PERIOD);
-    vm.stopPrank();
   }
 
   function _createRequest() internal returns (bytes32 _requestId) {
