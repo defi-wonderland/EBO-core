@@ -264,6 +264,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     bytes32 _requestId,
     address _payer,
     address _receiver,
+    IERC20, /* _token */
     uint256 _amount
   ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _payer) onlyParticipant(_requestId, _receiver) {
     // Discount the payer bondedForRequest
@@ -283,6 +284,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   function bond(
     address _bonder,
     bytes32 _requestId,
+    IERC20, /* _token */
     uint256 _amount
   ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _bonder) {
     if (!_approvals[_bonder].contains(msg.sender)) revert HorizonAccountingExtension_NotAllowed();
@@ -294,9 +296,11 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     emit Bonded(_requestId, _bonder, _amount);
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
   function bond(
     address _bonder,
     bytes32 _requestId,
+    IERC20, /* _token */
     uint256 _amount,
     address _sender
   ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _bonder) {
@@ -318,6 +322,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   function release(
     address _bonder,
     bytes32 _requestId,
+    IERC20, /* _token */
     uint256 _amount
   ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _bonder) {
     // TODO: Release is used to pay the user the rewards for proposing or returning the funds to the

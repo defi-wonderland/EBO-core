@@ -915,7 +915,7 @@ contract HorizonAccountingExtension_Unit_Pay is HorizonAccountingExtension_Unit_
     // Check: does it revert if the module is not allowed?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedModule.selector);
 
-    horizonAccountingExtension.pay(_requestId, _payer, _receiver, _amount);
+    horizonAccountingExtension.pay(_requestId, _payer, _receiver, grt, _amount);
   }
 
   function test_revertIfUnauthorizedUserPayer(
@@ -934,7 +934,7 @@ contract HorizonAccountingExtension_Unit_Pay is HorizonAccountingExtension_Unit_
     // Check: does it revert if the module is not allowed?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedUser.selector);
 
-    horizonAccountingExtension.pay(_requestId, _payer, _receiver, _amount);
+    horizonAccountingExtension.pay(_requestId, _payer, _receiver, grt, _amount);
   }
 
   function test_revertIfUnauthorizedUserReceiver(
@@ -956,7 +956,7 @@ contract HorizonAccountingExtension_Unit_Pay is HorizonAccountingExtension_Unit_
     // Check: does it revert if the module is not allowed?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedUser.selector);
 
-    horizonAccountingExtension.pay(_requestId, _payer, _receiver, _amount);
+    horizonAccountingExtension.pay(_requestId, _payer, _receiver, grt, _amount);
   }
 
   function test_successfulCall(
@@ -988,7 +988,7 @@ contract HorizonAccountingExtension_Unit_Pay is HorizonAccountingExtension_Unit_
     vm.expectEmit();
     emit Paid(_requestId, _receiver, _payer, _amount);
 
-    horizonAccountingExtension.pay(_requestId, _payer, _receiver, _amount);
+    horizonAccountingExtension.pay(_requestId, _payer, _receiver, grt, _amount);
 
     uint256 _bondedAfter = horizonAccountingExtension.bondedForRequest(_payer, _requestId);
     uint256 _totalBondedAfter = horizonAccountingExtension.totalBonded(_payer);
@@ -1028,7 +1028,7 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
     // Check: does it revert if the module is not allowed?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedModule.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount);
   }
 
   function test_revertIfUnauthorizedUser(address _bonder, bytes32 _requestId, uint256 _amount) public {
@@ -1042,7 +1042,7 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
     // Check: does it revert if the module is not allowed?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedUser.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount);
   }
 
   function test_revertIfNotAllowed(address _bonder, bytes32 _requestId, uint256 _amount) public {
@@ -1055,7 +1055,7 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
 
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NotAllowed.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount);
   }
 
   function test_revertIfInvalidMaxVerifierCut(
@@ -1073,7 +1073,7 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
 
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InvalidMaxVerifierCut.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount);
   }
 
   function test_revertIfInvalidThawingPeriod(
@@ -1091,7 +1091,7 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
 
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InvalidThawingPeriod.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount);
   }
 
   function test_revertIfInsufficientTokens(
@@ -1108,7 +1108,7 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
     );
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount);
   }
 
   function test_revertIfInsufficientBondedTokens(
@@ -1126,7 +1126,7 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
 
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientBondedTokens.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount);
   }
 
   function test_successfulCall(
@@ -1143,7 +1143,7 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
     vm.expectEmit();
     emit Bonded(_requestId, _bonder, _amount);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount);
 
     uint256 _bondedForRequestAfter = horizonAccountingExtension.bondedForRequest(_bonder, _requestId);
     uint256 _totalBondedAfter = horizonAccountingExtension.totalBonded(_bonder);
@@ -1184,7 +1184,7 @@ contract HorizonAccountingExtension_Unit_BondSender is HorizonAccountingExtensio
     // Check: does it revert if the module is not allowed?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedModule.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount, _sender);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount, _sender);
   }
 
   function test_revertIfUnauthorizedUser(address _bonder, bytes32 _requestId, uint256 _amount, address _sender) public {
@@ -1198,7 +1198,7 @@ contract HorizonAccountingExtension_Unit_BondSender is HorizonAccountingExtensio
     // Check: does it revert if the module is not allowed?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedUser.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount, _sender);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount, _sender);
   }
 
   function test_revertIfNotAllowedModule(address _bonder, bytes32 _requestId, uint256 _amount, address _sender) public {
@@ -1215,7 +1215,7 @@ contract HorizonAccountingExtension_Unit_BondSender is HorizonAccountingExtensio
 
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NotAllowed.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount, _sender);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount, _sender);
   }
 
   function test_revertIfNotAllowedSender(address _bonder, bytes32 _requestId, uint256 _amount, address _sender) public {
@@ -1232,7 +1232,7 @@ contract HorizonAccountingExtension_Unit_BondSender is HorizonAccountingExtensio
 
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NotAllowed.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount, _sender);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount, _sender);
   }
 
   function test_revertIfInvalidMaxVerifierCut(
@@ -1251,7 +1251,7 @@ contract HorizonAccountingExtension_Unit_BondSender is HorizonAccountingExtensio
 
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InvalidMaxVerifierCut.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount, _sender);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount, _sender);
   }
 
   function test_revertIfInvalidThawingPeriod(
@@ -1270,7 +1270,7 @@ contract HorizonAccountingExtension_Unit_BondSender is HorizonAccountingExtensio
 
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InvalidThawingPeriod.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount, _sender);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount, _sender);
   }
 
   function test_revertIfInsufficientTokens(
@@ -1288,7 +1288,7 @@ contract HorizonAccountingExtension_Unit_BondSender is HorizonAccountingExtensio
     );
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount, _sender);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount, _sender);
   }
 
   function test_revertIfInsufficientBondedTokens(
@@ -1307,7 +1307,7 @@ contract HorizonAccountingExtension_Unit_BondSender is HorizonAccountingExtensio
 
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientBondedTokens.selector);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount, _sender);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount, _sender);
   }
 
   function test_successfulCall(
@@ -1325,7 +1325,7 @@ contract HorizonAccountingExtension_Unit_BondSender is HorizonAccountingExtensio
     vm.expectEmit();
     emit Bonded(_requestId, _bonder, _amount);
 
-    horizonAccountingExtension.bond(_bonder, _requestId, _amount, _sender);
+    horizonAccountingExtension.bond(_bonder, _requestId, grt, _amount, _sender);
 
     uint256 _bondedForRequestAfter = horizonAccountingExtension.bondedForRequest(_bonder, _requestId);
     uint256 _totalBondedAfter = horizonAccountingExtension.totalBonded(_bonder);
@@ -1358,7 +1358,7 @@ contract HorizonAccountingExtension_Unit_Release is HorizonAccountingExtension_U
     // Check: does it revert if the module is not allowed?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedModule.selector);
 
-    horizonAccountingExtension.release(_bonder, _requestId, _amount);
+    horizonAccountingExtension.release(_bonder, _requestId, grt, _amount);
   }
 
   function test_revertIfUnauthorizedUser(address _bonder, bytes32 _requestId, uint256 _amount) public {
@@ -1372,7 +1372,7 @@ contract HorizonAccountingExtension_Unit_Release is HorizonAccountingExtension_U
     // Check: does it revert if the module is not allowed?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedUser.selector);
 
-    horizonAccountingExtension.release(_bonder, _requestId, _amount);
+    horizonAccountingExtension.release(_bonder, _requestId, grt, _amount);
   }
 
   function test_revertIfInsufficientBondedTokens(
@@ -1384,7 +1384,7 @@ contract HorizonAccountingExtension_Unit_Release is HorizonAccountingExtension_U
 
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientBondedTokens.selector);
 
-    horizonAccountingExtension.release(_bonder, _requestId, _amount);
+    horizonAccountingExtension.release(_bonder, _requestId, grt, _amount);
   }
 
   function test_successfulCall(
@@ -1397,7 +1397,7 @@ contract HorizonAccountingExtension_Unit_Release is HorizonAccountingExtension_U
     vm.expectEmit();
     emit Released(_requestId, _bonder, _amount);
 
-    horizonAccountingExtension.release(_bonder, _requestId, _amount);
+    horizonAccountingExtension.release(_bonder, _requestId, grt, _amount);
 
     uint256 _bondedForRequestAfter = horizonAccountingExtension.bondedForRequest(_bonder, _requestId);
     uint256 _totalBondedAfter = horizonAccountingExtension.totalBonded(_bonder);

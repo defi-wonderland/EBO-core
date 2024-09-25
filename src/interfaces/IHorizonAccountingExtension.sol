@@ -338,23 +338,36 @@ interface IHorizonAccountingExtension is IValidator {
    * @param _requestId The id of the request handling the user's tokens
    * @param _payer The address of the user paying the tokens
    * @param _receiver The address of the user receiving the tokens
-   * @param _amount The amount of GRT being transferred
+   * @param _token The address of the token being transferred
+   * @param _amount The amount of `_token` being transferred
    */
-  function pay(bytes32 _requestId, address _payer, address _receiver, uint256 _amount) external;
+  function pay(bytes32 _requestId, address _payer, address _receiver, IERC20 _token, uint256 _amount) external;
 
   /**
-   * @notice Allows a allowed module to bond a user's tokens for a request
+   * @notice Allows an allowed module to bond a user's tokens for a request
    * @param _bonder The address of the user to bond tokens for
    * @param _requestId The id of the request the user is bonding for
-   * @param _amount The amount of GRT to bond
+   * @param _token The address of the token being bonded
+   * @param _amount The amount of `_token` to bond
    */
-  function bond(address _bonder, bytes32 _requestId, uint256 _amount) external;
+  function bond(address _bonder, bytes32 _requestId, IERC20 _token, uint256 _amount) external;
+
+  /**
+   * @notice Allows a valid module to bond a user's tokens for a request
+   * @param _bonder The address of the user to bond tokens for
+   * @param _requestId The id of the request the user is bonding for
+   * @param _token The address of the token being bonded
+   * @param _amount The amount of `_token` to bond
+   * @param _sender The address starting the propose call on the Oracle
+   */
+  function bond(address _bonder, bytes32 _requestId, IERC20 _token, uint256 _amount, address _sender) external;
 
   /**
    * @notice Allows a valid module to release a user's tokens
    * @param _bonder The address of the user to release tokens for
    * @param _requestId The id of the request where the tokens were bonded
-   * @param _amount The amount of GRT to release
+   * @param _token The address of the token being released
+   * @param _amount The amount of `_token` to release
    */
-  function release(address _bonder, bytes32 _requestId, uint256 _amount) external;
+  function release(address _bonder, bytes32 _requestId, IERC20 _token, uint256 _amount) external;
 }
