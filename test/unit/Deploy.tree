@@ -10,7 +10,6 @@ UnitDeploy::run
     └── when precomputed address is correct
         ├── it should deploy all contracts using a single EOA
         ├── it should deploy `Oracle`
-        ├── it should deploy `Arbitrable`
         ├── it should deploy `EBORequestModule` with correct args
         ├── it should deploy `BondedResponseModule` with correct args
         ├── it should deploy `BondEscalationModule` with correct args
@@ -18,4 +17,5 @@ UnitDeploy::run
         ├── it should deploy `EBOFinalityModule` with correct args
         ├── it should deploy `HorizonAccountingExtension` with correct args
         ├── it should deploy `EBORequestCreator` with correct args
-        └── it should deploy `CouncilArbitrator` with correct args
+        ├── it should deploy `CouncilArbitrator` with correct args
+        └── it should deploy `Arbitrable`

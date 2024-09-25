@@ -2,6 +2,9 @@
 pragma solidity 0.8.26;
 
 import {ValidatorLib} from '@defi-wonderland/prophet-core/solidity/libraries/ValidatorLib.sol';
+import {IController} from 'interfaces/external/IController.sol';
+
+import {_ARBITRUM_SEPOLIA_CONTROLLER, _ARBITRUM_SEPOLIA_GOVERNOR} from 'script/Constants.sol';
 
 import 'script/Deploy.s.sol';
 
@@ -14,6 +17,10 @@ contract IntegrationBase is Deploy, Test {
 
   uint256 internal constant _ARBITRUM_MAINNET_FORK_BLOCK = 240_000_000;
   uint256 internal constant _ARBITRUM_SEPOLIA_FORK_BLOCK = 83_000_000;
+
+  // The Graph
+  IController internal _controller;
+  address internal _governor;
 
   // Users
   address internal _requester;
@@ -34,6 +41,10 @@ contract IntegrationBase is Deploy, Test {
     super.setUp();
     run();
 
+    // Define The Graph accounts
+    _controller = IController(_ARBITRUM_SEPOLIA_CONTROLLER);
+    _governor = _ARBITRUM_SEPOLIA_GOVERNOR;
+
     // Set user accounts
     _requester = makeAddr('requester');
     _proposer = makeAddr('proposer');
@@ -44,6 +55,10 @@ contract IntegrationBase is Deploy, Test {
 
     // Fetch current epoch
     _currentEpoch = epochManager.currentEpoch();
+
+    // Unpause Graph Horizon
+    vm.prank(_governor);
+    _controller.setPaused(false);
   }
 
   function _createRequest() internal returns (bytes32 _requestId) {
@@ -107,6 +122,16 @@ contract IntegrationBase is Deploy, Test {
     councilArbitrator.arbitrateDispute(_disputeId, _award);
   }
 
+  function _addChains() internal {
+    string[] memory _chainIds = _getChains();
+
+    vm.startPrank(arbitrator);
+    for (uint256 _i; _i < _chainIds.length; ++_i) {
+      eboRequestCreator.addChain(_chainIds[_i]);
+    }
+    vm.stopPrank();
+  }
+
   function _setRequestModuleData() internal {
     IEBORequestModule.RequestParameters memory _requestParams = _instantiateRequestParams();
 
@@ -135,42 +160,62 @@ contract IntegrationBase is Deploy, Test {
     eboRequestCreator.setResolutionModuleData(address(arbitratorModule), _resolutionParams);
   }
 
-  function _depositGRT() internal {
+  function _approveModules() internal {
+    vm.prank(_requester);
+    horizonAccountingExtension.approveModule(address(eboRequestModule));
+
+    vm.prank(_proposer);
+    horizonAccountingExtension.approveModule(address(bondedResponseModule));
+
+    vm.prank(_disputer);
+    horizonAccountingExtension.approveModule(address(bondEscalationModule));
+  }
+
+  function _stakeGRT() internal {
     vm.startPrank(_requester);
     deal(address(graphToken), _requester, paymentAmount, true);
-    graphToken.approve(address(bondEscalationAccounting), paymentAmount);
-    bondEscalationAccounting.deposit(graphToken, paymentAmount);
+    graphToken.approve(address(horizonStaking), paymentAmount);
+    horizonStaking.stake(paymentAmount);
 
     vm.startPrank(_proposer);
     deal(address(graphToken), _proposer, responseBondSize, true);
-    graphToken.approve(address(bondEscalationAccounting), responseBondSize);
-    bondEscalationAccounting.deposit(graphToken, responseBondSize);
+    graphToken.approve(address(horizonStaking), responseBondSize);
+    horizonStaking.stake(responseBondSize);
 
     vm.startPrank(_disputer);
     deal(address(graphToken), _disputer, disputeBondSize, true);
-    graphToken.approve(address(bondEscalationAccounting), disputeBondSize);
-    bondEscalationAccounting.deposit(graphToken, disputeBondSize);
+    graphToken.approve(address(horizonStaking), disputeBondSize);
+    horizonStaking.stake(disputeBondSize);
     vm.stopPrank();
   }
 
-  function _approveModules() internal {
-    vm.prank(_requester);
-    bondEscalationAccounting.approveModule(address(eboRequestModule));
+  function _createProvisions() internal {
+    vm.startPrank(_requester);
+    horizonStaking.provision(
+      _requester,
+      address(horizonAccountingExtension),
+      paymentAmount,
+      horizonAccountingExtension.MAX_VERIFIER_CUT(),
+      horizonAccountingExtension.MIN_THAWING_PERIOD()
+    );
 
-    vm.prank(_proposer);
-    bondEscalationAccounting.approveModule(address(bondedResponseModule));
+    vm.startPrank(_proposer);
+    horizonStaking.provision(
+      _proposer,
+      address(horizonAccountingExtension),
+      responseBondSize,
+      horizonAccountingExtension.MAX_VERIFIER_CUT(),
+      horizonAccountingExtension.MIN_THAWING_PERIOD()
+    );
 
-    vm.prank(_disputer);
-    bondEscalationAccounting.approveModule(address(bondEscalationModule));
-  }
-
-  function _addChains() internal {
-    string[] memory _chainIds = _getChainIds();
-
-    vm.startPrank(arbitrator);
-    for (uint256 _i; _i < _chainIds.length; ++_i) {
-      eboRequestCreator.addChain(_chainIds[_i]);
-    }
+    vm.startPrank(_disputer);
+    horizonStaking.provision(
+      _disputer,
+      address(horizonAccountingExtension),
+      disputeBondSize,
+      horizonAccountingExtension.MAX_VERIFIER_CUT(),
+      horizonAccountingExtension.MIN_THAWING_PERIOD()
+    );
     vm.stopPrank();
   }
 
@@ -190,7 +235,7 @@ contract IntegrationBase is Deploy, Test {
     _disputeData.requestId = _requestId;
   }
 
-  function _getChainIds() internal view returns (string[] memory _chainIds) {
+  function _getChains() internal view returns (string[] memory _chainIds) {
     _chainIds = new string[](1);
     _chainIds[0] = _chainId;
   }

@@ -30,11 +30,11 @@ import {HorizonAccountingExtension} from 'contracts/HorizonAccountingExtension.s
 import {Deploy} from 'script/Deploy.s.sol';
 
 import {
-  _ARBITRATOR,
+  _ARBITRUM_SEPOLIA_ARBITRATOR,
+  _ARBITRUM_SEPOLIA_COUNCIL,
   _ARBITRUM_SEPOLIA_EPOCH_MANAGER,
   _ARBITRUM_SEPOLIA_GRAPH_TOKEN,
   _ARBITRUM_SEPOLIA_HORIZON_STAKING,
-  _COUNCIL,
   _MIN_THAWING_PERIOD
 } from 'script/Constants.sol';
 
@@ -58,8 +58,8 @@ contract UnitDeploy is Test {
     assertEq(address(deploy.graphToken()).code, _ARBITRUM_SEPOLIA_GRAPH_TOKEN.code);
     assertEq(address(deploy.horizonStaking()).code, _ARBITRUM_SEPOLIA_HORIZON_STAKING.code);
     assertEq(address(deploy.epochManager()).code, _ARBITRUM_SEPOLIA_EPOCH_MANAGER.code);
-    assertEq(address(deploy.arbitrator()), _ARBITRATOR);
-    assertEq(address(deploy.council()), _COUNCIL);
+    assertEq(address(deploy.arbitrator()), _ARBITRUM_SEPOLIA_ARBITRATOR);
+    assertEq(address(deploy.council()), _ARBITRUM_SEPOLIA_COUNCIL);
   }
 
   function test_RunRevertWhen_TheGraphAccountsAreNotSetUp() public {
@@ -102,9 +102,6 @@ contract UnitDeploy is Test {
 
     // it should deploy `Oracle`
     assertEq(address(deploy.oracle()).code, type(Oracle).runtimeCode);
-
-    // it should deploy `Arbitrable`
-    assertEq(address(deploy.arbitrable()).code, type(Arbitrable).runtimeCode);
 
     // it should deploy `EBORequestModule` with correct args
     EBORequestModule _eboRequestModule =
@@ -161,6 +158,9 @@ contract UnitDeploy is Test {
     assertEq(address(deploy.councilArbitrator()).code, address(_councilArbitrator).code);
     assertEq(address(deploy.councilArbitrator().ARBITRATOR_MODULE()), address(deploy.arbitratorModule()));
     assertEq(address(deploy.councilArbitrator().ARBITRABLE()), address(deploy.arbitrable()));
+
+    // it should deploy `Arbitrable`
+    assertEq(address(deploy.arbitrable()).code, type(Arbitrable).runtimeCode);
   }
 
   function _instantiateRequestData() internal view returns (IOracle.Request memory _requestData) {

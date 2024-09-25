@@ -30,11 +30,11 @@ import {EBORequestModule, IEBORequestModule} from 'contracts/EBORequestModule.so
 import {HorizonAccountingExtension, IHorizonAccountingExtension} from 'contracts/HorizonAccountingExtension.sol';
 
 import {
-  _ARBITRATOR,
+  _ARBITRUM_SEPOLIA_ARBITRATOR,
+  _ARBITRUM_SEPOLIA_COUNCIL,
   _ARBITRUM_SEPOLIA_EPOCH_MANAGER,
   _ARBITRUM_SEPOLIA_GRAPH_TOKEN,
   _ARBITRUM_SEPOLIA_HORIZON_STAKING,
-  _COUNCIL,
   _MIN_THAWING_PERIOD
 } from 'script/Constants.sol';
 
@@ -46,9 +46,6 @@ contract Deploy is Script {
 
   // Oracle
   IOracle public oracle;
-
-  // Arbitrable
-  IArbitrable public arbitrable;
 
   // Modules
   IEBORequestModule public eboRequestModule;
@@ -64,6 +61,7 @@ contract Deploy is Script {
   // Periphery
   IEBORequestCreator public eboRequestCreator;
   ICouncilArbitrator public councilArbitrator;
+  IArbitrable public arbitrable;
 
   // The Graph
   IERC20 public graphToken;
@@ -90,11 +88,11 @@ contract Deploy is Script {
     graphToken = IERC20(_ARBITRUM_SEPOLIA_GRAPH_TOKEN);
     horizonStaking = IHorizonStaking(_ARBITRUM_SEPOLIA_HORIZON_STAKING);
     epochManager = IEpochManager(_ARBITRUM_SEPOLIA_EPOCH_MANAGER);
-    arbitrator = _ARBITRATOR;
-    council = _COUNCIL;
+    arbitrator = _ARBITRUM_SEPOLIA_ARBITRATOR;
+    council = _ARBITRUM_SEPOLIA_COUNCIL;
 
     // TODO: Set production request module params
-    paymentAmount = 0 ether;
+    paymentAmount = 0.1 ether;
 
     // TODO: Set production response module params
     responseBondSize = 0.5 ether;
