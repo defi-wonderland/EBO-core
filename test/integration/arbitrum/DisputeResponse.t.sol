@@ -61,9 +61,9 @@ contract IntegrationDisputeResponse is IntegrationBase {
     IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
     assertEq(_escalation.disputeId, _disputeId);
     assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.Active));
-    // Assert BondEscalationAccounting::bond
-    assertEq(bondEscalationAccounting.bondedAmountOf(_disputer, graphToken, _requestId), disputeBondSize);
-    assertEq(bondEscalationAccounting.balanceOf(_disputer, graphToken), 0);
+    // Assert HorizonAccountingExtension::bond
+    assertEq(horizonAccountingExtension.bondedForRequest(_disputer, _requestId), disputeBondSize);
+    assertEq(horizonAccountingExtension.totalBonded(_disputer), disputeBondSize);
 
     // Revert if the response has already been disputed
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_ResponseAlreadyDisputed.selector, _responseId));

@@ -43,9 +43,9 @@ contract IntegrationProposeResponse is IntegrationBase {
 
     // Assert Oracle::proposeResponse
     assertEq(oracle.responseCreatedAt(_responseId), block.number);
-    // Assert BondEscalationAccounting::bond
-    assertEq(bondEscalationAccounting.bondedAmountOf(_proposer, graphToken, _requestId), responseBondSize);
-    assertEq(bondEscalationAccounting.balanceOf(_proposer, graphToken), 0);
+    // Assert HorizonAccountingExtension::bond
+    assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), responseBondSize);
+    assertEq(horizonAccountingExtension.totalBonded(_proposer), responseBondSize);
 
     // Revert if the response has already been proposed
     vm.expectRevert(IOracle.Oracle_InvalidResponseBody.selector);

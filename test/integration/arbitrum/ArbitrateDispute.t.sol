@@ -74,14 +74,18 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
     assertEq(_escalation.disputeId, _disputeId);
     assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.DisputerWon));
-    // Assert BondEscalationAccounting::pay
-    assertEq(
-      bondEscalationAccounting.bondedAmountOf(_proposer, graphToken, _requestId), responseBondSize - disputeBondSize
-    );
-    assertEq(bondEscalationAccounting.balanceOf(_proposer, graphToken), 0);
-    // Assert BondEscalationAccounting::release
-    assertEq(bondEscalationAccounting.bondedAmountOf(_disputer, graphToken, _requestId), 0);
-    assertEq(bondEscalationAccounting.balanceOf(_disputer, graphToken), disputeBondSize * 2);
+    // Assert HorizonAccountingExtension::pay
+    assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), responseBondSize - disputeBondSize);
+    assertEq(horizonAccountingExtension.totalBonded(_proposer), responseBondSize - disputeBondSize);
+    // Assert HorizonStaking::slash
+    IHorizonStaking.Provision memory _provision =
+      horizonStaking.getProvision(_proposer, address(horizonAccountingExtension));
+    assertEq(_provision.tokens, responseBondSize - disputeBondSize);
+    // Assert GraphToken::transfer
+    assertEq(graphToken.balanceOf(_disputer), disputeBondSize);
+    // Assert HorizonAccountingExtension::release
+    assertEq(horizonAccountingExtension.bondedForRequest(_disputer, _requestId), 0);
+    assertEq(horizonAccountingExtension.totalBonded(_disputer), 0);
     // Assert Oracle::finalize
     assertEq(oracle.finalizedAt(_requestId), block.number);
     assertEq(oracle.finalizedResponseId(_requestId), 0);
@@ -152,15 +156,21 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
     assertEq(_escalation.disputeId, _disputeId);
     assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.DisputerLost));
-    // Assert BondEscalationAccounting::pay
-    assertEq(bondEscalationAccounting.bondedAmountOf(_disputer, graphToken, _requestId), 0);
-    assertEq(bondEscalationAccounting.balanceOf(_disputer, graphToken), 0);
+    // Assert HorizonAccountingExtension::pay
+    assertEq(horizonAccountingExtension.bondedForRequest(_disputer, _requestId), 0);
+    assertEq(horizonAccountingExtension.totalBonded(_disputer), 0);
+    // Assert HorizonStaking::slash
+    IHorizonStaking.Provision memory _provision =
+      horizonStaking.getProvision(_disputer, address(horizonAccountingExtension));
+    assertEq(_provision.tokens, 0);
+    // Assert GraphToken::transfer
+    assertEq(graphToken.balanceOf(_proposer), disputeBondSize);
     // Assert Oracle::finalize
     assertEq(oracle.finalizedAt(_requestId), block.number);
     assertEq(oracle.finalizedResponseId(_requestId), _responseId);
-    // Assert BondEscalationAccounting::release
-    assertEq(bondEscalationAccounting.bondedAmountOf(_proposer, graphToken, _requestId), 0);
-    assertEq(bondEscalationAccounting.balanceOf(_proposer, graphToken), responseBondSize + disputeBondSize);
+    // Assert HorizonAccountingExtension::release
+    assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), 0);
+    assertEq(horizonAccountingExtension.totalBonded(_proposer), 0);
 
     // Revert if the dispute has already been arbitrated
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_DisputeAlreadyArbitrated.selector);
@@ -221,9 +231,10 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
     assertEq(_escalation.disputeId, _disputeId);
     assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.Escalated));
-    // Assert BondEscalationAccounting::release
-    assertEq(bondEscalationAccounting.bondedAmountOf(_disputer, graphToken, _requestId), 0);
-    assertEq(bondEscalationAccounting.balanceOf(_disputer, graphToken), disputeBondSize);
+    // Assert HorizonAccountingExtension::release
+    assertEq(horizonAccountingExtension.bondedForRequest(_disputer, _requestId), 0);
+    assertEq(horizonAccountingExtension.totalBonded(_disputer), 0);
+    // TODO: Why isn't proposer's bond released?
     // Assert Oracle::finalize
     assertEq(oracle.finalizedAt(_requestId), block.number);
     assertEq(oracle.finalizedResponseId(_requestId), 0);

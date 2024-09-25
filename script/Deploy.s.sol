@@ -55,7 +55,6 @@ contract Deploy is Script {
   IEBOFinalityModule public eboFinalityModule;
 
   // Extensions
-  IBondEscalationAccounting public bondEscalationAccounting;
   IHorizonAccountingExtension public horizonAccountingExtension;
 
   // Periphery
@@ -94,12 +93,12 @@ contract Deploy is Script {
     // TODO: Set production request module params
     paymentAmount = 0.1 ether;
 
-    // TODO: Set production response module params
+    // TODO: Set production response module params (responseBondSize == disputeBondSize)
     responseBondSize = 0.5 ether;
     responseDeadline = block.timestamp + 5 days;
     responseDisputeWindow = block.timestamp + 1 weeks;
 
-    // TODO: Set production dispute module params
+    // TODO: Set production dispute module params (disputeBondSize == responseBondSize)
     disputeBondSize = 0.3 ether;
     maxNumberOfEscalations = 1;
     disputeDeadline = block.timestamp + 10 days;
