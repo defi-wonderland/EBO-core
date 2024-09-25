@@ -1,14 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.sol';
-import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
-
-import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
-import {IArbitrable, IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
+import {IModule, Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.sol';
 
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+
+import {IArbitrable, IEBORequestCreator, IEBORequestModule, IOracle} from 'interfaces/IEBORequestModule.sol';
 
 /**
  * @title EBORequestModule
