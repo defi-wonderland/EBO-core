@@ -1,23 +1,26 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.sol';
-import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IModule, Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.sol';
 
-import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
-import {IArbitrable, IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+
+import {IArbitrable, IEBORequestCreator, IEBORequestModule, IOracle} from 'interfaces/IEBORequestModule.sol';
 
 /**
  * @title EBORequestModule
  * @notice Module allowing users to create a request for RPC data for a specific epoch
  */
 contract EBORequestModule is Module, IEBORequestModule {
+  using EnumerableSet for EnumerableSet.AddressSet;
+
   /// @inheritdoc IEBORequestModule
   IArbitrable public immutable ARBITRABLE;
 
-  /// @inheritdoc IEBORequestModule
-  IEBORequestCreator public eboRequestCreator;
+  /**
+   * @notice The set of EBORequestCreators allowed
+   */
+  EnumerableSet.AddressSet internal _eboRequestCreatorsAllowed;
 
   /**
    * @notice Constructor
@@ -26,13 +29,13 @@ contract EBORequestModule is Module, IEBORequestModule {
    * @param _arbitrable The address of the Arbitrable contract
    */
   constructor(IOracle _oracle, IEBORequestCreator _eboRequestCreator, IArbitrable _arbitrable) Module(_oracle) {
-    _setEBORequestCreator(_eboRequestCreator);
+    _addEBORequestCreator(_eboRequestCreator);
     ARBITRABLE = _arbitrable;
   }
 
   /// @inheritdoc IEBORequestModule
   function createRequest(bytes32 _requestId, bytes calldata _data, address _requester) external onlyOracle {
-    if (_requester != address(eboRequestCreator)) revert EBORequestModule_InvalidRequester();
+    if (!_eboRequestCreatorsAllowed.contains(_requester)) revert EBORequestModule_InvalidRequester();
 
     RequestParameters memory _params = decodeRequestData(_data);
 
@@ -45,7 +48,7 @@ contract EBORequestModule is Module, IEBORequestModule {
     IOracle.Response calldata _response,
     address _finalizer
   ) external override(Module, IEBORequestModule) onlyOracle {
-    if (_request.requester != address(eboRequestCreator)) revert EBORequestModule_InvalidRequester();
+    if (!_eboRequestCreatorsAllowed.contains(_request.requester)) revert EBORequestModule_InvalidRequester();
 
     // TODO: Redeclare the `Request` struct
     // RequestParameters memory _params = decodeRequestData(_request.requestModuleData);
@@ -58,9 +61,27 @@ contract EBORequestModule is Module, IEBORequestModule {
   }
 
   /// @inheritdoc IEBORequestModule
-  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
+  function addEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
     ARBITRABLE.validateArbitrator(msg.sender);
-    _setEBORequestCreator(_eboRequestCreator);
+    _addEBORequestCreator(_eboRequestCreator);
+  }
+
+  /// @inheritdoc IEBORequestModule
+  function removeEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
+    if (_eboRequestCreatorsAllowed.remove(address(_eboRequestCreator))) {
+      emit RemoveEBORequestCreator(_eboRequestCreator);
+    }
+  }
+
+  /// @inheritdoc IEBORequestModule
+  function getAllowedEBORequestCreators() external view returns (address[] memory _eboRequestCreators) {
+    _eboRequestCreators = _eboRequestCreatorsAllowed.values();
+  }
+
+  /// @inheritdoc IEBORequestModule
+  function decodeRequestData(bytes calldata _data) public pure returns (RequestParameters memory _params) {
+    _params = abi.decode(_data, (RequestParameters));
   }
 
   /// @inheritdoc IModule
@@ -80,17 +101,13 @@ contract EBORequestModule is Module, IEBORequestModule {
     _moduleName = 'EBORequestModule';
   }
 
-  /// @inheritdoc IEBORequestModule
-  function decodeRequestData(bytes calldata _data) public pure returns (RequestParameters memory _params) {
-    _params = abi.decode(_data, (RequestParameters));
-  }
-
   /**
-   * @notice Sets the address of the EBORequestCreator
+   * @notice Adds the address of the EBORequestCreator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function _setEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
-    eboRequestCreator = _eboRequestCreator;
-    emit SetEBORequestCreator(_eboRequestCreator);
+  function _addEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
+    if (_eboRequestCreatorsAllowed.add(address(_eboRequestCreator))) {
+      emit AddEBORequestCreator(_eboRequestCreator);
+    }
   }
 }
