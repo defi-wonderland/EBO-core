@@ -9,6 +9,7 @@ interface IHorizonStaking {
    * @return The provision details.
    */
   function getProvision(address serviceProvider, address verifier) external view returns (Provision memory);
+
   /**
    * @notice Deposit tokens on the staking contract.
    * @dev Pulls tokens from the caller.
@@ -114,4 +115,10 @@ interface IHorizonStaking {
    * @param verifierDestination The address to transfer the verifier cut to
    */
   function slash(address serviceProvider, uint256 tokens, uint256 tokensVerifier, address verifierDestination) external;
+
+  /**
+   * @notice Sets the global maximum thawing period allowed for provisions.
+   * @param maxThawingPeriod The new maximum thawing period, in seconds
+   */
+  function setMaxThawingPeriod(uint64 maxThawingPeriod) external;
 }

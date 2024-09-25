@@ -56,9 +56,12 @@ contract IntegrationBase is Deploy, Test {
     // Fetch current epoch
     _currentEpoch = epochManager.currentEpoch();
 
+    vm.startPrank(_governor);
     // Unpause Graph Horizon
-    vm.prank(_governor);
     _controller.setPaused(false);
+    // Set max thawing period
+    horizonStaking.setMaxThawingPeriod(_MIN_THAWING_PERIOD);
+    vm.stopPrank();
   }
 
   function _createRequest() internal returns (bytes32 _requestId) {

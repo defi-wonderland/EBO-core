@@ -20,4 +20,4 @@ address constant _ARBITRUM_SEPOLIA_ARBITRATOR = address(0x100);
 address constant _ARBITRUM_SEPOLIA_COUNCIL = address(0x101);
 
 // Data
-uint64 constant _MIN_THAWING_PERIOD = 0 days; // TODO: Increase max thawing period via HorizonStaking::setMaxThawingPeriod
+uint64 constant _MIN_THAWING_PERIOD = 30 days;
