@@ -32,7 +32,7 @@ contract EBORequestModule is Module, IEBORequestModule {
    * @param _arbitrable The address of the Arbitrable contract
    */
   constructor(IOracle _oracle, IEBORequestCreator _eboRequestCreator, IArbitrable _arbitrable) Module(_oracle) {
-    _setEBORequestCreator(_eboRequestCreator);
+    _addEBORequestCreator(_eboRequestCreator);
     ARBITRABLE = _arbitrable;
   }
 
@@ -64,9 +64,9 @@ contract EBORequestModule is Module, IEBORequestModule {
   }
 
   /// @inheritdoc IEBORequestModule
-  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
+  function addEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
     ARBITRABLE.validateArbitrator(msg.sender);
-    _setEBORequestCreator(_eboRequestCreator);
+    _addEBORequestCreator(_eboRequestCreator);
   }
 
   /// @inheritdoc IEBORequestModule
@@ -105,12 +105,12 @@ contract EBORequestModule is Module, IEBORequestModule {
   }
 
   /**
-   * @notice Sets the address of the EBORequestCreator
+   * @notice Adds the address of the EBORequestCreator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function _setEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
+  function _addEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
     if (_eboRequestCreatorsAllowed.add(address(_eboRequestCreator))) {
-      emit SetEBORequestCreator(_eboRequestCreator);
+      emit AddEBORequestCreator(_eboRequestCreator);
     }
   }
 }

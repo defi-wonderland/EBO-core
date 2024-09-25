@@ -26,7 +26,7 @@ contract EBORequestModuleForTest is EBORequestModule {
     IArbitrable _arbitrable
   ) EBORequestModule(_oracle, _eboRequestCreator, _arbitrable) {}
 
-  function setEBORequestCreatorForTest(IEBORequestCreator _eboRequestCreator) public {
+  function addEBORequestCreatorForTest(IEBORequestCreator _eboRequestCreator) public {
     _eboRequestCreatorsAllowed.add(address(_eboRequestCreator));
   }
 }
@@ -38,7 +38,7 @@ contract EBORequestModule_Unit_BaseTest is Test {
   IEBORequestCreator public eboRequestCreator;
   IArbitrable public arbitrable;
 
-  event SetEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
+  event AddEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
   event RemoveEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
   event RequestFinalized(bytes32 indexed _requestId, IOracle.Response _response, address _finalizer);
 
@@ -70,15 +70,15 @@ contract EBORequestModule_Unit_Constructor is EBORequestModule_Unit_BaseTest {
     assertEq(address(eboRequestModule.ARBITRABLE()), address(_params.arbitrable));
   }
 
-  function test_setEBORequestCreator(ConstructorParams calldata _params) public {
+  function test_addEBORequestCreator(ConstructorParams calldata _params) public {
     eboRequestModule = new EBORequestModuleForTest(_params.oracle, _params.eboRequestCreator, _params.arbitrable);
 
     assertEq(eboRequestModule.getAllowedEBORequestCreators()[0], address(_params.eboRequestCreator));
   }
 
-  function test_emitSetEBORequestCreator(ConstructorParams calldata _params) public {
+  function test_emitAddEBORequestCreator(ConstructorParams calldata _params) public {
     vm.expectEmit();
-    emit SetEBORequestCreator(_params.eboRequestCreator);
+    emit AddEBORequestCreator(_params.eboRequestCreator);
     new EBORequestModuleForTest(_params.oracle, _params.eboRequestCreator, _params.arbitrable);
   }
 }
@@ -192,22 +192,22 @@ contract EBORequestModule_Unit_SetEBORequestCreator is EBORequestModule_Unit_Bas
     _;
   }
 
-  function test_setEBORequestCreator(
+  function test_addEBORequestCreator(
     IEBORequestCreator _eboRequestCreator,
     address _arbitrator
   ) public happyPath(_eboRequestCreator, _arbitrator) {
-    eboRequestModule.setEBORequestCreator(_eboRequestCreator);
+    eboRequestModule.addEBORequestCreator(_eboRequestCreator);
 
     assertEq(eboRequestModule.getAllowedEBORequestCreators()[1], address(_eboRequestCreator));
   }
 
-  function test_emitSetEBORequestCreator(
+  function test_emitAddEBORequestCreator(
     IEBORequestCreator _eboRequestCreator,
     address _arbitrator
   ) public happyPath(_eboRequestCreator, _arbitrator) {
     vm.expectEmit();
-    emit SetEBORequestCreator(_eboRequestCreator);
-    eboRequestModule.setEBORequestCreator(_eboRequestCreator);
+    emit AddEBORequestCreator(_eboRequestCreator);
+    eboRequestModule.addEBORequestCreator(_eboRequestCreator);
   }
 }
 
@@ -215,7 +215,7 @@ contract EBORequestModule_Unit_RemoveEBORequestCreator is EBORequestModule_Unit_
   modifier happyPath(IEBORequestCreator _eboRequestCreator, address _arbitrator) {
     vm.assume(address(_eboRequestCreator) != address(eboRequestCreator));
 
-    eboRequestModule.setEBORequestCreatorForTest(_eboRequestCreator);
+    eboRequestModule.addEBORequestCreatorForTest(_eboRequestCreator);
     vm.mockCall(
       address(arbitrable),
       abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
@@ -231,7 +231,11 @@ contract EBORequestModule_Unit_RemoveEBORequestCreator is EBORequestModule_Unit_
   ) public happyPath(_eboRequestCreator, _arbitrator) {
     eboRequestModule.removeEBORequestCreator(_eboRequestCreator);
 
-    assertEq(eboRequestModule.getAllowedEBORequestCreators().length, 1);
+    address[] memory _allowedEBORequestCreators = eboRequestModule.getAllowedEBORequestCreators();
+
+    assertEq(_allowedEBORequestCreators.length, 1);
+    assertEq(_allowedEBORequestCreators[0], address(eboRequestCreator));
+    assertNotEq(_allowedEBORequestCreators[0], address(_eboRequestCreator));
   }
 
   function test_emitRemoveEBORequestCreator(

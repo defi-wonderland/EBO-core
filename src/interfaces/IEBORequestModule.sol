@@ -37,10 +37,10 @@ interface IEBORequestModule is IRequestModule {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Emitted when the EBORequestCreator is set
+   * @notice Emitted when the EBORequestCreator is added
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  event SetEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
+  event AddEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
 
   /**
    * @notice Emitted when an EBORequestCreator is removed
@@ -100,11 +100,11 @@ interface IEBORequestModule is IRequestModule {
   ) external;
 
   /**
-   * @notice Sets the address of the EBORequestCreator
+   * @notice Adds the address of the EBORequestCreator
    * @dev Callable only by The Graph's Arbitrator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
+  function addEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
 
   /**
    * @notice Removes an EBORequestCreator
