@@ -234,7 +234,6 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     // Assert HorizonAccountingExtension::release
     assertEq(horizonAccountingExtension.bondedForRequest(_disputer, _requestId), 0);
     assertEq(horizonAccountingExtension.totalBonded(_disputer), 0);
-    // TODO: Why isn't proposer's bond released?
     // Assert Oracle::finalize
     assertEq(oracle.finalizedAt(_requestId), block.number);
     assertEq(oracle.finalizedResponseId(_requestId), 0);
