@@ -15,17 +15,6 @@ import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
  */
 interface IEBOFinalityModule is IFinalityModule {
   /*///////////////////////////////////////////////////////////////
-                              STRUCTS
-  //////////////////////////////////////////////////////////////*/
-
-  /**
-   * @notice Parameters of the response in the module
-   * @param block The block number of the response
-   */
-  struct ResponseParameters {
-    uint256 block;
-  }
-  /*///////////////////////////////////////////////////////////////
                               EVENTS
   //////////////////////////////////////////////////////////////*/
 
@@ -140,7 +129,7 @@ interface IEBOFinalityModule is IFinalityModule {
   /**
    * @notice Decodes the response data
    * @param _data The response data
-   * @return _params The decoded response data
+   * @return _block The decoded response data which is the block number
    */
-  function decodeResponseData(bytes calldata _data) external pure returns (ResponseParameters memory _params);
+  function decodeResponseData(bytes calldata _data) external pure returns (uint256 _block);
 }

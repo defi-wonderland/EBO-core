@@ -50,9 +50,9 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
 
     if (_response.requestId != 0) {
       IEBORequestModule.RequestParameters memory _requestParams = decodeRequestData(_request.requestModuleData);
-      ResponseParameters memory _responseParams = decodeResponseData(_response.response);
+      uint256 _block = decodeResponseData(_response.response);
 
-      emit NewEpoch(_requestParams.epoch, _requestParams.chainId, _responseParams.block);
+      emit NewEpoch(_requestParams.epoch, _requestParams.chainId, _block);
     }
 
     emit RequestFinalized(_response.requestId, _response, _finalizer);
@@ -94,8 +94,8 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
   }
 
   /// @inheritdoc IEBOFinalityModule
-  function decodeResponseData(bytes calldata _data) public pure returns (ResponseParameters memory _params) {
-    _params = abi.decode(_data, (ResponseParameters));
+  function decodeResponseData(bytes calldata _data) public pure returns (uint256 _block) {
+    _block = abi.decode(_data, (uint256));
   }
 
   /// @inheritdoc IEBOFinalityModule

@@ -122,7 +122,7 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
     uint128 responseCreatedAt;
     bool finalizeWithResponse;
     IEBORequestModule.RequestParameters requestParams;
-    IEBOFinalityModule.ResponseParameters responseParams;
+    uint256 block;
   }
 
   modifier happyPath(FinalizeRequestParams memory _params) {
@@ -139,7 +139,7 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
         address(oracle), abi.encodeCall(IOracle.responseCreatedAt, (_responseId)), abi.encode(_params.responseCreatedAt)
       );
 
-      _params.response.response = abi.encode(_params.responseParams);
+      _params.response.response = abi.encode(_params.block);
       _params.request.requestModuleData = abi.encode(_params.requestParams);
     } else {
       _params.response.requestId = 0;
@@ -173,11 +173,10 @@ contract EBOFinalityModule_Unit_FinalizeRequest is EBOFinalityModule_Unit_BaseTe
     IEBORequestModule.RequestParameters memory _requestParams =
       abi.decode(_params.request.requestModuleData, (IEBORequestModule.RequestParameters));
 
-    IEBOFinalityModule.ResponseParameters memory _responseParams =
-      abi.decode(_params.response.response, (IEBOFinalityModule.ResponseParameters));
+    uint256 _decodedBlock = abi.decode(_params.response.response, (uint256));
 
     vm.expectEmit();
-    emit NewEpoch(_requestParams.epoch, _requestParams.chainId, _responseParams.block);
+    emit NewEpoch(_requestParams.epoch, _requestParams.chainId, _decodedBlock);
     eboFinalityModule.finalizeRequest(_params.request, _params.response, _params.finalizer);
   }
 
@@ -331,10 +330,10 @@ contract EBOFinalityModule_Unit_DecodeRequestData is EBOFinalityModule_Unit_Base
 
 contract EBOFinalityModule_Unit_DecodeResponseData is EBOFinalityModule_Unit_BaseTest {
   function test_decodeResponseData(uint256 _block) public view {
-    bytes memory _data = abi.encode(IEBOFinalityModule.ResponseParameters(_block));
+    bytes memory _data = abi.encode(_block);
 
-    IEBOFinalityModule.ResponseParameters memory _params = eboFinalityModule.decodeResponseData(_data);
+    uint256 _decodedBlock = eboFinalityModule.decodeResponseData(_data);
 
-    assertEq(_params.block, _block);
+    assertEq(_decodedBlock, _block);
   }
 }
