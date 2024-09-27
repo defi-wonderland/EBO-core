@@ -36,10 +36,6 @@ contract EBORequestModule is Module, IEBORequestModule {
   /// @inheritdoc IEBORequestModule
   function createRequest(bytes32 _requestId, bytes calldata _data, address _requester) external onlyOracle {
     if (!_eboRequestCreatorsAllowed.contains(_requester)) revert EBORequestModule_InvalidRequester();
-
-    RequestParameters memory _params = decodeRequestData(_data);
-
-    // TODO: Bond for the rewards
   }
 
   /// @inheritdoc IEBORequestModule

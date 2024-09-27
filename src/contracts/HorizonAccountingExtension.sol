@@ -210,7 +210,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       // If not enough balance, slash some users to get enough balance
       uint256 _balance = GRT.balanceOf(address(this));
 
-      // TODO: How many iterations should we do?
+      // Claim one by one until the balance is enough
       while (_balance < _claimAmount) {
         _balance += _slash(_disputeId, 1, MAX_USERS_TO_CHECK, _result, _status);
       }
@@ -273,7 +273,6 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     _unbond(_payer, _amount);
 
     // Slash a payer to pay the receiver
-    // TODO: Check if will provision that amount or we will send it directly
     HORIZON_STAKING.slash(_payer, _amount, _amount, _receiver);
 
     emit Paid({_requestId: _requestId, _beneficiary: _receiver, _payer: _payer, _amount: _amount});

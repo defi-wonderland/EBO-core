@@ -434,19 +434,19 @@ contract EBORequestCreator_Unit_SetRequestModuleData is EBORequestCreator_Unit_B
     _;
   }
 
-  // TODO: IF WE USE THIS TEST, WE HAVE TO CHANGE THE SETTINGS TO USE --VIA-IR BECAUSE WE HAVE TO CREATE A LOT OF VARIABLES
-  // /**
-  //  * @notice Test params are setted properly
-  //  */
-  // function test_requestModuleDataParams(
-  //   address _requestModule,
-  //   IEBORequestModule.RequestParameters calldata _requestModuleData
-  // ) external happyPath(_requestModule, _requestModuleData) {
-  //   eboRequestCreator.setRequestModuleData(_requestModule, _requestModuleData);
+  /**
+   * @notice Test params are setted properly
+   */
+  function test_requestModuleDataParams(
+    address _requestModule,
+    IEBORequestModule.RequestParameters calldata _requestModuleData,
+    address _arbitrator
+  ) external happyPath(_arbitrator) {
+    eboRequestCreator.setRequestModuleData(_requestModule, _requestModuleData);
 
-  //   (,,,,,,, bytes memory _getRequestModuleData,,,,) = eboRequestCreator.requestData();
-  //   assertEq(abi.encode(_requestModuleData), _getRequestModuleData);
-  // }
+    IOracle.Request memory _requestData = eboRequestCreator.getRequestData();
+    assertEq(abi.encode(_requestModuleData), _requestData.requestModuleData);
+  }
 
   /**
    * @notice Test the emit request module data set
