@@ -1,12 +1,17 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.sol';
-import {IModule} from '@defi-wonderland/prophet-core/solidity/interfaces/IModule.sol';
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
+import {IModule, Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.sol';
 
-import {IArbitrable, IEBOFinalityModule} from 'interfaces/IEBOFinalityModule.sol';
-import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
+import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
+
+import {
+  IArbitrable,
+  IEBOFinalityModule,
+  IEBORequestCreator,
+  IEBORequestModule,
+  IOracle
+} from 'interfaces/IEBOFinalityModule.sol';
 
 /**
  * @title EBOFinalityModule
@@ -14,11 +19,15 @@ import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
  * as a result of a request being finalized
  */
 contract EBOFinalityModule is Module, IEBOFinalityModule {
+  using EnumerableSet for EnumerableSet.AddressSet;
+
   /// @inheritdoc IEBOFinalityModule
   IArbitrable public immutable ARBITRABLE;
 
-  /// @inheritdoc IEBOFinalityModule
-  IEBORequestCreator public eboRequestCreator;
+  /**
+   * @notice The set of EBORequestCreators allowed
+   */
+  EnumerableSet.AddressSet internal _eboRequestCreatorsAllowed;
 
   /**
    * @notice Constructor
@@ -27,7 +36,7 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
    * @param _arbitrable The address of the Arbitrable contract
    */
   constructor(IOracle _oracle, IEBORequestCreator _eboRequestCreator, IArbitrable _arbitrable) Module(_oracle) {
-    _setEBORequestCreator(_eboRequestCreator);
+    _addEBORequestCreator(_eboRequestCreator);
     ARBITRABLE = _arbitrable;
   }
 
@@ -37,11 +46,13 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
     IOracle.Response calldata _response,
     address _finalizer
   ) external override(Module, IEBOFinalityModule) onlyOracle {
-    if (_request.requester != address(eboRequestCreator)) revert EBOFinalityModule_InvalidRequester();
+    if (!_eboRequestCreatorsAllowed.contains(address(_request.requester))) revert EBOFinalityModule_InvalidRequester();
 
     if (_response.requestId != 0) {
-      // TODO: Redeclare the `Response` struct
-      // emit NewEpoch(_response.epoch, _response.chainId, _response.block);
+      IEBORequestModule.RequestParameters memory _requestParams = decodeRequestData(_request.requestModuleData);
+      uint256 _block = decodeResponseData(_response.response);
+
+      emit NewEpoch(_requestParams.epoch, _requestParams.chainId, _block);
     }
 
     emit RequestFinalized(_response.requestId, _response, _finalizer);
@@ -60,9 +71,36 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
   }
 
   /// @inheritdoc IEBOFinalityModule
-  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
+  function addEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
     ARBITRABLE.validateArbitrator(msg.sender);
-    _setEBORequestCreator(_eboRequestCreator);
+    _addEBORequestCreator(_eboRequestCreator);
+  }
+
+  /// @inheritdoc IEBOFinalityModule
+  function removeEBORequestCreator(IEBORequestCreator _eboRequestCreator) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
+    if (_eboRequestCreatorsAllowed.remove(address(_eboRequestCreator))) {
+      emit RemoveEBORequestCreator(_eboRequestCreator);
+    }
+  }
+
+  /// @inheritdoc IEBOFinalityModule
+  function decodeRequestData(bytes calldata _data)
+    public
+    pure
+    returns (IEBORequestModule.RequestParameters memory _params)
+  {
+    _params = abi.decode(_data, (IEBORequestModule.RequestParameters));
+  }
+
+  /// @inheritdoc IEBOFinalityModule
+  function decodeResponseData(bytes calldata _data) public pure returns (uint256 _block) {
+    _block = abi.decode(_data, (uint256));
+  }
+
+  /// @inheritdoc IEBOFinalityModule
+  function getAllowedEBORequestCreators() external view returns (address[] memory _eboRequestCreators) {
+    _eboRequestCreators = _eboRequestCreatorsAllowed.values();
   }
 
   /// @inheritdoc IModule
@@ -71,11 +109,12 @@ contract EBOFinalityModule is Module, IEBOFinalityModule {
   }
 
   /**
-   * @notice Sets the address of the EBORequestCreator
+   * @notice Adds the address of the EBORequestCreator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function _setEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
-    eboRequestCreator = _eboRequestCreator;
-    emit SetEBORequestCreator(_eboRequestCreator);
+  function _addEBORequestCreator(IEBORequestCreator _eboRequestCreator) private {
+    if (_eboRequestCreatorsAllowed.add(address(_eboRequestCreator))) {
+      emit AddEBORequestCreator(_eboRequestCreator);
+    }
   }
 }
