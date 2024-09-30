@@ -1,20 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
-import {IBondEscalationModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
-import {IArbitratorModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
-import {IBondedResponseModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
-
-import {IArbitrable} from 'interfaces/IArbitrable.sol';
-import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
-
-import {EBORequestCreator, IEBORequestCreator} from 'contracts/EBORequestCreator.sol';
+import {
+  EBORequestCreator,
+  EnumerableSet,
+  IArbitrable,
+  IArbitratorModule,
+  IBondEscalationModule,
+  IBondedResponseModule,
+  IEBORequestCreator,
+  IEBORequestModule,
+  IEpochManager,
+  IOracle
+} from 'contracts/EBORequestCreator.sol';
 
 import 'forge-std/Test.sol';
 
@@ -556,15 +554,11 @@ contract EBORequestCreator_Unit_SetFinalityModuleData is EBORequestCreator_Unit_
   /**
    * @notice Test the emit finality module data set
    */
-  function test_emitFinalityModuleDataSet(
-    address _finalityModule,
-    bytes calldata _finalityModuleData,
-    address _arbitrator
-  ) external happyPath(_arbitrator) {
+  function test_emitFinalityModuleDataSet(address _finalityModule, address _arbitrator) external happyPath(_arbitrator) {
     vm.expectEmit();
-    emit FinalityModuleDataSet(_finalityModule, _finalityModuleData);
+    emit FinalityModuleDataSet(_finalityModule, new bytes(0));
 
-    eboRequestCreator.setFinalityModuleData(_finalityModule, _finalityModuleData);
+    eboRequestCreator.setFinalityModuleData(_finalityModule);
   }
 }
 

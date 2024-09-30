@@ -1,13 +1,10 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 import {ValidatorLib} from '@defi-wonderland/prophet-core/solidity/libraries/ValidatorLib.sol';
 import {IArbitrator} from '@defi-wonderland/prophet-modules/solidity/interfaces/IArbitrator.sol';
-import {IArbitratorModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 
-import {IArbitrable, ICouncilArbitrator} from 'interfaces/ICouncilArbitrator.sol';
+import {IArbitrable, IArbitratorModule, ICouncilArbitrator, IOracle} from 'interfaces/ICouncilArbitrator.sol';
 
 /**
  * @title CouncilArbitrator
@@ -52,7 +49,7 @@ contract CouncilArbitrator is ICouncilArbitrator {
     IOracle.Request calldata _request,
     IOracle.Response calldata _response,
     IOracle.Dispute calldata _dispute
-  ) external onlyArbitratorModule returns (bytes memory /* _data */ ) {
+  ) external onlyArbitratorModule returns (bytes memory _data) {
     bytes32 _disputeId = _dispute._getId();
 
     resolutions[_disputeId] = ResolutionParameters(_request, _response, _dispute);

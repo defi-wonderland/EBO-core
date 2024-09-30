@@ -5,6 +5,7 @@ import {SafeERC20} from '@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import {
+  IArbitrable,
   IBondEscalationModule,
   IERC20,
   IHorizonAccountingExtension,
@@ -25,16 +26,19 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   IERC20 public immutable GRT;
 
   /// @inheritdoc IHorizonAccountingExtension
+  IArbitrable public immutable ARBITRABLE;
+
+  /// @inheritdoc IHorizonAccountingExtension
   uint256 public immutable MIN_THAWING_PERIOD;
 
   /// @inheritdoc IHorizonAccountingExtension
   uint256 public constant MAX_VERIFIER_CUT = 1_000_000;
 
-  // TODO: Validate what the correct magic numbers should be
-  uint256 public constant MAX_SLASHING_USERS = 4;
+  /// @inheritdoc IHorizonAccountingExtension
+  uint256 public maxSlashingUsers;
 
-  // TODO: Validate what the correct magic numbers should be
-  uint256 public constant MAX_USERS_TO_CHECK = 10;
+  /// @inheritdoc IHorizonAccountingExtension
+  uint256 public maxUsersToCheck;
 
   /// @inheritdoc IHorizonAccountingExtension
   mapping(address _user => uint256 _bonded) public totalBonded;
@@ -67,16 +71,24 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
    * @param _oracle The address of the Oracle
    * @param _grt The address of the GRT token
    * @param _minThawingPeriod The minimum thawing period for the staking
+   * @param _maxSlashingUsers The maximum number of users to slash
+   * @param _maxUsersToCheck The maximum number of users to check
    */
   constructor(
     IHorizonStaking _horizonStaking,
     IOracle _oracle,
     IERC20 _grt,
-    uint256 _minThawingPeriod
+    IArbitrable _arbitrable,
+    uint256 _minThawingPeriod,
+    uint256 _maxSlashingUsers,
+    uint256 _maxUsersToCheck
   ) Validator(_oracle) {
     HORIZON_STAKING = _horizonStaking;
     GRT = _grt;
+    ARBITRABLE = _arbitrable;
     MIN_THAWING_PERIOD = _minThawingPeriod;
+    _setMaxSlashingUsers(_maxSlashingUsers);
+    _setMaxUsersToCheck(_maxUsersToCheck);
   }
 
   /**
@@ -163,10 +175,6 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       bondEscalationModule: _bondEscalationModule
     });
 
-    // TODO: The amount of money to be distributed needs to be slashed.
-    // The problem is that there could be multiple users to slash and we can't do it fully
-    // in this function.
-
     emit BondEscalationSettled({
       _requestId: _requestId,
       _disputeId: _disputeId,
@@ -212,7 +220,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
       // Claim one by one until the balance is enough
       while (_balance < _claimAmount) {
-        _balance += _slash(_disputeId, 1, MAX_USERS_TO_CHECK, _result, _status);
+        _balance += _slash(_disputeId, maxSlashingUsers, maxUsersToCheck, _result, _status);
       }
 
       _rewardAmount = _claimAmount - _pledgeAmount;
@@ -293,6 +301,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     emit Bonded(_requestId, _bonder, _amount);
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
   function bond(
     address _bonder,
     bytes32 _requestId,
@@ -319,14 +328,6 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     bytes32 _requestId,
     uint256 _amount
   ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _bonder) {
-    // TODO: Release is used to pay the user the rewards for proposing or returning the funds to the
-    // creator in case the request finalized without a response. We need to finish designing the payments
-    // integration to do this.
-
-    // TODO: Release is also used in the bond escalation module to:
-    // 1) return the funds to the disputer in case there is no resolution
-    // 2) release the initial dispute bond if the disputer wins
-
     // Release the bond amount for the request for the user
     bondedForRequest[_bonder][_requestId] -= _amount;
 
@@ -335,6 +336,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     emit Released(_requestId, _bonder, _amount);
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
   function slash(bytes32 _disputeId, uint256 _usersToSlash, uint256 _maxUsersToCheck) external {
     EscalationResult memory _result = escalationResults[_disputeId];
 
@@ -343,6 +345,38 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     IOracle.DisputeStatus _status = ORACLE.disputeStatus(_disputeId);
 
     _slash(_disputeId, _usersToSlash, _maxUsersToCheck, _result, _status);
+  }
+
+  /// @inheritdoc IHorizonAccountingExtension
+  function setMaxSlashingUsers(uint256 _maxSlashingUsers) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
+    _setMaxSlashingUsers(_maxSlashingUsers);
+  }
+
+  /// @inheritdoc IHorizonAccountingExtension
+  function setMaxUsersToCheck(uint256 _maxUsersToCheck) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
+    _setMaxUsersToCheck(_maxUsersToCheck);
+  }
+
+  /**
+   * @notice Set the maximum number of users to slash.
+   * @param _maxSlashingUsers The maximum number of users to slash.
+   */
+  function _setMaxSlashingUsers(uint256 _maxSlashingUsers) internal {
+    maxSlashingUsers = _maxSlashingUsers;
+
+    emit MaxSlashingUsersSetted(_maxSlashingUsers);
+  }
+
+  /**
+   * @notice Set the maximum number of users to check.
+   * @param _maxUsersToCheck The maximum number of users to check.
+   */
+  function _setMaxUsersToCheck(uint256 _maxUsersToCheck) internal {
+    maxUsersToCheck = _maxUsersToCheck;
+
+    emit MaxUsersToCheckSetted(_maxUsersToCheck);
   }
 
   /**
