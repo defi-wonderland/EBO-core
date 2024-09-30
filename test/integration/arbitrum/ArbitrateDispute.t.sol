@@ -35,6 +35,11 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     vm.expectRevert(IArbitratorModule.ArbitratorModule_InvalidDisputeId.selector);
     _resolveDispute(_requestId, _responseId, _disputeId);
 
+    // Pledge for the dispute
+    _pledgeForDispute(_requestId, _disputeId);
+    // Pledge against the dispute
+    _pledgeAgainstDispute(_requestId, _disputeId);
+
     // Pass the dispute deadline
     vm.warp(disputeDeadline + 1);
 
@@ -71,6 +76,14 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
     assertEq(_escalation.disputeId, _disputeId);
     assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.DisputerWon));
+    // Assert BondEscalationAccounting::onSettleBondEscalation
+    // IBondEscalationAccounting.EscalationResult memory _escalationResult = bondEscalationAccounting.getEscalationResult(_disputeId);
+    (bytes32 __requestId, IERC20 __token, uint256 __amountPerPledger, IBondEscalationModule __bondEscalationModule) =
+      bondEscalationAccounting.escalationResults(_disputeId);
+    assertEq(__requestId, _requestId);
+    assertEq(__amountPerPledger, disputeBondSize * 2);
+    assertEq(address(__token), address(graphToken));
+    assertEq(address(__bondEscalationModule), address(bondEscalationModule));
     // Assert BondEscalationAccounting::pay
     assertEq(
       bondEscalationAccounting.bondedAmountOf(_proposer, graphToken, _requestId), responseBondSize - disputeBondSize
@@ -105,6 +118,11 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
     vm.expectRevert(IArbitratorModule.ArbitratorModule_InvalidDisputeId.selector);
     _resolveDispute(_requestId, _responseId, _disputeId);
+
+    // Pledge for the dispute
+    _pledgeForDispute(_requestId, _disputeId);
+    // Pledge against the dispute
+    _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
     vm.warp(disputeDeadline + 1);
@@ -149,6 +167,14 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
     assertEq(_escalation.disputeId, _disputeId);
     assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.DisputerLost));
+    // Assert BondEscalationAccounting::onSettleBondEscalation
+    // IBondEscalationAccounting.EscalationResult memory _escalationResult = bondEscalationAccounting.getEscalationResult(_disputeId);
+    (bytes32 __requestId, IERC20 __token, uint256 __amountPerPledger, IBondEscalationModule __bondEscalationModule) =
+      bondEscalationAccounting.escalationResults(_disputeId);
+    assertEq(__requestId, _requestId);
+    assertEq(__amountPerPledger, disputeBondSize * 2);
+    assertEq(address(__token), address(graphToken));
+    assertEq(address(__bondEscalationModule), address(bondEscalationModule));
     // Assert BondEscalationAccounting::pay
     assertEq(bondEscalationAccounting.bondedAmountOf(_disputer, graphToken, _requestId), 0);
     assertEq(bondEscalationAccounting.balanceOf(_disputer, graphToken), 0);
@@ -181,6 +207,11 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
     vm.expectRevert(IArbitratorModule.ArbitratorModule_InvalidDisputeId.selector);
     _resolveDispute(_requestId, _responseId, _disputeId);
+
+    // Pledge for the dispute
+    _pledgeForDispute(_requestId, _disputeId);
+    // Pledge against the dispute
+    _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
     vm.warp(disputeDeadline + 1);
@@ -218,9 +249,19 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
     assertEq(_escalation.disputeId, _disputeId);
     assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.Escalated));
+    // Assert BondEscalationAccounting::onSettleBondEscalation
+    // IBondEscalationAccounting.EscalationResult memory _escalationResult = bondEscalationAccounting.getEscalationResult(_disputeId);
+    (bytes32 __requestId, IERC20 __token, uint256 __amountPerPledger, IBondEscalationModule __bondEscalationModule) =
+      bondEscalationAccounting.escalationResults(_disputeId);
+    assertEq(__requestId, _requestId);
+    assertEq(__amountPerPledger, disputeBondSize);
+    assertEq(address(__token), address(graphToken));
+    assertEq(address(__bondEscalationModule), address(bondEscalationModule));
     // Assert BondEscalationAccounting::release
     assertEq(bondEscalationAccounting.bondedAmountOf(_disputer, graphToken, _requestId), 0);
     assertEq(bondEscalationAccounting.balanceOf(_disputer, graphToken), disputeBondSize);
+    assertEq(bondEscalationAccounting.bondedAmountOf(_proposer, graphToken, _requestId), responseBondSize);
+    assertEq(bondEscalationAccounting.balanceOf(_proposer, graphToken), 0);
     // Assert Oracle::finalize
     assertEq(oracle.finalizedAt(_requestId), block.number);
     assertEq(oracle.finalizedResponseId(_requestId), 0);
