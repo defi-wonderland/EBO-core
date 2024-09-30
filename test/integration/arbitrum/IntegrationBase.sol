@@ -27,6 +27,7 @@ contract IntegrationBase is Deploy, Test {
   mapping(bytes32 _disputeId => IOracle.Dispute _disputeData) internal _disputes;
   string internal _chainId;
   uint256 internal _currentEpoch;
+  uint256 internal _blockNumber;
 
   function setUp() public virtual override {
     vm.createSelectFork(vm.rpcUrl('arbitrum'), _FORK_BLOCK);
@@ -47,6 +48,9 @@ contract IntegrationBase is Deploy, Test {
 
     // Fetch current epoch
     _currentEpoch = epochManager.currentEpoch();
+
+    // Set block number
+    _blockNumber = block.number;
   }
 
   function _createRequest() internal returns (bytes32 _requestId) {
@@ -214,7 +218,7 @@ contract IntegrationBase is Deploy, Test {
   function _instantiateResponseData(bytes32 _requestId) internal view returns (IOracle.Response memory _responseData) {
     _responseData.proposer = _proposer;
     _responseData.requestId = _requestId;
-    _responseData.response = abi.encode(''); // TODO: Populate response
+    _responseData.response = abi.encode(_blockNumber);
   }
 
   function _instantiateDisputeData(
