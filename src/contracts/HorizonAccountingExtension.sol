@@ -52,6 +52,9 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   /// @inheritdoc IHorizonAccountingExtension
   mapping(bytes32 _requestId => mapping(address _pledger => bool _claimed)) public pledgerClaimed;
 
+  /// @inheritdoc IHorizonAccountingExtension
+  mapping(address _caller => bool _authorized) public authorizedCallers;
+
   /**
    * @notice Storing which modules have the users approved to bond their tokens.
    */
@@ -69,6 +72,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
    * @param _grt The address of the GRT token
    * @param _minThawingPeriod The minimum thawing period for the staking
    * @param _maxUsersToCheck The maximum number of users to check
+   * @param _authorizedCallers The addresses of the authorized callers
    */
   constructor(
     IHorizonStaking _horizonStaking,
@@ -76,13 +80,27 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     IERC20 _grt,
     IArbitrable _arbitrable,
     uint256 _minThawingPeriod,
-    uint256 _maxUsersToCheck
+    uint256 _maxUsersToCheck,
+    address[] memory _authorizedCallers
   ) Validator(_oracle) {
     HORIZON_STAKING = _horizonStaking;
     GRT = _grt;
     ARBITRABLE = _arbitrable;
     MIN_THAWING_PERIOD = _minThawingPeriod;
     _setMaxUsersToCheck(_maxUsersToCheck);
+
+    // Set the authorized callers
+    for (uint256 _i; _i < _authorizedCallers.length; ++_i) {
+      authorizedCallers[_authorizedCallers[_i]] = true;
+    }
+  }
+
+  /**
+   * @notice Checks that the caller is an authorized caller.
+   */
+  modifier onlyAuthorizedCaller() {
+    if (!authorizedCallers[msg.sender]) revert HorizonAccountingExtension_UnauthorizedCaller();
+    _;
   }
 
   /**
@@ -125,7 +143,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     IOracle.Request calldata _request,
     IOracle.Dispute calldata _dispute,
     uint256 _amount
-  ) external {
+  ) external onlyAuthorizedCaller {
     bytes32 _requestId = _getId(_request);
     bytes32 _disputeId = _validateDispute(_request, _dispute);
 
@@ -146,7 +164,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     IOracle.Dispute calldata _dispute,
     uint256 _amountPerPledger,
     uint256 _winningPledgersLength
-  ) external {
+  ) external onlyAuthorizedCaller {
     bytes32 _requestId = _getId(_request);
     bytes32 _disputeId = _validateDispute(_request, _dispute);
 
@@ -244,7 +262,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     IOracle.Dispute calldata _dispute,
     address _pledger,
     uint256 _amount
-  ) external {
+  ) external onlyAuthorizedCaller {
     bytes32 _requestId = _getId(_request);
     bytes32 _disputeId = _validateDispute(_request, _dispute);
 

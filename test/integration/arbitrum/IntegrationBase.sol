@@ -18,6 +18,8 @@ contract IntegrationBase is Deploy, Test {
   address internal _requester;
   address internal _proposer;
   address internal _disputer;
+  address internal _pledgerFor;
+  address internal _pledgerAgainst;
 
   // Data
   mapping(bytes32 _requestId => IOracle.Request _requestData) internal _requests;
@@ -38,6 +40,8 @@ contract IntegrationBase is Deploy, Test {
     _requester = makeAddr('requester');
     _proposer = makeAddr('proposer');
     _disputer = makeAddr('disputer');
+    _pledgerFor = makeAddr('pledgerFor');
+    _pledgerAgainst = makeAddr('pledgerAgainst');
 
     // Set chain ID
     _chainId = 'chainId1';
@@ -45,7 +49,7 @@ contract IntegrationBase is Deploy, Test {
     // Fetch current epoch
     _currentEpoch = epochManager.currentEpoch();
 
-    // Fetch current block number
+    // Set block number
     _blockNumber = block.number;
   }
 
@@ -87,6 +91,30 @@ contract IntegrationBase is Deploy, Test {
 
     _disputeId = _disputeData._getId();
     _disputes[_disputeId] = _disputeData;
+  }
+
+  function _pledgeForDispute(bytes32 _requestId, bytes32 _disputeId) internal {
+    IOracle.Request memory _requestData = _requests[_requestId];
+    IOracle.Dispute memory _disputeData = _disputes[_disputeId];
+
+    vm.prank(_pledgerFor);
+    bondEscalationModule.pledgeForDispute(_requestData, _disputeData);
+  }
+
+  function _pledgeAgainstDispute(bytes32 _requestId, bytes32 _disputeId) internal {
+    IOracle.Request memory _requestData = _requests[_requestId];
+    IOracle.Dispute memory _disputeData = _disputes[_disputeId];
+
+    vm.prank(_pledgerAgainst);
+    bondEscalationModule.pledgeAgainstDispute(_requestData, _disputeData);
+  }
+
+  function _settleBondEscalation(bytes32 _requestId, bytes32 _responseId, bytes32 _disputeId) internal {
+    IOracle.Request memory _requestData = _requests[_requestId];
+    IOracle.Response memory _responseData = _responses[_responseId];
+    IOracle.Dispute memory _disputeData = _disputes[_disputeId];
+
+    bondEscalationModule.settleBondEscalation(_requestData, _responseData, _disputeData);
   }
 
   function _escalateDispute(bytes32 _requestId, bytes32 _responseId, bytes32 _disputeId) internal {
@@ -153,6 +181,16 @@ contract IntegrationBase is Deploy, Test {
     deal(address(graphToken), _disputer, disputeBondSize, true);
     graphToken.approve(address(bondEscalationAccounting), disputeBondSize);
     bondEscalationAccounting.deposit(graphToken, disputeBondSize);
+
+    vm.startPrank(_pledgerFor);
+    deal(address(graphToken), _pledgerFor, disputeBondSize * maxNumberOfEscalations, true);
+    graphToken.approve(address(bondEscalationAccounting), disputeBondSize * maxNumberOfEscalations);
+    bondEscalationAccounting.deposit(graphToken, disputeBondSize * maxNumberOfEscalations);
+
+    vm.startPrank(_pledgerAgainst);
+    deal(address(graphToken), _pledgerAgainst, disputeBondSize * maxNumberOfEscalations, true);
+    graphToken.approve(address(bondEscalationAccounting), disputeBondSize * maxNumberOfEscalations);
+    bondEscalationAccounting.deposit(graphToken, disputeBondSize * maxNumberOfEscalations);
     vm.stopPrank();
   }
 

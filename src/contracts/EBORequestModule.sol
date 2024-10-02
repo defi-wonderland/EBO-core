@@ -34,7 +34,11 @@ contract EBORequestModule is Module, IEBORequestModule {
   }
 
   /// @inheritdoc IEBORequestModule
-  function createRequest(bytes32 _requestId, bytes calldata _data, address _requester) external view onlyOracle {
+  function createRequest(
+    bytes32, /* _requestId */
+    bytes calldata, /* _data */
+    address _requester
+  ) external view onlyOracle {
     if (!_eboRequestCreatorsAllowed.contains(_requester)) revert EBORequestModule_InvalidRequester();
   }
 

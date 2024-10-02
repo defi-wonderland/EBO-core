@@ -13,7 +13,6 @@
     "immutable-name-snakecase": "warn",
     "avoid-low-level-calls": "off",
     "no-console": "off",
-    "max-line-length": ["warn", 120],
-    "no-unused-vars": "off"
+    "max-line-length": ["warn", 120]
   }
 }

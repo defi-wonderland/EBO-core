@@ -91,7 +91,7 @@ contract Deploy is Script {
 
     // TODO: Set production dispute module params
     disputeBondSize = 0.3 ether;
-    maxNumberOfEscalations = 1;
+    maxNumberOfEscalations = 2;
     disputeDeadline = block.timestamp + 10 days;
     tyingBuffer = 3 days;
     disputeDisputeWindow = 1 weeks;

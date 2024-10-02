@@ -175,6 +175,11 @@ interface IHorizonAccountingExtension {
    */
   error HorizonAccountingExtension_InvalidMaxVerifierCut();
 
+  /**
+   * @notice Thrown when caller is not authorized
+   */
+  error HorizonAccountingExtension_UnauthorizedCaller();
+
   /*///////////////////////////////////////////////////////////////
                               STRUCTS
   //////////////////////////////////////////////////////////////*/
@@ -287,6 +292,14 @@ interface IHorizonAccountingExtension {
    * @return _approvedModules The approved modules for bonding tokens
    */
   function approvedModules(address _user) external view returns (address[] memory _approvedModules);
+
+  /**
+   * @notice Checks whether an address is an authorized caller.
+   *
+   * @param _caller      The address to check
+   * @return _authorized True if the address is authorized, false otherwise
+   */
+  function authorizedCallers(address _caller) external returns (bool _authorized);
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC

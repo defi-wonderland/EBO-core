@@ -28,8 +28,19 @@ contract HorizonAccountingExtensionForTest is HorizonAccountingExtension {
     IERC20 _grt,
     IArbitrable _arbitrable,
     uint256 _minThawingPeriod,
-    uint256 _maxUsersToCheck
-  ) HorizonAccountingExtension(_horizonStaking, _oracle, _grt, _arbitrable, _minThawingPeriod, _maxUsersToCheck) {}
+    uint256 _maxUsersToCheck,
+    address[] memory _authorizedCallers
+  )
+    HorizonAccountingExtension(
+      _horizonStaking,
+      _oracle,
+      _grt,
+      _arbitrable,
+      _minThawingPeriod,
+      _maxUsersToCheck,
+      _authorizedCallers
+    )
+  {}
 
   function approveModuleForTest(address _user, address _module) public {
     _approvals[_user].add(_module);
@@ -81,6 +92,10 @@ contract HorizonAccountingExtensionForTest is HorizonAccountingExtension {
   function setApprovalForTest(address _bonder, address _caller) public {
     _approvals[_bonder].add(_caller);
   }
+
+  function setAuthorizedCallerForTest(address _caller) public {
+    authorizedCallers[_caller] = true;
+  }
 }
 
 contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
@@ -94,6 +109,7 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
 
   /// Addresses
   address public user;
+  address public authorizedCaller;
 
   /// Constants
   uint32 public constant MAX_VERIFIER_CUT = 1_000_000;
@@ -132,9 +148,13 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
     bondEscalationModule = IBondEscalationModule(makeAddr('BondEscalationModule'));
 
     user = makeAddr('User');
+    authorizedCaller = makeAddr('AuthorizedCaller');
+
+    address[] memory _authorizedCallers = new address[](1);
+    _authorizedCallers[0] = authorizedCaller;
 
     horizonAccountingExtension = new HorizonAccountingExtensionForTest(
-      horizonStaking, oracle, grt, arbitrable, MIN_THAWING_PERIOD, maxUsersToCheck
+      horizonStaking, oracle, grt, arbitrable, MIN_THAWING_PERIOD, maxUsersToCheck, _authorizedCallers
     );
   }
 }
@@ -162,6 +182,10 @@ contract HorizonAccountingExtension_Unit_Constructor is HorizonAccountingExtensi
 
   function test_setMaxUsersToCheck() public view {
     assertEq(horizonAccountingExtension.maxUsersToCheck(), maxUsersToCheck);
+  }
+
+  function test_setAuthorizedCallers() public view {
+    assertEq(horizonAccountingExtension.authorizedCallers(authorizedCaller), true);
   }
 }
 
@@ -201,7 +225,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
 
     // Mock and expect the call to oracle checking if the module is allowed
     _mockAndExpect(
-      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, address(this))), abi.encode(true)
+      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, authorizedCaller)), abi.encode(true)
     );
 
     _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_mockDisputeId)), abi.encode(1));
@@ -211,13 +235,26 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
       abi.encodeWithSelector(horizonStaking.getProvision.selector, _pledger, horizonAccountingExtension),
       abi.encode(_provisionData)
     );
+
+    vm.startPrank(authorizedCaller);
     _;
+  }
+
+  function test_revertIfUnauthorizedCaller(address _pledger, uint256 _amount) public {
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedCaller.selector);
+
+    horizonAccountingExtension.pledge({
+      _pledger: _pledger,
+      _request: mockRequest,
+      _dispute: mockDispute,
+      _amount: _amount
+    });
   }
 
   function test_revertIfDisallowedModule(address _pledger, uint256 _amount) public {
     // Mock and expect the call to oracle checking if the module is allowed
     _mockAndExpect(
-      address(oracle), abi.encodeCall(IOracle.allowedModule, (_getId(mockRequest), address(this))), abi.encode(false)
+      address(oracle), abi.encodeCall(IOracle.allowedModule, (_getId(mockRequest), authorizedCaller)), abi.encode(false)
     );
 
     _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_mockDisputeId)), abi.encode(1));
@@ -225,6 +262,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
     // Check: does it revert if called by an unauthorized module?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedModule.selector);
 
+    vm.prank(authorizedCaller);
     horizonAccountingExtension.pledge({
       _pledger: _pledger,
       _request: mockRequest,
@@ -242,7 +280,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
     _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_mockDisputeId)), abi.encode(1));
 
     _mockAndExpect(
-      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, address(this))), abi.encode(true)
+      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, authorizedCaller)), abi.encode(true)
     );
 
     vm.mockCall(
@@ -255,6 +293,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
       abi.encodeWithSelector(IHorizonAccountingExtension.HorizonAccountingExtension_InvalidMaxVerifierCut.selector)
     );
 
+    vm.prank(authorizedCaller);
     horizonAccountingExtension.pledge({
       _pledger: _pledger,
       _request: mockRequest,
@@ -271,7 +310,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
     _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_mockDisputeId)), abi.encode(1));
 
     _mockAndExpect(
-      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, address(this))), abi.encode(true)
+      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, authorizedCaller)), abi.encode(true)
     );
 
     vm.mockCall(
@@ -284,6 +323,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
       abi.encodeWithSelector(IHorizonAccountingExtension.HorizonAccountingExtension_InvalidThawingPeriod.selector)
     );
 
+    vm.prank(authorizedCaller);
     horizonAccountingExtension.pledge({
       _pledger: _pledger,
       _request: mockRequest,
@@ -301,7 +341,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
     _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_mockDisputeId)), abi.encode(1));
 
     _mockAndExpect(
-      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, address(this))), abi.encode(true)
+      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, authorizedCaller)), abi.encode(true)
     );
 
     vm.mockCall(
@@ -314,6 +354,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
       abi.encodeWithSelector(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector)
     );
 
+    vm.prank(authorizedCaller);
     horizonAccountingExtension.pledge({
       _pledger: _pledger,
       _request: mockRequest,
@@ -340,7 +381,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
     _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_mockDisputeId)), abi.encode(1));
 
     _mockAndExpect(
-      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, address(this))), abi.encode(true)
+      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, authorizedCaller)), abi.encode(true)
     );
 
     vm.mockCall(
@@ -353,6 +394,7 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
       abi.encodeWithSelector(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientBondedTokens.selector)
     );
 
+    vm.prank(authorizedCaller);
     horizonAccountingExtension.pledge({
       _pledger: _pledger,
       _request: mockRequest,
@@ -425,15 +467,28 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
       abi.encode(true)
     );
 
+    horizonAccountingExtension.setAuthorizedCallerForTest(address(bondEscalationModule));
+
     vm.startPrank(address(bondEscalationModule));
 
     _;
+  }
+
+  function test_revertIfUnauthorizedCaller(uint256 _amountPerPledger, uint256 _winningPledgersLength) public {
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedCaller.selector);
+
+    vm.prank(address(bondEscalationModule));
+    horizonAccountingExtension.onSettleBondEscalation(
+      mockRequest, mockDispute, _amountPerPledger, _winningPledgersLength
+    );
   }
 
   function test_revertIfDisallowedModule(uint256 _amountPerPledger, uint256 _winningPledgersLength) public {
     vm.mockCall(
       address(oracle), abi.encodeWithSelector(IOracle.disputeCreatedAt.selector, _mockDisputeId), abi.encode(1)
     );
+
+    horizonAccountingExtension.setAuthorizedCallerForTest(address(bondEscalationModule));
 
     // Mock and expect the call to oracle checking if the module is allowed
     _mockAndExpect(
@@ -471,6 +526,8 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
       abi.encode(true)
     );
 
+    horizonAccountingExtension.setAuthorizedCallerForTest(address(bondEscalationModule));
+
     // Check: does it revert if the pledger does not have enough funds?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientFunds.selector);
 
@@ -491,6 +548,8 @@ contract HorizonAccountingExtension_Unit_OnSettleBondEscalation is HorizonAccoun
     );
 
     horizonAccountingExtension.setPledgedForTest(_mockDisputeId, _amount);
+
+    horizonAccountingExtension.setAuthorizedCallerForTest(address(bondEscalationModule));
 
     // Check: does it revert if the escalation is already settled?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_AlreadySettled.selector);
@@ -862,10 +921,18 @@ contract HorizonAccountingExtension_Unit_ReleasePledge is HorizonAccountingExten
 
     // Mock and expect the call to oracle checking if the module is allowed
     _mockAndExpect(
-      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, address(this))), abi.encode(true)
+      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, authorizedCaller)), abi.encode(true)
     );
 
+    vm.startPrank(authorizedCaller);
     _;
+  }
+
+  function test_revertIfUnauthorizedCaller(address _pledger, uint256 _amount) public {
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedCaller.selector);
+
+    vm.prank(address(bondEscalationModule));
+    horizonAccountingExtension.releasePledge(mockRequest, mockDispute, _pledger, _amount);
   }
 
   function test_revertIfDisallowedModule(address _pledger, uint256 _amount) public {
@@ -875,12 +942,13 @@ contract HorizonAccountingExtension_Unit_ReleasePledge is HorizonAccountingExten
 
     // Mock and expect the call to oracle checking if the module is allowed
     _mockAndExpect(
-      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, address(this))), abi.encode(false)
+      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, authorizedCaller)), abi.encode(false)
     );
 
     // Check: does it revert if the module is not allowed?
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedModule.selector);
 
+    vm.prank(authorizedCaller);
     horizonAccountingExtension.releasePledge(mockRequest, mockDispute, _pledger, _amount);
   }
 
