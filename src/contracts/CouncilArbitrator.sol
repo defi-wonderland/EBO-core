@@ -49,7 +49,7 @@ contract CouncilArbitrator is ICouncilArbitrator {
     IOracle.Request calldata _request,
     IOracle.Response calldata _response,
     IOracle.Dispute calldata _dispute
-  ) external onlyArbitratorModule returns (bytes memory _data) {
+  ) external onlyArbitratorModule returns (bytes memory /* _data */ ) {
     bytes32 _disputeId = _dispute._getId();
 
     resolutions[_disputeId] = ResolutionParameters(_request, _response, _dispute);

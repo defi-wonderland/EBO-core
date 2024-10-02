@@ -28,19 +28,8 @@ contract HorizonAccountingExtensionForTest is HorizonAccountingExtension {
     IERC20 _grt,
     IArbitrable _arbitrable,
     uint256 _minThawingPeriod,
-    uint256 _maxSlashingUsers,
     uint256 _maxUsersToCheck
-  )
-    HorizonAccountingExtension(
-      _horizonStaking,
-      _oracle,
-      _grt,
-      _arbitrable,
-      _minThawingPeriod,
-      _maxSlashingUsers,
-      _maxUsersToCheck
-    )
-  {}
+  ) HorizonAccountingExtension(_horizonStaking, _oracle, _grt, _arbitrable, _minThawingPeriod, _maxUsersToCheck) {}
 
   function approveModuleForTest(address _user, address _module) public {
     _approvals[_user].add(_module);
@@ -111,7 +100,6 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
   uint64 public constant MIN_THAWING_PERIOD = 30 days;
 
   /// Mocks
-  uint256 public maxSlashingUsers = 10;
   uint256 public maxUsersToCheck = 1;
 
   /// Events
@@ -134,8 +122,7 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
   event EscalationRewardClaimed(
     bytes32 indexed _requestId, bytes32 indexed _disputeId, address indexed _pledger, uint256 _reward, uint256 _released
   );
-  event MaxSlashingUsersSetted(uint256 _maxSlashingUsers);
-  event MaxUsersToCheckSetted(uint256 _maxUsersToCheck);
+  event MaxUsersToCheckSet(uint256 _maxUsersToCheck);
 
   function setUp() public {
     horizonStaking = IHorizonStaking(makeAddr('HorizonStaking'));
@@ -147,7 +134,7 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
     user = makeAddr('User');
 
     horizonAccountingExtension = new HorizonAccountingExtensionForTest(
-      horizonStaking, oracle, grt, arbitrable, MIN_THAWING_PERIOD, maxSlashingUsers, maxUsersToCheck
+      horizonStaking, oracle, grt, arbitrable, MIN_THAWING_PERIOD, maxUsersToCheck
     );
   }
 }
@@ -171,10 +158,6 @@ contract HorizonAccountingExtension_Unit_Constructor is HorizonAccountingExtensi
 
   function test_setMinThawingPeriod() public view {
     assertEq(horizonAccountingExtension.MIN_THAWING_PERIOD(), MIN_THAWING_PERIOD);
-  }
-
-  function test_setMaxSlashingUsers() public view {
-    assertEq(horizonAccountingExtension.maxSlashingUsers(), maxSlashingUsers);
   }
 
   function test_setMaxUsersToCheck() public view {
@@ -1588,33 +1571,9 @@ contract HorizonAccountingExtension_Unit_Slash is HorizonAccountingExtension_Uni
   }
 }
 
-contract HorizonAccountingExtension_Unit_SetMaxSlashingUsers is HorizonAccountingExtension_Unit_BaseTest {
-  modifier happyPath(address _arbitrator) {
-    vm.mockCall(
-      address(arbitrable),
-      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
-      abi.encode(true)
-    );
-    vm.startPrank(_arbitrator);
-    _;
-  }
-
-  function test_setMaxSlashingUsers(address _arbitrator, uint256 _maxSlashingUsers) public happyPath(_arbitrator) {
-    horizonAccountingExtension.setMaxSlashingUsers(_maxSlashingUsers);
-    assertEq(horizonAccountingExtension.maxSlashingUsers(), _maxSlashingUsers);
-  }
-
-  function test_emitMaxSlashingUsers(address _arbitrator, uint256 _maxSlashingUsers) public happyPath(_arbitrator) {
-    vm.expectEmit();
-    emit MaxSlashingUsersSetted(_maxSlashingUsers);
-
-    horizonAccountingExtension.setMaxSlashingUsers(_maxSlashingUsers);
-  }
-}
-
 contract HorizonAccountingExtension_Unit_SetMaxUsersToCheck is HorizonAccountingExtension_Unit_BaseTest {
   modifier happyPath(address _arbitrator) {
-    vm.mockCall(
+    _mockAndExpect(
       address(arbitrable),
       abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
       abi.encode(true)
@@ -1630,7 +1589,7 @@ contract HorizonAccountingExtension_Unit_SetMaxUsersToCheck is HorizonAccounting
 
   function test_emitMaxUsersToCheck(address _arbitrator, uint256 _maxUsersToCheck) public happyPath(_arbitrator) {
     vm.expectEmit();
-    emit MaxUsersToCheckSetted(_maxUsersToCheck);
+    emit MaxUsersToCheckSet(_maxUsersToCheck);
 
     horizonAccountingExtension.setMaxUsersToCheck(_maxUsersToCheck);
   }

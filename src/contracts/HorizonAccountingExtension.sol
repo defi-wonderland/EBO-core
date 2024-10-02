@@ -35,9 +35,6 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   uint256 public constant MAX_VERIFIER_CUT = 1_000_000;
 
   /// @inheritdoc IHorizonAccountingExtension
-  uint256 public maxSlashingUsers;
-
-  /// @inheritdoc IHorizonAccountingExtension
   uint256 public maxUsersToCheck;
 
   /// @inheritdoc IHorizonAccountingExtension
@@ -71,7 +68,6 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
    * @param _oracle The address of the Oracle
    * @param _grt The address of the GRT token
    * @param _minThawingPeriod The minimum thawing period for the staking
-   * @param _maxSlashingUsers The maximum number of users to slash
    * @param _maxUsersToCheck The maximum number of users to check
    */
   constructor(
@@ -80,14 +76,12 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     IERC20 _grt,
     IArbitrable _arbitrable,
     uint256 _minThawingPeriod,
-    uint256 _maxSlashingUsers,
     uint256 _maxUsersToCheck
   ) Validator(_oracle) {
     HORIZON_STAKING = _horizonStaking;
     GRT = _grt;
     ARBITRABLE = _arbitrable;
     MIN_THAWING_PERIOD = _minThawingPeriod;
-    _setMaxSlashingUsers(_maxSlashingUsers);
     _setMaxUsersToCheck(_maxUsersToCheck);
   }
 
@@ -220,7 +214,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
       // Claim one by one until the balance is enough
       while (_balance < _claimAmount) {
-        _balance += _slash(_disputeId, maxSlashingUsers, maxUsersToCheck, _result, _status);
+        _balance += _slash(_disputeId, 1, maxUsersToCheck, _result, _status);
       }
 
       _rewardAmount = _claimAmount - _pledgeAmount;
@@ -348,25 +342,9 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   }
 
   /// @inheritdoc IHorizonAccountingExtension
-  function setMaxSlashingUsers(uint256 _maxSlashingUsers) external {
-    ARBITRABLE.validateArbitrator(msg.sender);
-    _setMaxSlashingUsers(_maxSlashingUsers);
-  }
-
-  /// @inheritdoc IHorizonAccountingExtension
   function setMaxUsersToCheck(uint256 _maxUsersToCheck) external {
     ARBITRABLE.validateArbitrator(msg.sender);
     _setMaxUsersToCheck(_maxUsersToCheck);
-  }
-
-  /**
-   * @notice Set the maximum number of users to slash.
-   * @param _maxSlashingUsers The maximum number of users to slash.
-   */
-  function _setMaxSlashingUsers(uint256 _maxSlashingUsers) internal {
-    maxSlashingUsers = _maxSlashingUsers;
-
-    emit MaxSlashingUsersSetted(_maxSlashingUsers);
   }
 
   /**
@@ -376,7 +354,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   function _setMaxUsersToCheck(uint256 _maxUsersToCheck) internal {
     maxUsersToCheck = _maxUsersToCheck;
 
-    emit MaxUsersToCheckSetted(_maxUsersToCheck);
+    emit MaxUsersToCheckSet(_maxUsersToCheck);
   }
 
   /**

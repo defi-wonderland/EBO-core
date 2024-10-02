@@ -103,18 +103,11 @@ interface IHorizonAccountingExtension {
   );
 
   /**
-   * @notice Emitted when max slashing users is set
-   *
-   * @param _maxSlashingUsers   The new value of max slashing users
-   */
-  event MaxSlashingUsersSetted(uint256 _maxSlashingUsers);
-
-  /**
    * @notice Emitted when max users to check is set
    *
    * @param _maxUsersToCheck   The new value of max users to check
    */
-  event MaxUsersToCheckSetted(uint256 _maxUsersToCheck);
+  event MaxUsersToCheckSet(uint256 _maxUsersToCheck);
 
   /*///////////////////////////////////////////////////////////////
                               ERRORS
@@ -233,12 +226,6 @@ interface IHorizonAccountingExtension {
    * @return _MAX_VERIFIER_CUT The maximum verifier cut
    */
   function MAX_VERIFIER_CUT() external view returns (uint256 _MAX_VERIFIER_CUT);
-
-  /**
-   * @notice The maximum slashing users
-   * @return _maxSlashingUsers The maximum slashing users
-   */
-  function maxSlashingUsers() external view returns (uint256 _maxSlashingUsers);
 
   /**
    * @notice The maximum users to check
@@ -408,12 +395,6 @@ interface IHorizonAccountingExtension {
    * @param _maxUsersToCheck The number of users to check
    */
   function slash(bytes32 _disputeId, uint256 _usersToSlash, uint256 _maxUsersToCheck) external;
-
-  /**
-   * @notice Sets the maximum slashing users
-   * @param _maxSlashingUsers The new value of max slashing users
-   */
-  function setMaxSlashingUsers(uint256 _maxSlashingUsers) external;
 
   /**
    * @notice Sets the maximum users to check
