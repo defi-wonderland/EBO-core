@@ -90,15 +90,17 @@ contract Deploy is Script {
     arbitrator = _ARBITRUM_SEPOLIA_ARBITRATOR;
     council = _ARBITRUM_SEPOLIA_COUNCIL;
 
-    // TODO: Set production request module params
-    paymentAmount = 0.1 ether;
+    // Set request module params
+    paymentAmount = 0 ether;
 
-    // TODO: Set production response module params (responseBondSize == disputeBondSize)
+    // Set response module params
+    // TODO: Review production params (responseBondSize == disputeBondSize)
     responseBondSize = 0.5 ether;
     responseDeadline = block.timestamp + 5 days;
     responseDisputeWindow = block.timestamp + 1 weeks;
 
-    // TODO: Set production dispute module params (disputeBondSize == responseBondSize)
+    // Set dispute module params
+    // TODO: Review production params (disputeBondSize == responseBondSize)
     disputeBondSize = 0.3 ether;
     maxNumberOfEscalations = 2;
     disputeDeadline = block.timestamp + 10 days;

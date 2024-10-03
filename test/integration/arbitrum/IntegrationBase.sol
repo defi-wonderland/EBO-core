@@ -186,9 +186,6 @@ contract IntegrationBase is Deploy, Test {
   }
 
   function _approveModules() internal {
-    vm.prank(_requester);
-    horizonAccountingExtension.approveModule(address(eboRequestModule));
-
     vm.prank(_proposer);
     horizonAccountingExtension.approveModule(address(bondedResponseModule));
 
@@ -197,11 +194,6 @@ contract IntegrationBase is Deploy, Test {
   }
 
   function _stakeGRT() internal {
-    vm.startPrank(_requester);
-    deal(address(graphToken), _requester, paymentAmount, true);
-    graphToken.approve(address(horizonStaking), paymentAmount);
-    horizonStaking.stake(paymentAmount);
-
     vm.startPrank(_proposer);
     deal(address(graphToken), _proposer, responseBondSize, true);
     graphToken.approve(address(horizonStaking), responseBondSize);
@@ -225,15 +217,6 @@ contract IntegrationBase is Deploy, Test {
   }
 
   function _createProvisions() internal {
-    vm.startPrank(_requester);
-    horizonStaking.provision(
-      _requester,
-      address(horizonAccountingExtension),
-      paymentAmount,
-      horizonAccountingExtension.MAX_VERIFIER_CUT(),
-      horizonAccountingExtension.MIN_THAWING_PERIOD()
-    );
-
     vm.startPrank(_proposer);
     horizonStaking.provision(
       _proposer,
