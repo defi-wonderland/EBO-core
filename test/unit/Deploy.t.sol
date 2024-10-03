@@ -131,7 +131,7 @@ contract UnitDeploy is Test {
       new EBOFinalityModule(deploy.oracle(), deploy.eboRequestCreator(), deploy.arbitrable());
     assertEq(address(deploy.eboFinalityModule()).code, address(_eboFinalityModule).code);
     assertEq(address(deploy.eboFinalityModule().ORACLE()), address(deploy.oracle()));
-    assertEq(address(deploy.eboFinalityModule().eboRequestCreator()), address(deploy.eboRequestCreator()));
+    assertEq(deploy.eboFinalityModule().getAllowedEBORequestCreators()[0], address(deploy.eboRequestCreator()));
     assertEq(address(deploy.eboFinalityModule().ARBITRABLE()), address(deploy.arbitrable()));
 
     // it should deploy `HorizonAccountingExtension` with correct args

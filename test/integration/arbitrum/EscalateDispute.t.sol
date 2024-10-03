@@ -36,6 +36,22 @@ contract IntegrationEscalateDispute is IntegrationBase {
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationNotOver.selector);
     _escalateDispute(_requestId, _responseId, _disputeId);
 
+    // Pledge for the dispute
+    _pledgeForDispute(_requestId, _disputeId);
+
+    // Pass the dispute deadline
+    vm.warp(disputeDeadline + 1);
+
+    // Revert if the bond escalation has not tied
+    vm.expectRevert(IBondEscalationModule.BondEscalationModule_NotEscalatable.selector);
+    _escalateDispute(_requestId, _responseId, _disputeId);
+
+    // Do not pass the dispute deadline
+    vm.warp(disputeDeadline);
+
+    // Pledge against the dispute
+    _pledgeAgainstDispute(_requestId, _disputeId);
+
     // Pass the dispute deadline
     vm.warp(disputeDeadline + 1);
 
@@ -60,5 +76,24 @@ contract IntegrationEscalateDispute is IntegrationBase {
     // Revert if the dispute has already been escalated
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_CannotEscalate.selector, _disputeId));
     _escalateDispute(_requestId, _responseId, _disputeId);
+
+    // Revert if the dispute has been escalated
+    vm.expectRevert(IBondEscalationModule.BondEscalationModule_CannotBreakTieDuringTyingBuffer.selector);
+    _pledgeForDispute(_requestId, _disputeId);
+    vm.expectRevert(IBondEscalationModule.BondEscalationModule_CannotBreakTieDuringTyingBuffer.selector);
+    _pledgeAgainstDispute(_requestId, _disputeId);
+    vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationNotOver.selector);
+    _settleBondEscalation(_requestId, _responseId, _disputeId);
+
+    // Pass the dispute deadline and the tying buffer
+    vm.warp(disputeDeadline + tyingBuffer + 1);
+
+    // Revert if the dispute has been escalated
+    vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationOver.selector);
+    _pledgeForDispute(_requestId, _disputeId);
+    vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationOver.selector);
+    _pledgeAgainstDispute(_requestId, _disputeId);
+    vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationCantBeSettled.selector);
+    _settleBondEscalation(_requestId, _responseId, _disputeId);
   }
 }
