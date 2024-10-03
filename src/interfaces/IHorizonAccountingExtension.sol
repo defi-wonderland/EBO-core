@@ -227,22 +227,22 @@ interface IHorizonAccountingExtension is IValidator {
   /**
    * @notice The bound amount of tokens for a user in a request
    * @param _user The user address
-   * @param _requestId The request Id
+   * @param _requestId The ID of the request
    * @return _amount The amount of tokens bonded
    */
   function bondedForRequest(address _user, bytes32 _requestId) external view returns (uint256 _amount);
 
   /**
    * @notice The total pledged tokens for a user
-   * @param _disputeId The dispute Id
+   * @param _disputeId The ID of the dispute
    * @return _amount The total pledged tokens for a user
    */
   function pledges(bytes32 _disputeId) external view returns (uint256 _amount);
 
   /**
-   * @notice The escalation result of a request
-   * @param _disputeId The dispute Id
-   * @return _requestId The request Id
+   * @notice The escalation result of a dispute
+   * @param _disputeId The ID of the dispute
+   * @return _requestId The ID of the request
    * @return _amountPerPledger The amount of token paid to each of the winning pledgers
    * @return _bondSize             The size of the bond required for bond escalation
    * @return _bondEscalationModule The address of the bond escalation module that was used
@@ -258,12 +258,27 @@ interface IHorizonAccountingExtension is IValidator {
     );
 
   /**
+   * @notice The escalation result of a dispute
+   * @param _disputeId The ID of the dispute
+   * @return _escalationResult The escalation result
+   */
+  function getEscalationResult(bytes32 _disputeId) external view returns (EscalationResult memory _escalationResult);
+
+  /**
    * @notice The claim status of a user for a pledge
-   * @param _requestId The request Id
+   * @param _requestId The ID of the request
    * @param _pledger The user address
    * @return _claimed True if the user claimed their pledge
    */
   function pledgerClaimed(bytes32 _requestId, address _pledger) external view returns (bool _claimed);
+
+  /**
+   * @notice Checks whether an address is an authorized caller
+   *
+   * @param _caller      The address to check
+   * @return _authorized True if the address is authorized, false otherwise
+   */
+  function authorizedCallers(address _caller) external returns (bool _authorized);
 
   /**
    * @notice Returns the approved modules for bonding tokens
@@ -273,12 +288,11 @@ interface IHorizonAccountingExtension is IValidator {
   function approvedModules(address _user) external view returns (address[] memory _approvedModules);
 
   /**
-   * @notice Checks whether an address is an authorized caller.
-   *
-   * @param _caller      The address to check
-   * @return _authorized True if the address is authorized, false otherwise
+   * @notice Returns the pledgers for a dispute
+   * @param _disputeId The ID of the dispute
+   * @return _pledgers The pledgers for the dispute
    */
-  function authorizedCallers(address _caller) external returns (bool _authorized);
+  function getPledgers(bytes32 _disputeId) external view returns (address[] memory _pledgers);
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC
@@ -297,16 +311,18 @@ interface IHorizonAccountingExtension is IValidator {
   function revokeModule(address _module) external;
 
   /**
-   * @notice Pledges the given amount of token to the provided dispute id of the provided request id
+   * @notice Pledges the given amount of token to the provided dispute ID of the provided request ID
    * @param _pledger Address of the pledger
    * @param _request The bond-escalated request
    * @param _dispute The bond-escalated dispute
-   * @param _amount Amount of token to pledge
+   * @param _token Address of the token being paid as a reward for winning the bond escalation
+   * @param _amount Amount of GRT to pledge
    */
   function pledge(
     address _pledger,
     IOracle.Request calldata _request,
     IOracle.Dispute calldata _dispute,
+    IERC20 _token,
     uint256 _amount
   ) external;
 
@@ -315,12 +331,14 @@ interface IHorizonAccountingExtension is IValidator {
    * @notice Updates the accounting of the given dispute to reflect the result of the bond escalation
    * @param _request The bond-escalated request
    * @param _dispute The bond-escalated dispute
+   * @param _token Address of the token being paid as a reward for winning the bond escalation
    * @param _amountPerPledger Amount of GRT to be rewarded to each of the winning pledgers
    * @param _winningPledgersLength Amount of pledges that won the dispute
    */
   function onSettleBondEscalation(
     IOracle.Request calldata _request,
     IOracle.Dispute calldata _dispute,
+    IERC20 _token,
     uint256 _amountPerPledger,
     uint256 _winningPledgersLength
   ) external;
@@ -337,40 +355,42 @@ interface IHorizonAccountingExtension is IValidator {
    * @param _request The bond-escalated request
    * @param _dispute The bond-escalated dispute
    * @param _pledger Address of the pledger
+   * @param _token   Address of the token to be released
    * @param _amount  Amount of GRT to be released to the pledger
    */
   function releasePledge(
     IOracle.Request calldata _request,
     IOracle.Dispute calldata _dispute,
     address _pledger,
+    IERC20 _token,
     uint256 _amount
   ) external;
 
   /**
    * @notice Allows a allowed module to transfer bonded tokens from one user to another
-   * @param _requestId The id of the request handling the user's tokens
+   * @param _requestId The ID of the request handling the user's tokens
    * @param _payer The address of the user paying the tokens
    * @param _receiver The address of the user receiving the tokens
    * @param _token The address of the token being transferred
-   * @param _amount The amount of `_token` being transferred
+   * @param _amount The amount of GRT being transferred
    */
   function pay(bytes32 _requestId, address _payer, address _receiver, IERC20 _token, uint256 _amount) external;
 
   /**
    * @notice Allows an allowed module to bond a user's tokens for a request
    * @param _bonder The address of the user to bond tokens for
-   * @param _requestId The id of the request the user is bonding for
+   * @param _requestId The ID of the request the user is bonding for
    * @param _token The address of the token being bonded
-   * @param _amount The amount of `_token` to bond
+   * @param _amount The amount of GRT to bond
    */
   function bond(address _bonder, bytes32 _requestId, IERC20 _token, uint256 _amount) external;
 
   /**
    * @notice Allows a valid module to bond a user's tokens for a request
    * @param _bonder The address of the user to bond tokens for
-   * @param _requestId The id of the request the user is bonding for
+   * @param _requestId The ID of the request the user is bonding for
    * @param _token The address of the token being bonded
-   * @param _amount The amount of `_token` to bond
+   * @param _amount The amount of GRT to bond
    * @param _sender The address starting the propose call on the Oracle
    */
   function bond(address _bonder, bytes32 _requestId, IERC20 _token, uint256 _amount, address _sender) external;
@@ -378,9 +398,9 @@ interface IHorizonAccountingExtension is IValidator {
   /**
    * @notice Allows a valid module to release a user's tokens
    * @param _bonder The address of the user to release tokens for
-   * @param _requestId The id of the request where the tokens were bonded
+   * @param _requestId The ID of the request where the tokens were bonded
    * @param _token The address of the token being released
-   * @param _amount The amount of `_token` to release
+   * @param _amount The amount of GRT to release
    */
   function release(address _bonder, bytes32 _requestId, IERC20 _token, uint256 _amount) external;
 }

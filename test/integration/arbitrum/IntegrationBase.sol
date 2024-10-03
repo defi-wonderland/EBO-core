@@ -214,13 +214,13 @@ contract IntegrationBase is Deploy, Test {
 
     vm.startPrank(_pledgerFor);
     deal(address(graphToken), _pledgerFor, disputeBondSize * maxNumberOfEscalations, true);
-    graphToken.approve(address(bondEscalationAccounting), disputeBondSize * maxNumberOfEscalations);
-    bondEscalationAccounting.deposit(graphToken, disputeBondSize * maxNumberOfEscalations);
+    graphToken.approve(address(horizonStaking), disputeBondSize * maxNumberOfEscalations);
+    horizonStaking.stake(disputeBondSize * maxNumberOfEscalations);
 
     vm.startPrank(_pledgerAgainst);
     deal(address(graphToken), _pledgerAgainst, disputeBondSize * maxNumberOfEscalations, true);
-    graphToken.approve(address(bondEscalationAccounting), disputeBondSize * maxNumberOfEscalations);
-    bondEscalationAccounting.deposit(graphToken, disputeBondSize * maxNumberOfEscalations);
+    graphToken.approve(address(horizonStaking), disputeBondSize * maxNumberOfEscalations);
+    horizonStaking.stake(disputeBondSize * maxNumberOfEscalations);
     vm.stopPrank();
   }
 
@@ -248,6 +248,24 @@ contract IntegrationBase is Deploy, Test {
       _disputer,
       address(horizonAccountingExtension),
       disputeBondSize,
+      horizonAccountingExtension.MAX_VERIFIER_CUT(),
+      horizonAccountingExtension.MIN_THAWING_PERIOD()
+    );
+
+    vm.startPrank(_pledgerFor);
+    horizonStaking.provision(
+      _pledgerFor,
+      address(horizonAccountingExtension),
+      disputeBondSize * maxNumberOfEscalations,
+      horizonAccountingExtension.MAX_VERIFIER_CUT(),
+      horizonAccountingExtension.MIN_THAWING_PERIOD()
+    );
+
+    vm.startPrank(_pledgerAgainst);
+    horizonStaking.provision(
+      _pledgerAgainst,
+      address(horizonAccountingExtension),
+      disputeBondSize * maxNumberOfEscalations,
       horizonAccountingExtension.MAX_VERIFIER_CUT(),
       horizonAccountingExtension.MIN_THAWING_PERIOD()
     );

@@ -79,23 +79,26 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
     assertEq(_escalation.disputeId, _disputeId);
     assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.DisputerWon));
-    // Assert BondEscalationAccounting::onSettleBondEscalation
-    // IBondEscalationAccounting.EscalationResult memory _escalationResult = bondEscalationAccounting.getEscalationResult(_disputeId);
-    (bytes32 __requestId, IERC20 __token, uint256 __amountPerPledger, IBondEscalationModule __bondEscalationModule) =
-      bondEscalationAccounting.escalationResults(_disputeId);
-    assertEq(__requestId, _requestId);
-    assertEq(__amountPerPledger, disputeBondSize * 2);
-    assertEq(address(__token), address(graphToken));
-    assertEq(address(__bondEscalationModule), address(bondEscalationModule));
+    // Assert HorizonAccountingExtension::onSettleBondEscalation
+    IHorizonAccountingExtension.EscalationResult memory _escalationResult =
+      horizonAccountingExtension.getEscalationResult(_disputeId);
+    assertEq(_escalationResult.requestId, _requestId);
+    assertEq(_escalationResult.amountPerPledger, disputeBondSize * 2);
+    assertEq(_escalationResult.bondSize, disputeBondSize);
+    assertEq(address(_escalationResult.bondEscalationModule), address(bondEscalationModule));
     // Assert HorizonAccountingExtension::pay
     assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), responseBondSize - disputeBondSize);
     assertEq(horizonAccountingExtension.totalBonded(_proposer), responseBondSize - disputeBondSize);
     // Assert HorizonStaking::slash
-    IHorizonStaking.Provision memory _provision =
+    IHorizonStaking.Provision memory _proposerProvision =
       horizonStaking.getProvision(_proposer, address(horizonAccountingExtension));
-    assertEq(_provision.tokens, responseBondSize - disputeBondSize);
+    IHorizonStaking.Provision memory _disputerProvision =
+      horizonStaking.getProvision(_disputer, address(horizonAccountingExtension));
+    assertEq(_proposerProvision.tokens, responseBondSize - disputeBondSize);
+    assertEq(_disputerProvision.tokens, disputeBondSize);
     // Assert GraphToken::transfer
     assertEq(graphToken.balanceOf(_disputer), disputeBondSize);
+    assertEq(graphToken.balanceOf(_proposer), 0);
     // Assert HorizonAccountingExtension::release
     assertEq(horizonAccountingExtension.bondedForRequest(_disputer, _requestId), 0);
     assertEq(horizonAccountingExtension.totalBonded(_disputer), 0);
@@ -174,23 +177,26 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
     assertEq(_escalation.disputeId, _disputeId);
     assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.DisputerLost));
-    // Assert BondEscalationAccounting::onSettleBondEscalation
-    // IBondEscalationAccounting.EscalationResult memory _escalationResult = bondEscalationAccounting.getEscalationResult(_disputeId);
-    (bytes32 __requestId, IERC20 __token, uint256 __amountPerPledger, IBondEscalationModule __bondEscalationModule) =
-      bondEscalationAccounting.escalationResults(_disputeId);
-    assertEq(__requestId, _requestId);
-    assertEq(__amountPerPledger, disputeBondSize * 2);
-    assertEq(address(__token), address(graphToken));
-    assertEq(address(__bondEscalationModule), address(bondEscalationModule));
+    // Assert HorizonAccountingExtension::onSettleBondEscalation
+    IHorizonAccountingExtension.EscalationResult memory _escalationResult =
+      horizonAccountingExtension.getEscalationResult(_disputeId);
+    assertEq(_escalationResult.requestId, _requestId);
+    assertEq(_escalationResult.amountPerPledger, disputeBondSize * 2);
+    assertEq(_escalationResult.bondSize, disputeBondSize);
+    assertEq(address(_escalationResult.bondEscalationModule), address(bondEscalationModule));
     // Assert HorizonAccountingExtension::pay
     assertEq(horizonAccountingExtension.bondedForRequest(_disputer, _requestId), 0);
     assertEq(horizonAccountingExtension.totalBonded(_disputer), 0);
     // Assert HorizonStaking::slash
-    IHorizonStaking.Provision memory _provision =
+    IHorizonStaking.Provision memory _disputerProvision =
       horizonStaking.getProvision(_disputer, address(horizonAccountingExtension));
-    assertEq(_provision.tokens, 0);
+    IHorizonStaking.Provision memory _proposerProvision =
+      horizonStaking.getProvision(_proposer, address(horizonAccountingExtension));
+    assertEq(_disputerProvision.tokens, 0);
+    assertEq(_proposerProvision.tokens, responseBondSize);
     // Assert GraphToken::transfer
     assertEq(graphToken.balanceOf(_proposer), disputeBondSize);
+    assertEq(graphToken.balanceOf(_disputer), 0);
     // Assert Oracle::finalize
     assertEq(oracle.finalizedAt(_requestId), block.number);
     assertEq(oracle.finalizedResponseId(_requestId), _responseId);
@@ -262,19 +268,18 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
     assertEq(_escalation.disputeId, _disputeId);
     assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.Escalated));
-    // Assert BondEscalationAccounting::onSettleBondEscalation
-    // IBondEscalationAccounting.EscalationResult memory _escalationResult = bondEscalationAccounting.getEscalationResult(_disputeId);
-    (bytes32 __requestId, IERC20 __token, uint256 __amountPerPledger, IBondEscalationModule __bondEscalationModule) =
-      bondEscalationAccounting.escalationResults(_disputeId);
-    assertEq(__requestId, _requestId);
-    assertEq(__amountPerPledger, disputeBondSize);
-    assertEq(address(__token), address(graphToken));
-    assertEq(address(__bondEscalationModule), address(bondEscalationModule));
+    // Assert HorizonAccountingExtension::onSettleBondEscalation
+    IHorizonAccountingExtension.EscalationResult memory _escalationResult =
+      horizonAccountingExtension.getEscalationResult(_disputeId);
+    assertEq(_escalationResult.requestId, _requestId);
+    assertEq(_escalationResult.amountPerPledger, disputeBondSize);
+    assertEq(_escalationResult.bondSize, disputeBondSize);
+    assertEq(address(_escalationResult.bondEscalationModule), address(bondEscalationModule));
     // Assert HorizonAccountingExtension::release
     assertEq(horizonAccountingExtension.bondedForRequest(_disputer, _requestId), 0);
     assertEq(horizonAccountingExtension.totalBonded(_disputer), 0);
-    assertEq(bondEscalationAccounting.bondedAmountOf(_proposer, graphToken, _requestId), responseBondSize);
-    assertEq(bondEscalationAccounting.balanceOf(_proposer, graphToken), 0);
+    assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), responseBondSize);
+    assertEq(horizonAccountingExtension.totalBonded(_proposer), responseBondSize);
     // Assert Oracle::finalize
     assertEq(oracle.finalizedAt(_requestId), block.number);
     assertEq(oracle.finalizedResponseId(_requestId), 0);
