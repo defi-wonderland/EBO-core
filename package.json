@@ -13,7 +13,7 @@
     "build": "forge build",
     "build:optimized": "FOUNDRY_PROFILE=optimized forge build",
     "coverage": "forge coverage --report summary --report lcov --match-path 'test/unit/*'",
-    "deploy:arbitrum": "bash -c 'source .env && forge script Deploy --rpc-url $ARBITRUM_RPC --account $ARBITRUM_DEPLOYER_NAME --broadcast --verify --chain arbitrum -vvvvv'",
+    "deploy:arbitrum": "bash -c 'source .env && forge script Deploy --rpc-url arbitrum --account $ARBITRUM_DEPLOYER_NAME --broadcast --verify --chain arbitrum -vvvvv'",
     "lint:check": "yarn lint:sol-tests && yarn lint:sol-logic && forge fmt --check",
     "lint:fix": "sort-package-json && forge fmt && yarn lint:sol-tests --fix && yarn lint:sol-logic --fix",
     "lint:natspec": "npx @defi-wonderland/natspec-smells --config natspec-smells.config.js",

@@ -142,7 +142,9 @@ contract Deploy is Script {
     console.log('`EBOFinalityModule` deployed at:', address(eboFinalityModule));
 
     // Deploy `HorizonAccountingExtension`
-    horizonAccountingExtension = new HorizonAccountingExtension(horizonStaking, oracle, graphToken, _MIN_THAWING_PERIOD);
+    address[] memory _authorizedCallers = _instantiateAuthorizedCallers();
+    horizonAccountingExtension =
+      new HorizonAccountingExtension(horizonStaking, oracle, graphToken, _MIN_THAWING_PERIOD, _authorizedCallers);
     console.log('`HorizonAccountingExtension` deployed at:', address(horizonAccountingExtension));
 
     // Deploy `CouncilArbitrator`
@@ -224,6 +226,11 @@ contract Deploy is Script {
     returns (IArbitratorModule.RequestParameters memory _resolutionParams)
   {
     _resolutionParams.arbitrator = address(councilArbitrator);
+  }
+
+  function _instantiateAuthorizedCallers() internal view returns (address[] memory _authorizedCallers) {
+    _authorizedCallers = new address[](1);
+    _authorizedCallers[0] = address(bondEscalationModule);
   }
 
   function _precomputeCreateAddress(uint256 _deploymentOffset) internal view virtual returns (address _targetAddress) {

@@ -135,13 +135,18 @@ contract UnitDeploy is Test {
     assertEq(address(deploy.eboFinalityModule().ARBITRABLE()), address(deploy.arbitrable()));
 
     // it should deploy `HorizonAccountingExtension` with correct args
-    HorizonAccountingExtension _horizonAccountingExtension =
-      new HorizonAccountingExtension(deploy.horizonStaking(), deploy.oracle(), deploy.graphToken(), _MIN_THAWING_PERIOD);
+    address[] memory _authorizedCallers = _instantiateAuthorizedCallers();
+    HorizonAccountingExtension _horizonAccountingExtension = new HorizonAccountingExtension(
+      deploy.horizonStaking(), deploy.oracle(), deploy.graphToken(), _MIN_THAWING_PERIOD, _authorizedCallers
+    );
     assertEq(address(deploy.horizonAccountingExtension()).code, address(_horizonAccountingExtension).code);
     assertEq(address(deploy.horizonAccountingExtension().HORIZON_STAKING()), address(deploy.horizonStaking()));
     assertEq(address(deploy.horizonAccountingExtension().ORACLE()), address(deploy.oracle()));
     assertEq(address(deploy.horizonAccountingExtension().GRT()), address(deploy.graphToken()));
     assertEq(deploy.horizonAccountingExtension().MIN_THAWING_PERIOD(), _MIN_THAWING_PERIOD);
+    for (uint256 _i; _i < _authorizedCallers.length; ++_i) {
+      assertTrue(deploy.horizonAccountingExtension().authorizedCallers(_authorizedCallers[_i]));
+    }
 
     // it should deploy `EBORequestCreator` with correct args
     IOracle.Request memory _requestData = _instantiateRequestData();
@@ -224,6 +229,11 @@ contract UnitDeploy is Test {
     returns (IArbitratorModule.RequestParameters memory _resolutionParams)
   {
     _resolutionParams.arbitrator = address(deploy.councilArbitrator());
+  }
+
+  function _instantiateAuthorizedCallers() internal view returns (address[] memory _authorizedCallers) {
+    _authorizedCallers = new address[](1);
+    _authorizedCallers[0] = address(deploy.bondEscalationModule());
   }
 }
 
