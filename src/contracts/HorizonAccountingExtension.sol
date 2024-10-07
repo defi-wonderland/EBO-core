@@ -239,7 +239,9 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
     pledges[_disputeId] -= _claimAmount;
 
-    // TODO: Delete _pledgers[_disputeId] if pledges[_disputeId] == 0
+    if (pledges[_disputeId] == 0) {
+      delete _pledgers[_disputeId];
+    }
 
     emit EscalationRewardClaimed({
       _requestId: _requestId,

@@ -341,8 +341,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     assertEq(horizonAccountingExtension.totalBonded(_pledgerFor), 0);
     assertEq(horizonAccountingExtension.totalBonded(_pledgerAgainst), 0);
     address[] memory _pledgers = horizonAccountingExtension.getPledgers(_disputeId);
-    assertEq(_pledgers[0], _pledgerFor); // TODO: `_pledgerFor` remains in the pledgers list
-    assertEq(_pledgers.length, 1);
+    assertEq(_pledgers.length, 0);
     // Assert HorizonStaking::slash
     IHorizonStaking.Provision memory _pledgerForProvision =
       horizonStaking.getProvision(_pledgerFor, address(horizonAccountingExtension));
@@ -395,8 +394,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     assertEq(horizonAccountingExtension.totalBonded(_pledgerFor), 0);
     assertEq(horizonAccountingExtension.totalBonded(_pledgerAgainst), 0);
     address[] memory _pledgers = horizonAccountingExtension.getPledgers(_disputeId);
-    assertEq(_pledgers[0], _pledgerAgainst); // TODO: `_pledgerAgainst` remains in the pledgers list
-    assertEq(_pledgers.length, 1);
+    assertEq(_pledgers.length, 0);
     // Assert HorizonStaking::slash
     IHorizonStaking.Provision memory _pledgerForProvision =
       horizonStaking.getProvision(_pledgerFor, address(horizonAccountingExtension));

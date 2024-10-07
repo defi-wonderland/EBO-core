@@ -626,6 +626,16 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     );
 
     horizonAccountingExtension.claimEscalationReward(_mockDisputeId, _pledger);
+
+    bool _pledgerClaimedAfter = horizonAccountingExtension.pledgerClaimed(_mockRequestId, _pledger);
+    uint256 _pledgerTotalBondedAfter = horizonAccountingExtension.totalBonded(_pledger);
+    uint256 _pledgesAfter = horizonAccountingExtension.pledges(_mockDisputeId);
+    uint256 _pledgersLengthAfter = horizonAccountingExtension.getPledgersLengthForTest(_mockDisputeId);
+
+    assertTrue(_pledgerClaimedAfter);
+    assertEq(_pledgerTotalBondedAfter, 0);
+    assertEq(_pledgesAfter, 0);
+    assertEq(_pledgersLengthAfter, 0);
   }
 
   function test_successfulCallWonForDispute(
@@ -676,6 +686,16 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     );
 
     horizonAccountingExtension.claimEscalationReward(_mockDisputeId, _pledger);
+
+    bool _pledgerClaimedAfter = horizonAccountingExtension.pledgerClaimed(_mockRequestId, _pledger);
+    uint256 _pledgerTotalBondedAfter = horizonAccountingExtension.totalBonded(_pledger);
+    uint256 _pledgesAfter = horizonAccountingExtension.pledges(_mockDisputeId);
+    uint256 _pledgersLengthAfter = horizonAccountingExtension.getPledgersLengthForTest(_mockDisputeId);
+
+    assertTrue(_pledgerClaimedAfter);
+    assertEq(_pledgerTotalBondedAfter, 0);
+    assertEq(_pledgesAfter, 0);
+    assertEq(_pledgersLengthAfter, 0);
   }
 
   function test_successfulCallLostAgainstDispute(
@@ -726,6 +746,16 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     );
 
     horizonAccountingExtension.claimEscalationReward(_mockDisputeId, _pledger);
+
+    bool _pledgerClaimedAfter = horizonAccountingExtension.pledgerClaimed(_mockRequestId, _pledger);
+    uint256 _pledgerTotalBondedAfter = horizonAccountingExtension.totalBonded(_pledger);
+    uint256 _pledgesAfter = horizonAccountingExtension.pledges(_mockDisputeId);
+    uint256 _pledgersLengthAfter = horizonAccountingExtension.getPledgersLengthForTest(_mockDisputeId);
+
+    assertTrue(_pledgerClaimedAfter);
+    assertEq(_pledgerTotalBondedAfter, 0);
+    assertEq(_pledgesAfter, 0);
+    assertEq(_pledgersLengthAfter, 0);
   }
 
   function test_successfulCallWinForDisputeSlashing(
@@ -789,7 +819,7 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
 
     horizonAccountingExtension.setPledgersForTest(_mockDisputeId, _notSlashedUser);
     horizonAccountingExtension.setPledgersForTest(_mockDisputeId, _slashedUser);
-    horizonAccountingExtension.setPledgedForTest(_mockDisputeId, _pledgesForDispute * _amount * _bondSize);
+    horizonAccountingExtension.setPledgedForTest(_mockDisputeId, _pledgesForDispute * _amount);
 
     vm.expectEmit();
     emit EscalationRewardClaimed(
@@ -802,11 +832,19 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
 
     horizonAccountingExtension.claimEscalationReward(_mockDisputeId, _pledger);
 
+    bool _pledgerClaimedAfter = horizonAccountingExtension.pledgerClaimed(_mockRequestId, _pledger);
+    bool _slashedUserClaimedAfter = horizonAccountingExtension.pledgerClaimed(_mockRequestId, _slashedUser);
     uint256 _pledgerTotalBondedAfter = horizonAccountingExtension.totalBonded(_pledger);
     uint256 _slashedUserTotalBondedAfter = horizonAccountingExtension.totalBonded(_slashedUser);
+    uint256 _pledgesAfter = horizonAccountingExtension.pledges(_mockDisputeId);
+    uint256 _pledgersLengthAfter = horizonAccountingExtension.getPledgersLengthForTest(_mockDisputeId);
 
+    assertTrue(_pledgerClaimedAfter);
+    assertFalse(_slashedUserClaimedAfter);
     assertEq(_pledgerTotalBondedAfter, 0);
     assertEq(_slashedUserTotalBondedAfter, 0);
+    assertEq(_pledgesAfter, 0);
+    assertEq(_pledgersLengthAfter, 0);
   }
 
   function test_successfulCallLostAgainstDisputeSlashing(
@@ -870,7 +908,7 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
 
     horizonAccountingExtension.setPledgersForTest(_mockDisputeId, _notSlashedUser);
     horizonAccountingExtension.setPledgersForTest(_mockDisputeId, _slashedUser);
-    horizonAccountingExtension.setPledgedForTest(_mockDisputeId, _pledgesAgainstDispute * _amount * _bondSize);
+    horizonAccountingExtension.setPledgedForTest(_mockDisputeId, _pledgesAgainstDispute * _amount);
 
     vm.expectEmit();
     emit EscalationRewardClaimed(
@@ -883,11 +921,19 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
 
     horizonAccountingExtension.claimEscalationReward(_mockDisputeId, _pledger);
 
+    bool _pledgerClaimedAfter = horizonAccountingExtension.pledgerClaimed(_mockRequestId, _pledger);
+    bool _slashedUserClaimedAfter = horizonAccountingExtension.pledgerClaimed(_mockRequestId, _slashedUser);
     uint256 _pledgerTotalBondedAfter = horizonAccountingExtension.totalBonded(_pledger);
     uint256 _slashedUserTotalBondedAfter = horizonAccountingExtension.totalBonded(_slashedUser);
+    uint256 _pledgesAfter = horizonAccountingExtension.pledges(_mockDisputeId);
+    uint256 _pledgersLengthAfter = horizonAccountingExtension.getPledgersLengthForTest(_mockDisputeId);
 
+    assertTrue(_pledgerClaimedAfter);
+    assertFalse(_slashedUserClaimedAfter);
     assertEq(_pledgerTotalBondedAfter, 0);
     assertEq(_slashedUserTotalBondedAfter, 0);
+    assertEq(_pledgesAfter, 0);
+    assertEq(_pledgersLengthAfter, 0);
   }
 }
 
