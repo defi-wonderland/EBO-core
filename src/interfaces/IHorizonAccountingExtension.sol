@@ -327,6 +327,8 @@ interface IHorizonAccountingExtension {
 
   /**
    * @notice Claims the reward for the pledger the given dispute
+   * @dev After the established thawing period the losing pledgers can withdraw their stake from Horizon.
+   *    Rewards should be claimed before that period ends to ensure that funds are available.
    * @param _disputeId The ID of the bond-escalated dispute
    * @param _pledger Address of the pledger to claim the rewards
    */
