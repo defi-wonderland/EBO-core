@@ -275,13 +275,6 @@ interface IHorizonAccountingExtension is IValidator {
    */
   function approvedModules(address _user) external view returns (address[] memory _approvedModules);
 
-  /**
-   * @notice Returns the pledgers for a dispute
-   * @param _disputeId The ID of the dispute
-   * @return _pledgers The pledgers for the dispute
-   */
-  function getPledgers(bytes32 _disputeId) external view returns (address[] memory _pledgers);
-
   /*///////////////////////////////////////////////////////////////
                               LOGIC
   //////////////////////////////////////////////////////////////*/

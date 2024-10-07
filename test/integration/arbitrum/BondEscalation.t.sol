@@ -60,9 +60,6 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Assert HorizonAccountingExtension::pledge
     assertEq(horizonAccountingExtension.pledges(_disputeId), disputeBondSize);
     assertEq(horizonAccountingExtension.totalBonded(_pledgerFor), disputeBondSize);
-    address[] memory _pledgers = horizonAccountingExtension.getPledgers(_disputeId);
-    assertEq(_pledgers[0], _pledgerFor);
-    assertEq(_pledgers.length, 1);
 
     // Revert if the dispute has already been pledged for, but not pledged against
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_CanOnlySurpassByOnePledge.selector);
@@ -105,9 +102,6 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Assert HorizonAccountingExtension::pledge
     assertEq(horizonAccountingExtension.pledges(_disputeId), disputeBondSize);
     assertEq(horizonAccountingExtension.totalBonded(_pledgerAgainst), disputeBondSize);
-    address[] memory _pledgers = horizonAccountingExtension.getPledgers(_disputeId);
-    assertEq(_pledgers[0], _pledgerAgainst);
-    assertEq(_pledgers.length, 1);
 
     // Revert if the dispute has already been pledged against, but not pledged for
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_CanOnlySurpassByOnePledge.selector);
@@ -146,10 +140,6 @@ contract IntegrationBondEscalation is IntegrationBase {
     assertEq(horizonAccountingExtension.pledges(_disputeId), disputeBondSize * maxNumberOfEscalations * 2);
     assertEq(horizonAccountingExtension.totalBonded(_pledgerFor), disputeBondSize * maxNumberOfEscalations);
     assertEq(horizonAccountingExtension.totalBonded(_pledgerAgainst), disputeBondSize * maxNumberOfEscalations);
-    address[] memory _pledgers = horizonAccountingExtension.getPledgers(_disputeId);
-    assertEq(_pledgers[0], _pledgerFor);
-    assertEq(_pledgers[1], _pledgerAgainst);
-    assertEq(_pledgers.length, 2);
 
     // Revert if the max number of escalations has been reached
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_MaxNumberOfEscalationsReached.selector);
@@ -340,8 +330,6 @@ contract IntegrationBondEscalation is IntegrationBase {
     assertEq(horizonAccountingExtension.pledges(_disputeId), 0);
     assertEq(horizonAccountingExtension.totalBonded(_pledgerFor), 0);
     assertEq(horizonAccountingExtension.totalBonded(_pledgerAgainst), 0);
-    address[] memory _pledgers = horizonAccountingExtension.getPledgers(_disputeId);
-    assertEq(_pledgers.length, 0);
     // Assert HorizonStaking::slash
     IHorizonStaking.Provision memory _pledgerForProvision =
       horizonStaking.getProvision(_pledgerFor, address(horizonAccountingExtension));
@@ -393,8 +381,6 @@ contract IntegrationBondEscalation is IntegrationBase {
     assertEq(horizonAccountingExtension.pledges(_disputeId), 0);
     assertEq(horizonAccountingExtension.totalBonded(_pledgerFor), 0);
     assertEq(horizonAccountingExtension.totalBonded(_pledgerAgainst), 0);
-    address[] memory _pledgers = horizonAccountingExtension.getPledgers(_disputeId);
-    assertEq(_pledgers.length, 0);
     // Assert HorizonStaking::slash
     IHorizonStaking.Provision memory _pledgerForProvision =
       horizonStaking.getProvision(_pledgerFor, address(horizonAccountingExtension));

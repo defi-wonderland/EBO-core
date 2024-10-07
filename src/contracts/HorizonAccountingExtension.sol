@@ -354,12 +354,6 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     _approvedModules = _approvals[_user].values();
   }
 
-  // TODO: Remove if unwanted
-  /// @inheritdoc IHorizonAccountingExtension
-  function getPledgers(bytes32 _disputeId) external view returns (address[] memory __pledgers) {
-    __pledgers = _pledgers[_disputeId].values();
-  }
-
   /**
    * @notice Slash the users that have pledged for a dispute.
    * @param _disputeId The dispute id.
