@@ -250,7 +250,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     });
   }
 
-  // TODO: Remove
+  // TODO: Remove?
   /// @inheritdoc IHorizonAccountingExtension
   function releasePledge(
     IOracle.Request calldata _request,
@@ -269,6 +269,8 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     unchecked {
       pledges[_disputeId] -= _amount;
     }
+
+    // TODO: _pledgers[_disputeId].remove(_pledger);
 
     _unbond(_pledger, _amount);
 
@@ -416,9 +418,10 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       if (_slashAmount > 0) {
         // Slash the user
         HORIZON_STAKING.slash(_user, _slashAmount, _slashAmount, address(this));
-        // TODO: What if `MIN_THAWING_PERIOD` has passed, all provision tokens have been thawed and slashing is skipped or reverts (bricking `claimEscalationReward()`)?
+        // TODO: What if `MIN_THAWING_PERIOD` has passed, all provision tokens have been thawed
+        //       and slashing is skipped or reverts (bricking `claimEscalationReward()`)?
 
-        // TODO: Unbond slashed pledgers
+        _unbond(_user, _slashAmount);
 
         _slashedAmount += _slashAmount;
 
@@ -466,6 +469,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     if (_provisionData.maxVerifierCut != MAX_VERIFIER_CUT) revert HorizonAccountingExtension_InvalidMaxVerifierCut();
     if (_provisionData.thawingPeriod < MIN_THAWING_PERIOD) revert HorizonAccountingExtension_InvalidThawingPeriod();
     if (_amount > _provisionData.tokens) revert HorizonAccountingExtension_InsufficientTokens();
+    // TODO: `thaw()` does not subtract from provision `tokens` but adds to `tokensThawing`
 
     totalBonded[_bonder] += _amount;
 

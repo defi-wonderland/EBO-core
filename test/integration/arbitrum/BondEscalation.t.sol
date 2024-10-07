@@ -339,7 +339,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     assertTrue(horizonAccountingExtension.pledgerClaimed(_requestId, _pledgerAgainst));
     assertEq(horizonAccountingExtension.pledges(_disputeId), 0);
     assertEq(horizonAccountingExtension.totalBonded(_pledgerFor), 0);
-    assertEq(horizonAccountingExtension.totalBonded(_pledgerAgainst), disputeBondSize); // TODO: `disputeBondSize` remains bonded
+    assertEq(horizonAccountingExtension.totalBonded(_pledgerAgainst), 0);
     address[] memory _pledgers = horizonAccountingExtension.getPledgers(_disputeId);
     assertEq(_pledgers[0], _pledgerFor); // TODO: `_pledgerFor` remains in the pledgers list
     assertEq(_pledgers.length, 1);
@@ -392,7 +392,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     assertTrue(horizonAccountingExtension.pledgerClaimed(_requestId, _pledgerFor));
     assertTrue(horizonAccountingExtension.pledgerClaimed(_requestId, _pledgerAgainst));
     assertEq(horizonAccountingExtension.pledges(_disputeId), 0);
-    assertEq(horizonAccountingExtension.totalBonded(_pledgerFor), disputeBondSize); // TODO: `disputeBondSize` remains bonded
+    assertEq(horizonAccountingExtension.totalBonded(_pledgerFor), 0);
     assertEq(horizonAccountingExtension.totalBonded(_pledgerAgainst), 0);
     address[] memory _pledgers = horizonAccountingExtension.getPledgers(_disputeId);
     assertEq(_pledgers[0], _pledgerAgainst); // TODO: `_pledgerAgainst` remains in the pledgers list
