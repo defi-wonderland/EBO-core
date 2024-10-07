@@ -252,33 +252,6 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     });
   }
 
-  // TODO: Remove?
-  /// @inheritdoc IHorizonAccountingExtension
-  function releasePledge(
-    IOracle.Request calldata _request,
-    IOracle.Dispute calldata _dispute,
-    address _pledger,
-    IERC20, /* _token */
-    uint256 _amount
-  ) external onlyAuthorizedCaller {
-    bytes32 _requestId = _getId(_request);
-    bytes32 _disputeId = _validateDispute(_request, _dispute);
-
-    if (!ORACLE.allowedModule(_requestId, msg.sender)) revert HorizonAccountingExtension_UnauthorizedModule();
-
-    if (_amount > pledges[_disputeId]) revert HorizonAccountingExtension_InsufficientFunds();
-
-    unchecked {
-      pledges[_disputeId] -= _amount;
-    }
-
-    // TODO: _pledgers[_disputeId].remove(_pledger);
-
-    _unbond(_pledger, _amount);
-
-    emit PledgeReleased({_requestId: _requestId, _disputeId: _disputeId, _pledger: _pledger, _amount: _amount});
-  }
-
   /// @inheritdoc IHorizonAccountingExtension
   function pay(
     bytes32 _requestId,

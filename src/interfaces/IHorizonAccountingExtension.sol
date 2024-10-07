@@ -76,18 +76,6 @@ interface IHorizonAccountingExtension is IValidator {
   );
 
   /**
-   * @notice A pledge has been released back to the user
-   *
-   * @param _requestId        The ID of the bond-escalated request
-   * @param _disputeId        The ID of the bond-escalated dispute
-   * @param _pledger          The user who is getting their tokens released
-   * @param _amount           The amount of GRT released
-   */
-  event PledgeReleased(
-    bytes32 indexed _requestId, bytes32 indexed _disputeId, address indexed _pledger, uint256 _amount
-  );
-
-  /**
    * @notice A user claimed their reward for pledging for the winning side of a dispute
    *
    * @param _requestId        The ID of the bond-escalated request
@@ -349,22 +337,6 @@ interface IHorizonAccountingExtension is IValidator {
    * @param _pledger Address of the pledger to claim the rewards
    */
   function claimEscalationReward(bytes32 _disputeId, address _pledger) external;
-
-  /**
-   * @notice Releases a given amount of funds to the pledger
-   * @param _request The bond-escalated request
-   * @param _dispute The bond-escalated dispute
-   * @param _pledger Address of the pledger
-   * @param _token   Address of the token to be released
-   * @param _amount  Amount of GRT to be released to the pledger
-   */
-  function releasePledge(
-    IOracle.Request calldata _request,
-    IOracle.Dispute calldata _dispute,
-    address _pledger,
-    IERC20 _token,
-    uint256 _amount
-  ) external;
 
   /**
    * @notice Allows a allowed module to transfer bonded tokens from one user to another

@@ -115,9 +115,6 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
   event BondEscalationSettled(
     bytes32 _requestId, bytes32 _disputeId, uint256 _amountPerPledger, uint256 _winningPledgersLength
   );
-  event PledgeReleased(
-    bytes32 indexed _requestId, bytes32 indexed _disputeId, address indexed _pledger, uint256 _amount
-  );
   event EscalationRewardClaimed(
     bytes32 indexed _requestId, bytes32 indexed _disputeId, address indexed _pledger, uint256 _reward, uint256 _released
   );
@@ -934,91 +931,6 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     assertEq(_slashedUserTotalBondedAfter, 0);
     assertEq(_pledgesAfter, 0);
     assertEq(_pledgersLengthAfter, 0);
-  }
-}
-
-contract HorizonAccountingExtension_Unit_ReleasePledge is HorizonAccountingExtension_Unit_BaseTest {
-  modifier happyPath(address _pledger, uint256 _amount, uint256 _amountPledge) {
-    vm.assume(_amount > 0);
-    vm.assume(_amountPledge > _amount);
-
-    horizonAccountingExtension.setPledgedForTest(_mockDisputeId, _amountPledge);
-    horizonAccountingExtension.setBondedTokensForTest(_pledger, _amount);
-
-    vm.mockCall(
-      address(oracle), abi.encodeWithSelector(IOracle.disputeCreatedAt.selector, _mockDisputeId), abi.encode(1)
-    );
-
-    // Mock and expect the call to oracle checking if the module is allowed
-    _mockAndExpect(
-      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, authorizedCaller)), abi.encode(true)
-    );
-
-    vm.startPrank(authorizedCaller);
-    _;
-  }
-
-  function test_revertIfUnauthorizedCaller(address _pledger, uint256 _amount) public {
-    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedCaller.selector);
-
-    vm.prank(address(bondEscalationModule));
-    horizonAccountingExtension.releasePledge(mockRequest, mockDispute, _pledger, grt, _amount);
-  }
-
-  function test_revertIfDisallowedModule(address _pledger, uint256 _amount) public {
-    vm.mockCall(
-      address(oracle), abi.encodeWithSelector(IOracle.disputeCreatedAt.selector, _mockDisputeId), abi.encode(1)
-    );
-
-    // Mock and expect the call to oracle checking if the module is allowed
-    _mockAndExpect(
-      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, authorizedCaller)), abi.encode(false)
-    );
-
-    // Check: does it revert if the module is not allowed?
-    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_UnauthorizedModule.selector);
-
-    vm.prank(authorizedCaller);
-    horizonAccountingExtension.releasePledge(mockRequest, mockDispute, _pledger, grt, _amount);
-  }
-
-  function test_revertIfInsufficientFunds(
-    address _pledger,
-    uint256 _amount,
-    uint256 _amountPledge
-  ) public happyPath(_pledger, _amount, _amountPledge) {
-    horizonAccountingExtension.setPledgedForTest(_mockDisputeId, 0);
-
-    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientFunds.selector);
-    horizonAccountingExtension.releasePledge(mockRequest, mockDispute, _pledger, grt, _amount);
-  }
-
-  function test_revertIfInsufficientBondedTokens(
-    address _pledger,
-    uint256 _amount,
-    uint256 _amountPledge
-  ) public happyPath(_pledger, _amount, _amountPledge) {
-    horizonAccountingExtension.setBondedTokensForTest(_pledger, 0);
-
-    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientBondedTokens.selector);
-    horizonAccountingExtension.releasePledge(mockRequest, mockDispute, _pledger, grt, _amount);
-  }
-
-  function test_successfulCall(
-    address _pledger,
-    uint256 _amount,
-    uint256 _amountPledge
-  ) public happyPath(_pledger, _amount, _amountPledge) {
-    vm.expectEmit();
-    emit PledgeReleased(_mockRequestId, _mockDisputeId, _pledger, _amount);
-
-    horizonAccountingExtension.releasePledge(mockRequest, mockDispute, _pledger, grt, _amount);
-
-    uint256 _pledgesAfter = horizonAccountingExtension.pledges(_mockDisputeId);
-    uint256 _totalBondedAfter = horizonAccountingExtension.totalBonded(_pledger);
-
-    assertEq(_pledgesAfter, _amountPledge - _amount);
-    assertEq(_totalBondedAfter, _amount - _amount);
   }
 }
 
