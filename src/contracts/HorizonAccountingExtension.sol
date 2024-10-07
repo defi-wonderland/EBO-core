@@ -25,10 +25,10 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   IERC20 public immutable GRT;
 
   /// @inheritdoc IHorizonAccountingExtension
-  uint256 public immutable MIN_THAWING_PERIOD;
+  uint64 public immutable MIN_THAWING_PERIOD;
 
   /// @inheritdoc IHorizonAccountingExtension
-  uint256 public constant MAX_VERIFIER_CUT = 1_000_000;
+  uint32 public constant MAX_VERIFIER_CUT = 1_000_000;
 
   // TODO: Validate what the correct magic numbers should be
   uint256 public constant MAX_SLASHING_USERS = 4;
@@ -75,7 +75,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     IHorizonStaking _horizonStaking,
     IOracle _oracle,
     IERC20 _grt,
-    uint256 _minThawingPeriod,
+    uint64 _minThawingPeriod,
     address[] memory _authorizedCallers
   ) Validator(_oracle) {
     HORIZON_STAKING = _horizonStaking;
@@ -116,11 +116,6 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   }
 
   /// @inheritdoc IHorizonAccountingExtension
-  function approvedModules(address _user) external view returns (address[] memory _approvedModules) {
-    _approvedModules = _approvals[_user].values();
-  }
-
-  /// @inheritdoc IHorizonAccountingExtension
   function approveModule(address _module) external {
     _approvals[msg.sender].add(_module);
   }
@@ -135,6 +130,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     address _pledger,
     IOracle.Request calldata _request,
     IOracle.Dispute calldata _dispute,
+    IERC20, /* _token */
     uint256 _amount
   ) external onlyAuthorizedCaller {
     bytes32 _requestId = _getId(_request);
@@ -155,6 +151,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   function onSettleBondEscalation(
     IOracle.Request calldata _request,
     IOracle.Dispute calldata _dispute,
+    IERC20, /* _token */
     uint256 _amountPerPledger,
     uint256 _winningPledgersLength
   ) external onlyAuthorizedCaller {
@@ -176,7 +173,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     escalationResults[_disputeId] = EscalationResult({
       requestId: _requestId,
       amountPerPledger: _amountPerPledger,
-      bondSize: _bondEscalationModule.decodeRequestData(_request.requestModuleData).bondSize,
+      bondSize: _bondEscalationModule.decodeRequestData(_request.disputeModuleData).bondSize,
       bondEscalationModule: _bondEscalationModule
     });
 
@@ -218,31 +215,33 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
         ? _result.bondEscalationModule.pledgesForDispute(_requestId, _pledger)
         : _result.bondEscalationModule.pledgesAgainstDispute(_requestId, _pledger);
 
-      // Release the winning pledges to the user
       _pledgeAmount = _result.bondSize * _numberOfPledges;
-
       _claimAmount = _amountPerPledger * _numberOfPledges;
+      _rewardAmount = _claimAmount - _pledgeAmount;
 
       // Check the balance in the contract
       // If not enough balance, slash some users to get enough balance
-      uint256 _balance = GRT.balanceOf(address(this));
+      uint256 _balance = GRT.balanceOf(address(this)); // TODO: What if the balance is enough by means other than slashing?
 
       // TODO: How many iterations should we do?
-      while (_balance < _claimAmount) {
+      while (_balance < _rewardAmount) {
         _balance += _slash(_disputeId, 1, MAX_USERS_TO_CHECK, _result, _status);
       }
-
-      _rewardAmount = _claimAmount - _pledgeAmount;
 
       // Send the user the amount they won by participating in the dispute
       GRT.safeTransfer(_pledger, _rewardAmount);
     }
 
+    // Release the winning pledges to the user
     _unbond(_pledger, _pledgeAmount);
 
     pledgerClaimed[_requestId][_pledger] = true;
 
     pledges[_disputeId] -= _claimAmount;
+
+    if (pledges[_disputeId] == 0) {
+      delete _pledgers[_disputeId];
+    }
 
     emit EscalationRewardClaimed({
       _requestId: _requestId,
@@ -254,33 +253,11 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   }
 
   /// @inheritdoc IHorizonAccountingExtension
-  function releasePledge(
-    IOracle.Request calldata _request,
-    IOracle.Dispute calldata _dispute,
-    address _pledger,
-    uint256 _amount
-  ) external onlyAuthorizedCaller {
-    bytes32 _requestId = _getId(_request);
-    bytes32 _disputeId = _validateDispute(_request, _dispute);
-
-    if (!ORACLE.allowedModule(_requestId, msg.sender)) revert HorizonAccountingExtension_UnauthorizedModule();
-
-    if (_amount > pledges[_disputeId]) revert HorizonAccountingExtension_InsufficientFunds();
-
-    unchecked {
-      pledges[_disputeId] -= _amount;
-    }
-
-    _unbond(_pledger, _amount);
-
-    emit PledgeReleased({_requestId: _requestId, _disputeId: _disputeId, _pledger: _pledger, _amount: _amount});
-  }
-
-  /// @inheritdoc IHorizonAccountingExtension
   function pay(
     bytes32 _requestId,
     address _payer,
     address _receiver,
+    IERC20, /* _token */
     uint256 _amount
   ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _payer) onlyParticipant(_requestId, _receiver) {
     // Discount the payer bondedForRequest
@@ -300,6 +277,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   function bond(
     address _bonder,
     bytes32 _requestId,
+    IERC20, /* _token */
     uint256 _amount
   ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _bonder) {
     if (!_approvals[_bonder].contains(msg.sender)) revert HorizonAccountingExtension_NotAllowed();
@@ -311,9 +289,11 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     emit Bonded(_requestId, _bonder, _amount);
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
   function bond(
     address _bonder,
     bytes32 _requestId,
+    IERC20, /* _token */
     uint256 _amount,
     address _sender
   ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _bonder) {
@@ -335,6 +315,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   function release(
     address _bonder,
     bytes32 _requestId,
+    IERC20, /* _token */
     uint256 _amount
   ) external onlyAllowedModule(_requestId) onlyParticipant(_requestId, _bonder) {
     // TODO: Release is used to pay the user the rewards for proposing or returning the funds to the
@@ -363,6 +344,16 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     _slash(_disputeId, _usersToSlash, _maxUsersToCheck, _result, _status);
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
+  function getEscalationResult(bytes32 _disputeId) external view returns (EscalationResult memory _escalationResult) {
+    _escalationResult = escalationResults[_disputeId];
+  }
+
+  /// @inheritdoc IHorizonAccountingExtension
+  function approvedModules(address _user) external view returns (address[] memory _approvedModules) {
+    _approvedModules = _approvals[_user].values();
+  }
+
   /**
    * @notice Slash the users that have pledged for a dispute.
    * @param _disputeId The dispute id.
@@ -388,7 +379,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
     _maxUsersToCheck = _maxUsersToCheck > _length ? _length : _maxUsersToCheck;
 
-    for (uint256 _i; _i < _maxUsersToCheck && _slashedUsers < _usersToSlash; _i++) {
+    for (uint256 _i; _i < _maxUsersToCheck && _slashedUsers < _usersToSlash; ++_i) {
       _user = _users.at(0);
 
       // Check if the user is actually slashable
@@ -396,10 +387,14 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       if (_slashAmount > 0) {
         // Slash the user
         HORIZON_STAKING.slash(_user, _slashAmount, _slashAmount, address(this));
+        // TODO: What if `MIN_THAWING_PERIOD` has passed, all provision tokens have been thawed
+        //       and slashing is skipped or reverts (bricking `claimEscalationReward()`)?
+
+        _unbond(_user, _slashAmount);
 
         _slashedAmount += _slashAmount;
 
-        _slashedUsers++;
+        ++_slashedUsers;
       }
 
       // Remove the user from the list of users
@@ -440,9 +435,10 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   function _bond(address _bonder, uint256 _amount) internal {
     IHorizonStaking.Provision memory _provisionData = HORIZON_STAKING.getProvision(_bonder, address(this));
 
-    if (_provisionData.maxVerifierCut < MAX_VERIFIER_CUT) revert HorizonAccountingExtension_InvalidMaxVerifierCut();
+    if (_provisionData.maxVerifierCut != MAX_VERIFIER_CUT) revert HorizonAccountingExtension_InvalidMaxVerifierCut();
     if (_provisionData.thawingPeriod < MIN_THAWING_PERIOD) revert HorizonAccountingExtension_InvalidThawingPeriod();
     if (_amount > _provisionData.tokens) revert HorizonAccountingExtension_InsufficientTokens();
+    // TODO: `thaw()` does not subtract from provision `tokens` but adds to `tokensThawing`
 
     totalBonded[_bonder] += _amount;
 

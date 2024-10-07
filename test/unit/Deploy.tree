@@ -1,7 +1,7 @@
-Deploy::setUp
+UnitDeploy::setUp
 └── it should define The Graph accounts
 
-Deploy::run
+UnitDeploy::run
 ├── when The Graph accounts are not set up
 │   └── it should revert
 └── given The Graph accounts are set up
@@ -15,6 +15,7 @@ Deploy::run
         ├── it should deploy `BondEscalationModule` with correct args
         ├── it should deploy `ArbitratorModule` with correct args
         ├── it should deploy `EBOFinalityModule` with correct args
-        ├── it should deploy `BondEscalationAccounting` with correct args
+        ├── it should deploy `HorizonAccountingExtension` with correct args
         ├── it should deploy `EBORequestCreator` with correct args
-        └── it should deploy `CouncilArbitrator` with correct args
+        ├── it should deploy `CouncilArbitrator` with correct args
+        └── it should deploy `Arbitrable`
