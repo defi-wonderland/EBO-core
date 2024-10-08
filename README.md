@@ -3,6 +3,11 @@
 > [!CAUTION]  
 > The code has not been audited yet, tread with caution.
 
+> [!CAUTION] 
+> After the established thawing period the losing pledgers can withdraw their stake from Horizon.  
+> Rewards from dispute escalations should be claimed or the losing pledgers slashed before that period ends to ensure that funds are available. 
+    
+
 ## Overview
 
 EBO is a mechanism for clock synchronization in the multichain world. It allows The Graph to permissionlessly sync up clocks between the protocol chain (Arbitrum) and multiple other chains supported by them to pay rewards to indexers. 
