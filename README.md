@@ -5,7 +5,7 @@
 
 > [!CAUTION] 
 > After the established thawing period the losing pledgers can withdraw their stake from Horizon.  
-> Rewards from dispute escalations should be claimed before that period ends to ensure that funds are available. 
+> Rewards from dispute escalations should be claimed or the losing pledgers slashed before that period ends to ensure that funds are available. 
     
 
 ## Overview

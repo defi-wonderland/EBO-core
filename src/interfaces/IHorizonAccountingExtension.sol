@@ -372,4 +372,14 @@ interface IHorizonAccountingExtension {
    * @param _amount The amount of GRT to release
    */
   function release(address _bonder, bytes32 _requestId, uint256 _amount) external;
+
+  /**
+   * @notice Allows a anyone to slash a number of users for a dispute
+   * @dev After the established thawing period the losing pledgers can withdraw their stake from Horizon.
+   *    Users should be slashed before that period ends to ensure that funds are available.
+   * @param _disputeId The ID of the dispute
+   * @param _usersToSlash The number of users to slash
+   * @param _maxUsersToCheck The maximum number of users to check before finishing the slashing
+   */
+  function slash(bytes32 _disputeId, uint256 _usersToSlash, uint256 _maxUsersToCheck) external;
 }

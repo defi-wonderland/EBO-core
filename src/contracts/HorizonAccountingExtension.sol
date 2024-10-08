@@ -353,6 +353,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     emit Released(_requestId, _bonder, _amount);
   }
 
+  /// @inheritdoc IHorizonAccountingExtension
   function slash(bytes32 _disputeId, uint256 _usersToSlash, uint256 _maxUsersToCheck) external {
     EscalationResult memory _result = escalationResults[_disputeId];
 
