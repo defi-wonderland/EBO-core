@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
-import './IntegrationBase.sol';
+import './IntegrationBase.t.sol';
 
 contract IntegrationFinalizeRequest is IntegrationBase {
   function setUp() public override {
@@ -125,7 +125,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
 
     // Pass the response dispute window
     vm.roll(block.number + responseDisputeWindow - responseDeadline);
-    
+
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
@@ -195,7 +195,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
 
     // Pass the response dispute window
     vm.roll(block.number + responseDisputeWindow - responseDeadline);
-    
+
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
@@ -460,7 +460,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     vm.skip(true); // TODO: How does the proposer release the response bond?
-    
+
     // Release the unfinalizable response bond
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
@@ -514,7 +514,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     vm.skip(true); // TODO: How does the proposer release the response bond?
-    
+
     // Release the unfinalizable response bond
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
@@ -569,7 +569,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Won);
 
     vm.skip(true); // TODO: How does the proposer release the response bond?
-    
+
     // Release the unfinalizable response bond
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
@@ -624,7 +624,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Lost);
 
     vm.skip(true); // TODO: How does the proposer release the response bond?
-    
+
     // Release the unfinalizable response bond
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
