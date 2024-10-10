@@ -51,6 +51,23 @@ interface IHorizonStaking {
     uint64 thawingPeriod
   ) external;
 
+  /**
+   * @notice Adds tokens from the service provider's idle stake to a provision
+   * @dev
+   *
+   * Requirements:
+   * - The `serviceProvider` must have previously provisioned stake to `verifier`.
+   * - `tokens` cannot be zero.
+   * - The `serviceProvider` must have enough idle stake to cover the tokens to add.
+   *
+   * Emits a {ProvisionIncreased} event.
+   *
+   * @param serviceProvider The service provider address
+   * @param verifier The verifier address
+   * @param tokens The amount of tokens to add to the provision
+   */
+  function addToProvision(address serviceProvider, address verifier, uint256 tokens) external;
+
   struct Provision {
     // Service provider tokens in the provision (does not include delegated tokens)
     uint256 tokens;

@@ -32,8 +32,11 @@ contract IntegrationBase is Deploy, Test {
   mapping(bytes32 _responseId => IOracle.Response _responseData) internal _responses;
   mapping(bytes32 _disputeId => IOracle.Dispute _disputeData) internal _disputes;
   string internal _chainId;
+  string internal _chainId2;
   uint256 internal _currentEpoch;
   uint256 internal _blockNumber;
+
+  uint96 public currentNonce;
 
   function setUp() public virtual override {
     vm.createSelectFork(vm.rpcUrl('arbitrum'), _ARBITRUM_SEPOLIA_FORK_BLOCK);
@@ -54,6 +57,7 @@ contract IntegrationBase is Deploy, Test {
 
     // Set chain ID
     _chainId = 'chainId1';
+    _chainId2 = 'chainId2';
 
     // Fetch current epoch
     _currentEpoch = epochManager.currentEpoch();
@@ -63,15 +67,20 @@ contract IntegrationBase is Deploy, Test {
   }
 
   function _createRequest() internal returns (bytes32 _requestId) {
+    _requestId = _createRequest(_chainId);
+  }
+
+  function _createRequest(string memory _customChainId) internal returns (bytes32 _requestId) {
     IEBORequestModule.RequestParameters memory _requestParams = _instantiateRequestParams();
     _requestParams.epoch = _currentEpoch;
-    _requestParams.chainId = _chainId;
+    _requestParams.chainId = _customChainId;
 
     IOracle.Request memory _requestData = _instantiateRequestData();
     _requestData.requestModuleData = abi.encode(_requestParams);
+    _requestData.nonce = currentNonce++;
 
     vm.prank(_requester);
-    eboRequestCreator.createRequest(_currentEpoch, _chainId);
+    eboRequestCreator.createRequest(_currentEpoch, _customChainId);
 
     _requestId = _requestData._getId();
     _requests[_requestId] = _requestData;
@@ -255,6 +264,25 @@ contract IntegrationBase is Deploy, Test {
     vm.stopPrank();
   }
 
+  function _addToProvisions() internal {
+    vm.startPrank(_proposer);
+    horizonStaking.addToProvision(_proposer, address(horizonAccountingExtension), responseBondSize);
+
+    vm.startPrank(_disputer);
+    horizonStaking.addToProvision(_disputer, address(horizonAccountingExtension), disputeBondSize);
+
+    vm.startPrank(_pledgerFor);
+    horizonStaking.addToProvision(
+      _pledgerFor, address(horizonAccountingExtension), disputeBondSize * maxNumberOfEscalations
+    );
+
+    vm.startPrank(_pledgerAgainst);
+    horizonStaking.addToProvision(
+      _pledgerAgainst, address(horizonAccountingExtension), disputeBondSize * maxNumberOfEscalations
+    );
+    vm.stopPrank();
+  }
+
   function _instantiateResponseData(bytes32 _requestId) internal view returns (IOracle.Response memory _responseData) {
     _responseData.proposer = _proposer;
     _responseData.requestId = _requestId;
@@ -272,7 +300,8 @@ contract IntegrationBase is Deploy, Test {
   }
 
   function _getChains() internal view returns (string[] memory _chainIds) {
-    _chainIds = new string[](1);
+    _chainIds = new string[](2);
     _chainIds[0] = _chainId;
+    _chainIds[1] = _chainId2;
   }
 }
