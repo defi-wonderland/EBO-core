@@ -161,6 +161,10 @@ contract IntegrationBase is Deploy, Test {
     bondedResponseModule.releaseUnutilizedResponse(_requestData, _responseData);
   }
 
+  function _claimEscalationReward(bytes32 _disputeId, address _pledger) internal {
+    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledger);
+  }
+
   function _addChains() internal {
     string[] memory _chainIds = _getChains();
 
