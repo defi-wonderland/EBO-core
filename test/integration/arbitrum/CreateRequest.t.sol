@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import './IntegrationBase.sol';
+import './IntegrationBase.t.sol';
 
 contract IntegrationCreateRequest is IntegrationBase {
   function setUp() public override {

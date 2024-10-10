@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import './IntegrationBase.sol';
+import './IntegrationBase.t.sol';
 
 contract IntegrationDisputeResponse is IntegrationBase {
   function setUp() public override {
@@ -30,14 +30,14 @@ contract IntegrationDisputeResponse is IntegrationBase {
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
 
-    // Pass the dispute window
+    // Pass the dispute dispute window
     vm.roll(block.number + disputeDisputeWindow + 1);
 
     // Revert if the dispute window has passed
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_DisputeWindowOver.selector);
     _disputeResponse(_requestId, _responseId);
 
-    // Do not pass the dispute window
+    // Do not pass the dispute dispute window
     vm.roll(block.number - disputeDisputeWindow - 1);
 
     // Pass the dispute deadline
