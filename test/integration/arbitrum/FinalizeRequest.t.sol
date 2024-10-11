@@ -24,13 +24,32 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _createProvisions();
   }
 
-  function test_FinalizeRequest_NoResponse() public {
+  function test_FinalizeRequest_TooEarlyToFinalize() public {
     // Create the request
     bytes32 _requestId = _createRequest();
 
     // Revert if the request is finalized without response before the response deadline
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
     _finalizeRequest(_requestId, 0);
+
+    // Propose the response
+    bytes32 _responseId = _proposeResponse(_requestId);
+
+    // Revert if the request is finalized with response before the response deadline
+    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
+    _finalizeRequest(_requestId, _responseId);
+
+    // Pass the response deadline
+    vm.roll(block.number + responseDeadline);
+
+    // Revert if the request is finalized with response before the dispute window
+    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
+    _finalizeRequest(_requestId, _responseId);
+  }
+
+  function test_FinalizeRequest_NoResponse() public {
+    // Create the request
+    bytes32 _requestId = _createRequest();
 
     // Pass the response deadline
     vm.roll(block.number + responseDeadline);
@@ -52,17 +71,8 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   function test_FinalizeRequest_NoEscalation() public {
     // Create the request
     bytes32 _requestId = _createRequest();
-
-    // Revert if the request is finalized without response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, 0);
-
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
-
-    // Revert if the request is finalized with response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, _responseId);
 
     // Pass the response deadline
     vm.roll(block.number + responseDeadline);
@@ -70,10 +80,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
-
-    // Revert if the request is finalized with response before the dispute window
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, _responseId);
 
     // Pass the response dispute window
     vm.roll(block.number + responseDisputeWindow - responseDeadline);
@@ -100,17 +106,8 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   function test_FinalizeRequest_BondEscalation_DisputerWon() public {
     // Create the request
     bytes32 _requestId = _createRequest();
-
-    // Revert if the request is finalized without response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, 0);
-
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
-
-    // Revert if the request is finalized with response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, _responseId);
 
     // Pass the response deadline
     vm.roll(block.number + responseDeadline);
@@ -118,10 +115,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
-
-    // Revert if the request is finalized with response before the dispute window
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, _responseId);
 
     // Pass the response dispute window
     vm.roll(block.number + responseDisputeWindow - responseDeadline);
@@ -170,17 +163,8 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   function test_FinalizeRequest_BondEscalation_DisputerLost() public {
     // Create the request
     bytes32 _requestId = _createRequest();
-
-    // Revert if the request is finalized without response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, 0);
-
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
-
-    // Revert if the request is finalized with response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, _responseId);
 
     // Pass the response deadline
     vm.roll(block.number + responseDeadline);
@@ -188,10 +172,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
-
-    // Revert if the request is finalized with response before the dispute window
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, _responseId);
 
     // Pass the response dispute window
     vm.roll(block.number + responseDisputeWindow - responseDeadline);
@@ -243,17 +223,8 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   function test_FinalizeRequest_Arbitration_Won() public {
     // Create the request
     bytes32 _requestId = _createRequest();
-
-    // Revert if the request is finalized without response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, 0);
-
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
-
-    // Revert if the request is finalized with response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, _responseId);
 
     // Pass the response deadline
     vm.roll(block.number + responseDeadline);
@@ -261,10 +232,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
-
-    // Revert if the request is finalized with response before the dispute window
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, _responseId);
 
     // Pass the response dispute window
     vm.roll(block.number + responseDisputeWindow - responseDeadline);
@@ -293,6 +260,10 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     // Arbitrate and resolve the dispute, and finalize the request without response
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Won);
 
+    // Assert Oracle::finalize
+    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedResponseId(_requestId), 0);
+
     // Revert if the request has already been finalized
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_AlreadyFinalized.selector, _requestId));
     _finalizeRequest(_requestId, 0);
@@ -303,17 +274,8 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   function test_FinalizeRequest_Arbitration_Lost() public {
     // Create the request
     bytes32 _requestId = _createRequest();
-
-    // Revert if the request is finalized without response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, 0);
-
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
-
-    // Revert if the request is finalized with response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, _responseId);
 
     // Pass the response deadline
     vm.roll(block.number + responseDeadline);
@@ -321,10 +283,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
-
-    // Revert if the request is finalized with response before the dispute window
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, _responseId);
 
     // Pass the response dispute window
     vm.roll(block.number + responseDisputeWindow - responseDeadline);
@@ -353,6 +311,13 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     // Arbitrate and resolve the dispute, and finalize the request with response
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Lost);
 
+    // Assert Oracle::finalize
+    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedResponseId(_requestId), _responseId);
+    // Assert HorizonAccountingExtension::release
+    assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), 0);
+    assertEq(horizonAccountingExtension.totalBonded(_proposer), 0);
+
     // Revert if the request has already been finalized
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
@@ -363,17 +328,8 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   function test_FinalizeRequest_Arbitration_NoResolution() public {
     // Create the request
     bytes32 _requestId = _createRequest();
-
-    // Revert if the request is finalized without response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, 0);
-
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
-
-    // Revert if the request is finalized with response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, _responseId);
 
     // Pass the response deadline
     vm.roll(block.number + responseDeadline);
@@ -381,10 +337,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
-
-    // Revert if the request is finalized with response before the dispute window
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _finalizeRequest(_requestId, _responseId);
 
     // Pass the response dispute window
     vm.roll(block.number + responseDisputeWindow - responseDeadline);
@@ -412,6 +364,10 @@ contract IntegrationFinalizeRequest is IntegrationBase {
 
     // Arbitrate and resolve the dispute, and finalize the request without response
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.NoResolution);
+
+    // Assert Oracle::finalize
+    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedResponseId(_requestId), 0);
 
     // Revert if the request has already been finalized
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_AlreadyFinalized.selector, _requestId));
