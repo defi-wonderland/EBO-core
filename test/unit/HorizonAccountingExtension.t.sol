@@ -307,14 +307,44 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
     horizonAccountingExtension.pledge(_pledger, mockRequest, mockDispute, grt, _amount);
   }
 
-  function test_insufficientBondedTokens(
+  function test_insufficientTokens_thawing(
     address _pledger,
-    uint128 _amount,
-    uint128 _tokens,
-    uint128 _tokensThawing
+    uint256 _amount,
+    uint256 _tokensThawing,
+    uint256 _tokens
   ) public {
+    vm.assume(_amount > 0);
     vm.assume(_tokens > _amount);
-    vm.assume(_amount > _tokensThawing);
+    vm.assume(_tokens > _tokensThawing);
+    vm.assume(_tokens - _tokensThawing < _amount);
+
+    _provisionData.tokens = _tokens;
+    _provisionData.tokensThawing = _tokensThawing;
+    _provisionData.thawingPeriod = MIN_THAWING_PERIOD;
+    _provisionData.maxVerifierCut = MAX_VERIFIER_CUT;
+
+    _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_mockDisputeId)), abi.encode(1));
+
+    _mockAndExpect(
+      address(oracle), abi.encodeCall(IOracle.allowedModule, (_mockRequestId, authorizedCaller)), abi.encode(true)
+    );
+
+    vm.mockCall(
+      address(horizonStaking),
+      abi.encodeWithSelector(horizonStaking.getProvision.selector, _pledger, horizonAccountingExtension),
+      abi.encode(_provisionData)
+    );
+
+    vm.expectRevert(
+      abi.encodeWithSelector(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector)
+    );
+
+    vm.prank(authorizedCaller);
+    horizonAccountingExtension.pledge(_pledger, mockRequest, mockDispute, grt, _amount);
+  }
+
+  function test_insufficientBondedTokens(address _pledger, uint128 _amount, uint128 _tokens) public {
+    vm.assume(_tokens > _amount);
 
     horizonAccountingExtension.setBondedTokensForTest(_pledger, _tokens);
 
