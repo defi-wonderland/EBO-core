@@ -114,6 +114,7 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
   /// Constants
   uint32 public constant MAX_VERIFIER_CUT = 1_000_000;
   uint64 public constant MIN_THAWING_PERIOD = 30 days;
+  uint32 public constant SLASH_USERS = 1;
 
   /// Mocks
   uint256 public maxUsersToCheck = 1;

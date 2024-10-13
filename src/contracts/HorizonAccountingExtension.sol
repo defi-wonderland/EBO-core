@@ -32,6 +32,9 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   uint256 public immutable MIN_THAWING_PERIOD;
 
   /// @inheritdoc IHorizonAccountingExtension
+  uint256 public constant SLASH_USERS = 1;
+
+  /// @inheritdoc IHorizonAccountingExtension
   uint256 public constant MAX_VERIFIER_CUT = 1_000_000;
 
   /// @inheritdoc IHorizonAccountingExtension
@@ -232,7 +235,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
       // Claim one by one until the balance is enough
       while (_balance < _claimAmount) {
-        _balance += _slash(_disputeId, 1, maxUsersToCheck, _result, _status);
+        _balance += _slash(_disputeId, SLASH_USERS, maxUsersToCheck, _result, _status);
       }
 
       _rewardAmount = _claimAmount - _pledgeAmount;
