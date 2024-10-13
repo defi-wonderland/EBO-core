@@ -21,10 +21,13 @@ interface IEBORequestCreator {
   /**
    * @notice Emitted when a request is created
    * @param _requestId The id of the request
+   * @param _request The request created
    * @param _epoch The epoch of the request
    * @param _chainId The chain id of the request
    */
-  event RequestCreated(bytes32 indexed _requestId, uint256 indexed _epoch, string indexed _chainId);
+  event RequestCreated(
+    bytes32 _requestId, IOracle.Request indexed _request, uint256 indexed _epoch, string indexed _chainId
+  );
 
   /**
    * @notice Emitted when a chain is added

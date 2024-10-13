@@ -88,7 +88,7 @@ contract EBORequestCreator is IEBORequestCreator {
 
     requestIdPerChainAndEpoch[_chainId][_epoch] = _requestId;
 
-    emit RequestCreated(_requestId, _epoch, _chainId);
+    emit RequestCreated(_requestId, _requestData, _epoch, _chainId);
   }
 
   /// @inheritdoc IEBORequestCreator
