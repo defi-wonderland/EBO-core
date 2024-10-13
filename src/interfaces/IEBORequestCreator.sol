@@ -26,7 +26,7 @@ interface IEBORequestCreator {
    * @param _chainId The chain id of the request
    */
   event RequestCreated(
-    bytes32 _requestId, IOracle.Request indexed _request, uint256 indexed _epoch, string indexed _chainId
+    bytes32 indexed _requestId, IOracle.Request _request, uint256 indexed _epoch, string indexed _chainId
   );
 
   /**

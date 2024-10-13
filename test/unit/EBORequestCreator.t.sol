@@ -49,7 +49,7 @@ contract EBORequestCreatorForTest is EBORequestCreator {
 abstract contract EBORequestCreator_Unit_BaseTest is Test {
   /// Events
   event RequestCreated(
-    bytes32 _requestId, IOracle.Request indexed _request, uint256 indexed _epoch, string indexed _chainId
+    bytes32 indexed _requestId, IOracle.Request _request, uint256 indexed _epoch, string indexed _chainId
   );
   event ChainAdded(string indexed _chainId);
   event ChainRemoved(string indexed _chainId);
