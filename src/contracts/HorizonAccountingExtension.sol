@@ -54,6 +54,9 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   /// @inheritdoc IHorizonAccountingExtension
   mapping(address _caller => bool _authorized) public authorizedCallers;
 
+  /// @inheritdoc IHorizonAccountingExtension
+  mapping(bytes32 _disputeId => uint256 _balance) public disputeBalance;
+
   /**
    * @notice Storing which modules have the users approved to bond their tokens.
    */
@@ -223,16 +226,18 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
       _claimAmount = _amountPerPledger * _numberOfPledges;
 
+      _rewardAmount = _claimAmount - _pledgeAmount;
+
       // Check the balance in the contract
       // If not enough balance, slash some users to get enough balance
-      uint256 _balance = GRT.balanceOf(address(this));
-
       // TODO: How many iterations should we do?
-      while (_balance < _claimAmount) {
-        _balance += _slash(_disputeId, 1, MAX_USERS_TO_CHECK, _result, _status);
+      while (disputeBalance[_disputeId] < _claimAmount) {
+        _slash(_disputeId, 1, MAX_USERS_TO_CHECK, _result, _status);
       }
 
-      _rewardAmount = _claimAmount - _pledgeAmount;
+      unchecked {
+        disputeBalance[_disputeId] -= _rewardAmount;
+      }
 
       // Send the user the amount they won by participating in the dispute
       GRT.safeTransfer(_pledger, _rewardAmount);
@@ -405,6 +410,8 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       // Remove the user from the list of users
       _users.remove(_user);
     }
+
+    disputeBalance[_disputeId] += _slashedAmount;
   }
 
   /**

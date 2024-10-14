@@ -280,6 +280,14 @@ interface IHorizonAccountingExtension {
    */
   function authorizedCallers(address _caller) external returns (bool _authorized);
 
+  /**
+   * @notice Returns the available balance to claim for a specific dispute
+   *
+   * @param _disputeId The id of the dispute to get the balance
+   * @return _balance  The balance of the dispute
+   */
+  function disputeBalance(bytes32 _disputeId) external returns (uint256 _balance);
+
   /*///////////////////////////////////////////////////////////////
                               LOGIC
   //////////////////////////////////////////////////////////////*/
