@@ -233,10 +233,10 @@ interface IHorizonAccountingExtension {
   function MAX_VERIFIER_CUT() external view returns (uint256 _MAX_VERIFIER_CUT);
 
   /**
-   * @notice The number of users to slash
-   * @return _SLASH_USERS The number of users to slash
+   * @notice The max number of users to slash
+   * @return _MAX_USERS_TO_SLASH The number of users to slash
    */
-  function SLASH_USERS() external view returns (uint256 _SLASH_USERS);
+  function MAX_USERS_TO_SLASH() external view returns (uint256 _MAX_USERS_TO_SLASH);
 
   /**
    * @notice The maximum users to check
