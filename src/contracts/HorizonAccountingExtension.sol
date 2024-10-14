@@ -438,8 +438,7 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
     if (_provisionData.maxVerifierCut != MAX_VERIFIER_CUT) revert HorizonAccountingExtension_InvalidMaxVerifierCut();
     if (_provisionData.thawingPeriod < MIN_THAWING_PERIOD) revert HorizonAccountingExtension_InvalidThawingPeriod();
 
-    uint256 _availableTokens =
-      _provisionData.tokens > _provisionData.tokensThawing ? _provisionData.tokens - _provisionData.tokensThawing : 0;
+    uint256 _availableTokens = _provisionData.tokens - _provisionData.tokensThawing;
     if (_amount > _availableTokens) revert HorizonAccountingExtension_InsufficientTokens();
 
     totalBonded[_bonder] += _amount;

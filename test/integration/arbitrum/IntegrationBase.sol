@@ -36,8 +36,6 @@ contract IntegrationBase is Deploy, Test {
   uint256 internal _currentEpoch;
   uint256 internal _blockNumber;
 
-  uint96 public currentNonce;
-
   function setUp() public virtual override {
     vm.createSelectFork(vm.rpcUrl('arbitrum'), _ARBITRUM_SEPOLIA_FORK_BLOCK);
 
@@ -67,17 +65,17 @@ contract IntegrationBase is Deploy, Test {
   }
 
   function _createRequest() internal returns (bytes32 _requestId) {
-    _requestId = _createRequest(_chainId);
+    _requestId = _createRequest(_chainId, _currentEpoch);
   }
 
-  function _createRequest(string memory _customChainId) internal returns (bytes32 _requestId) {
+  function _createRequest(string memory _customChainId, uint256 _customEpoch) internal returns (bytes32 _requestId) {
     IEBORequestModule.RequestParameters memory _requestParams = _instantiateRequestParams();
-    _requestParams.epoch = _currentEpoch;
+    _requestParams.epoch = _customEpoch;
     _requestParams.chainId = _customChainId;
 
     IOracle.Request memory _requestData = _instantiateRequestData();
     _requestData.requestModuleData = abi.encode(_requestParams);
-    _requestData.nonce = currentNonce++;
+    _requestData.nonce = uint96(oracle.totalRequestCount());
 
     vm.prank(_requester);
     eboRequestCreator.createRequest(_currentEpoch, _customChainId);
@@ -281,6 +279,11 @@ contract IntegrationBase is Deploy, Test {
       _pledgerAgainst, address(horizonAccountingExtension), disputeBondSize * maxNumberOfEscalations
     );
     vm.stopPrank();
+  }
+
+  function _thaw(address _sender, uint256 _amount) internal {
+    vm.prank(_sender);
+    horizonStaking.thaw(_sender, address(horizonAccountingExtension), _amount);
   }
 
   function _instantiateResponseData(bytes32 _requestId) internal view returns (IOracle.Response memory _responseData) {

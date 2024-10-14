@@ -185,12 +185,15 @@ contract HorizonAccountingExtension_Unit_RevokeModule is HorizonAccountingExtens
 contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Unit_BaseTest {
   IHorizonStaking.Provision internal _provisionData;
 
-  modifier happyPath(address _pledger, uint128 _amount, uint128 _tokens) {
+  modifier happyPath(address _pledger, uint128 _amount, uint128 _tokens, uint128 _tokensThawing) {
     vm.assume(_tokens > _amount);
+    vm.assume(_tokens > _tokensThawing);
+    vm.assume(_tokens - _tokensThawing >= _amount);
 
     _provisionData.tokens = _tokens;
     _provisionData.thawingPeriod = uint64(horizonAccountingExtension.MIN_THAWING_PERIOD());
     _provisionData.maxVerifierCut = uint32(horizonAccountingExtension.MAX_VERIFIER_CUT());
+    _provisionData.tokensThawing = _tokensThawing;
 
     // Mock and expect the call to oracle checking if the module is allowed
     _mockAndExpect(
@@ -343,14 +346,23 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
     horizonAccountingExtension.pledge(_pledger, mockRequest, mockDispute, grt, _amount);
   }
 
-  function test_insufficientBondedTokens(address _pledger, uint128 _amount, uint128 _tokens) public {
-    vm.assume(_tokens > _amount);
+  function test_insufficientBondedTokens(
+    address _pledger,
+    uint128 _amount,
+    uint128 _tokens,
+    uint128 _tokensThawing
+  ) public {
+    vm.assume(_amount > 0);
+    vm.assume(_tokens >= _amount);
+    vm.assume(_tokens >= _tokensThawing);
+    vm.assume(_tokens - _tokensThawing >= _amount);
 
-    horizonAccountingExtension.setBondedTokensForTest(_pledger, _tokens);
+    horizonAccountingExtension.setBondedTokensForTest(_pledger, uint256(_tokens) + _amount - 1);
 
     _provisionData.tokens = _tokens;
     _provisionData.thawingPeriod = MIN_THAWING_PERIOD;
     _provisionData.maxVerifierCut = MAX_VERIFIER_CUT;
+    _provisionData.tokensThawing = _tokensThawing;
 
     _mockAndExpect(address(oracle), abi.encodeCall(IOracle.disputeCreatedAt, (_mockDisputeId)), abi.encode(1));
 
@@ -375,8 +387,9 @@ contract HorizonAccountingExtension_Unit_Pledge is HorizonAccountingExtension_Un
   function test_successfulCall(
     address _pledger,
     uint128 _amount,
-    uint128 _tokens
-  ) public happyPath(_pledger, _amount, _tokens) {
+    uint128 _tokens,
+    uint128 _tokensThawing
+  ) public happyPath(_pledger, _amount, _tokens, _tokensThawing) {
     // Check: is the event emitted?
     vm.expectEmit();
     emit Pledged(_pledger, _mockRequestId, _mockDisputeId, _amount);

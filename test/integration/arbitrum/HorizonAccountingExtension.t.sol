@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import './IntegrationBase.sol';
@@ -41,21 +41,15 @@ contract IntegrationHorizonAccounting is IntegrationBase {
     assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), responseBondSize);
     assertEq(horizonAccountingExtension.totalBonded(_proposer), responseBondSize);
 
-    vm.roll(block.number + 1);
-
     // Reprovision more tokens to try again
     _stakeGRT();
     _addToProvisions();
 
     // Thaw some tokens
-    vm.prank(_proposer);
-    horizonStaking.thaw(_proposer, address(horizonAccountingExtension), responseBondSize + 1);
+    _thaw(_proposer, responseBondSize + 1);
 
     // Create the request
-    bytes32 _requestId2 = _createRequest(_chainId2);
-
-    // Do not pass the response deadline
-    vm.warp(responseDeadline - 1);
+    bytes32 _requestId2 = _createRequest(_chainId2, _currentEpoch);
 
     // Propose the response reverts because of insufficient funds
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector);
