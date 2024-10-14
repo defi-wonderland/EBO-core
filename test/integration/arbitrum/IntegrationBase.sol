@@ -281,6 +281,11 @@ contract IntegrationBase is Deploy, Test {
     vm.stopPrank();
   }
 
+  function _addToProvision(address _sender, uint256 _amount) internal {
+    vm.prank(_sender);
+    horizonStaking.addToProvision(_sender, address(horizonAccountingExtension), _amount);
+  }
+
   function _thaw(address _sender, uint256 _amount) internal {
     vm.prank(_sender);
     horizonStaking.thaw(_sender, address(horizonAccountingExtension), _amount);

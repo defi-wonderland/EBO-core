@@ -1073,8 +1073,10 @@ contract HorizonAccountingExtension_Unit_Pay is HorizonAccountingExtension_Unit_
 contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit_BaseTest {
   IHorizonStaking.Provision internal _provision;
 
-  modifier happyPath(address _bonder, bytes32 _requestId, uint256 _amount) {
+  modifier happyPath(address _bonder, bytes32 _requestId, uint256 _amount, uint256 _tokensThawing) {
     vm.assume(_amount > 0 && _amount < type(uint128).max);
+    vm.assume(_amount > _tokensThawing);
+
     // Mock and expect the call to oracle checking if the module is allowed
     _mockAndExpect(
       address(oracle), abi.encodeCall(IOracle.allowedModule, (_requestId, address(this))), abi.encode(true)
@@ -1086,7 +1088,8 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
 
     _provision.thawingPeriod = uint64(horizonAccountingExtension.MIN_THAWING_PERIOD());
     _provision.maxVerifierCut = uint32(horizonAccountingExtension.MAX_VERIFIER_CUT());
-    _provision.tokens = _amount;
+    _provision.tokens = _amount + _tokensThawing;
+    _provision.tokensThawing = _tokensThawing;
 
     _;
   }
@@ -1133,8 +1136,9 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
   function test_revertIfInvalidMaxVerifierCut(
     address _bonder,
     bytes32 _requestId,
-    uint256 _amount
-  ) public happyPath(_bonder, _requestId, _amount) {
+    uint256 _amount,
+    uint256 _tokensThawing
+  ) public happyPath(_bonder, _requestId, _amount, _tokensThawing) {
     _provision.maxVerifierCut = 0;
 
     _mockAndExpect(
@@ -1151,8 +1155,9 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
   function test_revertIfInvalidThawingPeriod(
     address _bonder,
     bytes32 _requestId,
-    uint256 _amount
-  ) public happyPath(_bonder, _requestId, _amount) {
+    uint256 _amount,
+    uint256 _tokensThawing
+  ) public happyPath(_bonder, _requestId, _amount, _tokensThawing) {
     _provision.thawingPeriod = 0;
 
     _mockAndExpect(
@@ -1169,9 +1174,10 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
   function test_revertIfInsufficientTokens(
     address _bonder,
     bytes32 _requestId,
-    uint256 _amount
-  ) public happyPath(_bonder, _requestId, _amount) {
-    _provision.tokens = 0;
+    uint256 _amount,
+    uint256 _tokensThawing
+  ) public happyPath(_bonder, _requestId, _amount, _tokensThawing) {
+    _provision.tokens = _amount + _tokensThawing - 1;
 
     _mockAndExpect(
       address(horizonStaking),
@@ -1186,15 +1192,16 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
   function test_revertIfInsufficientBondedTokens(
     address _bonder,
     bytes32 _requestId,
-    uint256 _amount
-  ) public happyPath(_bonder, _requestId, _amount) {
+    uint256 _amount,
+    uint256 _tokensThawing
+  ) public happyPath(_bonder, _requestId, _amount, _tokensThawing) {
     _mockAndExpect(
       address(horizonStaking),
       abi.encodeCall(IHorizonStaking.getProvision, (_bonder, address(horizonAccountingExtension))),
       abi.encode(_provision)
     );
 
-    horizonAccountingExtension.setBondedTokensForTest(_bonder, _amount);
+    horizonAccountingExtension.setBondedTokensForTest(_bonder, _amount + _tokensThawing + 1);
 
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientBondedTokens.selector);
 
@@ -1204,8 +1211,9 @@ contract HorizonAccountingExtension_Unit_Bond is HorizonAccountingExtension_Unit
   function test_successfulCall(
     address _bonder,
     bytes32 _requestId,
-    uint256 _amount
-  ) public happyPath(_bonder, _requestId, _amount) {
+    uint256 _amount,
+    uint256 _tokensThawing
+  ) public happyPath(_bonder, _requestId, _amount, _tokensThawing) {
     _mockAndExpect(
       address(horizonStaking),
       abi.encodeCall(IHorizonStaking.getProvision, (_bonder, address(horizonAccountingExtension))),

@@ -49,6 +49,18 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Do not pass the dispute deadline nor the tying buffer
     vm.warp(disputeDeadline);
 
+    // Thaw some tokens
+    uint256 _tokensToThaw = disputeBondSize * (maxNumberOfEscalations - 1) + 1;
+    _thaw(_pledgerFor, _tokensToThaw);
+
+    // Propose the response reverts because of insufficient funds as the pledgerFor thawed some tokens
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector);
+    _pledgeForDispute(_requestId, _disputeId);
+
+    // Reprovision the thawed token
+    _stakeGRT();
+    _addToProvision(_pledgerFor, _tokensToThaw);
+
     // Pledge for the dispute
     _pledgeForDispute(_requestId, _disputeId);
 
@@ -90,6 +102,18 @@ contract IntegrationBondEscalation is IntegrationBase {
 
     // Do not pass the dispute deadline nor the tying buffer
     vm.warp(disputeDeadline);
+
+    // Thaw some tokens
+    uint256 _tokensToThaw = disputeBondSize * (maxNumberOfEscalations - 1) + 1;
+    _thaw(_pledgerAgainst, _tokensToThaw);
+
+    // Propose the response reverts because of insufficient funds as the pledgerAgainst thawed some tokens
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector);
+    _pledgeAgainstDispute(_requestId, _disputeId);
+
+    // Reprovision the thawed token
+    _stakeGRT();
+    _addToProvision(_pledgerAgainst, _tokensToThaw);
 
     // Pledge against the dispute
     _pledgeAgainstDispute(_requestId, _disputeId);

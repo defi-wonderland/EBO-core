@@ -28,6 +28,17 @@ contract IntegrationProposeResponse is IntegrationBase {
     // Create the request
     bytes32 _requestId = _createRequest();
 
+    // Thaw some tokens
+    _thaw(_proposer, 1);
+
+    // Propose the response reverts because of insufficient funds as the proposer thawed some tokens
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector);
+    _proposeResponse(_requestId);
+
+    // Reprovision the thawed token
+    _stakeGRT();
+    _addToProvision(_proposer, 1);
+
     // Pass the response deadline
     vm.warp(responseDeadline);
 
