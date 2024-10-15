@@ -53,7 +53,7 @@ contract IntegrationDisputeResponse is IntegrationBase {
     // Thaw some tokens
     _thaw(_disputer, 1);
 
-    // Propose the response reverts because of insufficient funds as the disputer thawed some tokens
+    // Disputing the response reverts because of insufficient funds as the disputer thawed some tokens
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector);
     _disputeResponse(_requestId, _responseId);
 

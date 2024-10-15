@@ -110,19 +110,21 @@ contract IntegrationBase is Deploy, Test {
   }
 
   function _pledgeForDispute(bytes32 _requestId, bytes32 _disputeId) internal {
-    IOracle.Request memory _requestData = _requests[_requestId];
-    IOracle.Dispute memory _disputeData = _disputes[_disputeId];
+    _pledgeForDispute(_pledgerFor, _requestId, _disputeId);
+  }
 
-    vm.prank(_pledgerFor);
-    bondEscalationModule.pledgeForDispute(_requestData, _disputeData);
+  function _pledgeForDispute(address _sender, bytes32 _requestId, bytes32 _disputeId) internal {
+    vm.prank(_sender);
+    bondEscalationModule.pledgeForDispute(_requests[_requestId], _disputes[_disputeId]);
   }
 
   function _pledgeAgainstDispute(bytes32 _requestId, bytes32 _disputeId) internal {
-    IOracle.Request memory _requestData = _requests[_requestId];
-    IOracle.Dispute memory _disputeData = _disputes[_disputeId];
+    _pledgeAgainstDispute(_pledgerAgainst, _requestId, _disputeId);
+  }
 
-    vm.prank(_pledgerAgainst);
-    bondEscalationModule.pledgeAgainstDispute(_requestData, _disputeData);
+  function _pledgeAgainstDispute(address _sender, bytes32 _requestId, bytes32 _disputeId) internal {
+    vm.prank(_sender);
+    bondEscalationModule.pledgeAgainstDispute(_requests[_requestId], _disputes[_disputeId]);
   }
 
   function _settleBondEscalation(bytes32 _requestId, bytes32 _responseId, bytes32 _disputeId) internal {

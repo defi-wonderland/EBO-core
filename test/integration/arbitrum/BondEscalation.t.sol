@@ -53,7 +53,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     uint256 _tokensToThaw = disputeBondSize * (maxNumberOfEscalations - 1) + 1;
     _thaw(_pledgerFor, _tokensToThaw);
 
-    // Propose the response reverts because of insufficient funds as the pledgerFor thawed some tokens
+    // Pledging for dispute reverts because of insufficient funds as the pledgerFor thawed some tokens
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector);
     _pledgeForDispute(_requestId, _disputeId);
 
@@ -107,7 +107,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     uint256 _tokensToThaw = disputeBondSize * (maxNumberOfEscalations - 1) + 1;
     _thaw(_pledgerAgainst, _tokensToThaw);
 
-    // Propose the response reverts because of insufficient funds as the pledgerAgainst thawed some tokens
+    // Pledging against dispute reverts because of insufficient funds as the pledgerAgainst thawed some tokens
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector);
     _pledgeAgainstDispute(_requestId, _disputeId);
 
@@ -170,6 +170,61 @@ contract IntegrationBondEscalation is IntegrationBase {
     _pledgeForDispute(_requestId, _disputeId);
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_MaxNumberOfEscalationsReached.selector);
     _pledgeAgainstDispute(_requestId, _disputeId);
+  }
+
+  function test_InsufficientBondedTokens() public {
+    // Create the request
+    bytes32 _requestId = _createRequest();
+    // Propose the response
+    bytes32 _responseId = _proposeResponse(_requestId);
+    // Dispute the response
+    bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
+
+    // Disputer tries to pledge for or against dispute after adding to their provision.
+    _stakeGRT();
+    _addToProvision(_disputer, disputeBondSize - 1);
+
+    // Reverts because they don't have enough tokens to pledge
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientBondedTokens.selector);
+    _pledgeAgainstDispute(_disputer, _requestId, _disputeId);
+
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientBondedTokens.selector);
+    _pledgeForDispute(_disputer, _requestId, _disputeId);
+
+    // Add one more token to their provision
+    _addToProvision(_disputer, 1);
+
+    // Pledge for the dispute
+    _pledgeForDispute(_disputer, _requestId, _disputeId);
+
+    // Pledge against the dispute, twice
+    _pledgeAgainstDispute(_requestId, _disputeId);
+    _pledgeAgainstDispute(_requestId, _disputeId);
+
+    // Pass the dispute deadline, but not the tying buffer
+    vm.warp(disputeDeadline + 1);
+
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientBondedTokens.selector);
+    _pledgeForDispute(_disputer, _requestId, _disputeId);
+
+    // Add enough to pledge again
+    _stakeGRT();
+    _addToProvision(_disputer, disputeBondSize);
+
+    // Pledge for the dispute, again
+    _pledgeForDispute(_disputer, _requestId, _disputeId);
+
+    // Assert BondEscalationModule::pledgeForDispute and BondEscalationModule::pledgeAgainstDispute
+    IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
+    assertEq(_escalation.disputeId, _disputeId);
+    assertEq(_escalation.amountOfPledgesForDispute, maxNumberOfEscalations);
+    assertEq(_escalation.amountOfPledgesAgainstDispute, maxNumberOfEscalations);
+    assertEq(bondEscalationModule.pledgesForDispute(_requestId, _disputer), maxNumberOfEscalations);
+    assertEq(bondEscalationModule.pledgesAgainstDispute(_requestId, _pledgerAgainst), maxNumberOfEscalations);
+    // Assert HorizonAccountingExtension::pledge
+    assertEq(horizonAccountingExtension.pledges(_disputeId), disputeBondSize * maxNumberOfEscalations * 2);
+    assertEq(horizonAccountingExtension.totalBonded(_disputer), disputeBondSize * (maxNumberOfEscalations + 1));
+    assertEq(horizonAccountingExtension.totalBonded(_pledgerAgainst), disputeBondSize * maxNumberOfEscalations);
   }
 
   function test_SettleBondEscalation_DisputerWon() public {
