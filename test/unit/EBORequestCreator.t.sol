@@ -1,20 +1,18 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
-import {IBondEscalationModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
-import {IArbitratorModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
-import {IBondedResponseModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
-
-import {IArbitrable} from 'interfaces/IArbitrable.sol';
-import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
-
-import {EBORequestCreator, IEBORequestCreator} from 'contracts/EBORequestCreator.sol';
+import {
+  EBORequestCreator,
+  EnumerableSet,
+  IArbitrable,
+  IArbitratorModule,
+  IBondEscalationModule,
+  IBondedResponseModule,
+  IEBORequestCreator,
+  IEBORequestModule,
+  IEpochManager,
+  IOracle
+} from 'contracts/EBORequestCreator.sol';
 
 import 'forge-std/Test.sol';
 
@@ -458,19 +456,19 @@ contract EBORequestCreator_Unit_SetRequestModuleData is EBORequestCreator_Unit_B
     _;
   }
 
-  // TODO: IF WE USE THIS TEST, WE HAVE TO CHANGE THE SETTINGS TO USE --VIA-IR BECAUSE WE HAVE TO CREATE A LOT OF VARIABLES
-  // /**
-  //  * @notice Test params are setted properly
-  //  */
-  // function test_requestModuleDataParams(
-  //   address _requestModule,
-  //   IEBORequestModule.RequestParameters calldata _requestModuleData
-  // ) external happyPath(_requestModule, _requestModuleData) {
-  //   eboRequestCreator.setRequestModuleData(_requestModule, _requestModuleData);
+  /**
+   * @notice Test params are setted properly
+   */
+  function test_requestModuleDataParams(
+    address _requestModule,
+    IEBORequestModule.RequestParameters calldata _requestModuleData,
+    address _arbitrator
+  ) external happyPath(_arbitrator) {
+    eboRequestCreator.setRequestModuleData(_requestModule, _requestModuleData);
 
-  //   (,,,,,,, bytes memory _getRequestModuleData,,,,) = eboRequestCreator.requestData();
-  //   assertEq(abi.encode(_requestModuleData), _getRequestModuleData);
-  // }
+    IOracle.Request memory _requestData = eboRequestCreator.getRequestData();
+    assertEq(abi.encode(_requestModuleData), _requestData.requestModuleData);
+  }
 
   /**
    * @notice Test the emit request module data set
@@ -580,15 +578,11 @@ contract EBORequestCreator_Unit_SetFinalityModuleData is EBORequestCreator_Unit_
   /**
    * @notice Test the emit finality module data set
    */
-  function test_emitFinalityModuleDataSet(
-    address _finalityModule,
-    bytes calldata _finalityModuleData,
-    address _arbitrator
-  ) external happyPath(_arbitrator) {
+  function test_emitFinalityModuleDataSet(address _finalityModule, address _arbitrator) external happyPath(_arbitrator) {
     vm.expectEmit();
-    emit FinalityModuleDataSet(_finalityModule, _finalityModuleData);
+    emit FinalityModuleDataSet(_finalityModule, new bytes(0));
 
-    eboRequestCreator.setFinalityModuleData(_finalityModule, _finalityModuleData);
+    eboRequestCreator.setFinalityModuleData(_finalityModule);
   }
 }
 
