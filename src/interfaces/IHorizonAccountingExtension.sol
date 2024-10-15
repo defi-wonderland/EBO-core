@@ -8,6 +8,8 @@ import {IBondEscalationModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 
+import {IArbitrable} from 'interfaces/IArbitrable.sol';
+
 interface IHorizonAccountingExtension {
   /*///////////////////////////////////////////////////////////////
                               EVENTS
@@ -99,6 +101,13 @@ interface IHorizonAccountingExtension {
   event EscalationRewardClaimed(
     bytes32 indexed _requestId, bytes32 indexed _disputeId, address indexed _pledger, uint256 _reward, uint256 _released
   );
+
+  /**
+   * @notice Emitted when max users to check is set
+   *
+   * @param _maxUsersToCheck   The new value of max users to check
+   */
+  event MaxUsersToCheckSet(uint256 _maxUsersToCheck);
 
   /*///////////////////////////////////////////////////////////////
                               ERRORS
@@ -206,6 +215,12 @@ interface IHorizonAccountingExtension {
   function GRT() external view returns (IERC20 _GRT);
 
   /**
+   * @notice The Arbitrable contract
+   * @return _arbitrable The Arbitrable contract
+   */
+  function ARBITRABLE() external view returns (IArbitrable _arbitrable);
+
+  /**
    * @notice The minimum thawing period
    * @return _MIN_THAWING_PERIOD The minimum thawing period
    */
@@ -216,6 +231,18 @@ interface IHorizonAccountingExtension {
    * @return _MAX_VERIFIER_CUT The maximum verifier cut
    */
   function MAX_VERIFIER_CUT() external view returns (uint256 _MAX_VERIFIER_CUT);
+
+  /**
+   * @notice The max number of users to slash
+   * @return _MAX_USERS_TO_SLASH The number of users to slash
+   */
+  function MAX_USERS_TO_SLASH() external view returns (uint256 _MAX_USERS_TO_SLASH);
+
+  /**
+   * @notice The maximum users to check
+   * @return _maxUsersToCheck The maximum users to check
+   */
+  function maxUsersToCheck() external view returns (uint256 _maxUsersToCheck);
 
   /**
    * @notice The total bonded tokens for a user
@@ -366,6 +393,15 @@ interface IHorizonAccountingExtension {
   function bond(address _bonder, bytes32 _requestId, uint256 _amount) external;
 
   /**
+   * @notice Allows a allowed module to bond a user's tokens for a request
+   * @param _bonder The address of the user to bond tokens for
+   * @param _requestId The id of the request the user is bonding for
+   * @param _amount The amount of GRT to bond
+   * @param _sender The address of the user who is bonding the tokens
+   */
+  function bond(address _bonder, bytes32 _requestId, uint256 _amount, address _sender) external;
+
+  /**
    * @notice Allows a valid module to release a user's tokens
    * @param _bonder The address of the user to release tokens for
    * @param _requestId The id of the request where the tokens were bonded
@@ -382,4 +418,10 @@ interface IHorizonAccountingExtension {
    * @param _maxUsersToCheck The maximum number of users to check before finishing the slashing
    */
   function slash(bytes32 _disputeId, uint256 _usersToSlash, uint256 _maxUsersToCheck) external;
+
+  /**
+   * @notice Sets the maximum users to check
+   * @param _maxUsersToCheck The new value of max users to check
+   */
+  function setMaxUsersToCheck(uint256 _maxUsersToCheck) external;
 }

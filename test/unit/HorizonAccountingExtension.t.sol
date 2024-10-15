@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.26;
 
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import {Helpers} from 'test/utils/Helpers.sol';
 
 import {IBondEscalationAccounting} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IBondEscalationAccounting.sol';
-import {IBondEscalationModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
+
 import {
+  EnumerableSet,
   HorizonAccountingExtension,
+  IArbitrable,
+  IBondEscalationModule,
   IERC20,
   IHorizonAccountingExtension,
   IHorizonStaking,
@@ -25,9 +26,21 @@ contract HorizonAccountingExtensionForTest is HorizonAccountingExtension {
     IHorizonStaking _horizonStaking,
     IOracle _oracle,
     IERC20 _grt,
+    IArbitrable _arbitrable,
     uint256 _minThawingPeriod,
+    uint256 _maxUsersToCheck,
     address[] memory _authorizedCallers
-  ) HorizonAccountingExtension(_horizonStaking, _oracle, _grt, _minThawingPeriod, _authorizedCallers) {}
+  )
+    HorizonAccountingExtension(
+      _horizonStaking,
+      _oracle,
+      _grt,
+      _arbitrable,
+      _minThawingPeriod,
+      _maxUsersToCheck,
+      _authorizedCallers
+    )
+  {}
 
   function approveModuleForTest(address _user, address _module) public {
     _approvals[_user].add(_module);
@@ -91,6 +104,7 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
   IHorizonStaking public horizonStaking;
   IOracle public oracle;
   IERC20 public grt;
+  IArbitrable public arbitrable;
   IBondEscalationModule public bondEscalationModule;
 
   /// Addresses
@@ -100,6 +114,10 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
   /// Constants
   uint32 public constant MAX_VERIFIER_CUT = 1_000_000;
   uint64 public constant MIN_THAWING_PERIOD = 30 days;
+  uint32 public constant SLASH_USERS = 1;
+
+  /// Mocks
+  uint256 public maxUsersToCheck = 1;
 
   /// Events
   event Paid(bytes32 indexed _requestId, address indexed _beneficiary, address indexed _payer, uint256 _amount);
@@ -121,11 +139,13 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
   event EscalationRewardClaimed(
     bytes32 indexed _requestId, bytes32 indexed _disputeId, address indexed _pledger, uint256 _reward, uint256 _released
   );
+  event MaxUsersToCheckSet(uint256 _maxUsersToCheck);
 
   function setUp() public {
     horizonStaking = IHorizonStaking(makeAddr('HorizonStaking'));
     oracle = IOracle(makeAddr('Oracle'));
     grt = IERC20(makeAddr('GRT'));
+    arbitrable = IArbitrable(makeAddr('Arbitrable'));
     bondEscalationModule = IBondEscalationModule(makeAddr('BondEscalationModule'));
 
     user = makeAddr('User');
@@ -134,8 +154,9 @@ contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
     address[] memory _authorizedCallers = new address[](1);
     _authorizedCallers[0] = authorizedCaller;
 
-    horizonAccountingExtension =
-      new HorizonAccountingExtensionForTest(horizonStaking, oracle, grt, MIN_THAWING_PERIOD, _authorizedCallers);
+    horizonAccountingExtension = new HorizonAccountingExtensionForTest(
+      horizonStaking, oracle, grt, arbitrable, MIN_THAWING_PERIOD, maxUsersToCheck, _authorizedCallers
+    );
   }
 }
 
@@ -152,8 +173,16 @@ contract HorizonAccountingExtension_Unit_Constructor is HorizonAccountingExtensi
     assertEq(address(horizonAccountingExtension.GRT()), address(grt));
   }
 
+  function test_setArbitrable() public view {
+    assertEq(address(horizonAccountingExtension.ARBITRABLE()), address(arbitrable));
+  }
+
   function test_setMinThawingPeriod() public view {
     assertEq(horizonAccountingExtension.MIN_THAWING_PERIOD(), MIN_THAWING_PERIOD);
+  }
+
+  function test_setMaxUsersToCheck() public view {
+    assertEq(horizonAccountingExtension.maxUsersToCheck(), maxUsersToCheck);
   }
 
   function test_setAuthorizedCallers() public view {
@@ -1608,5 +1637,29 @@ contract HorizonAccountingExtension_Unit_Slash is HorizonAccountingExtension_Uni
     vm.expectCall(address(horizonStaking), abi.encodeWithSelector(IHorizonStaking.slash.selector), 0);
 
     horizonAccountingExtension.slash(_mockDisputeId, _usersToSlash, _maxUsersToCheck);
+  }
+}
+
+contract HorizonAccountingExtension_Unit_SetMaxUsersToCheck is HorizonAccountingExtension_Unit_BaseTest {
+  modifier happyPath(address _arbitrator) {
+    _mockAndExpect(
+      address(arbitrable),
+      abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
+      abi.encode(true)
+    );
+    vm.startPrank(_arbitrator);
+    _;
+  }
+
+  function test_setMaxUsersToCheck(address _arbitrator, uint256 _maxUsersToCheck) public happyPath(_arbitrator) {
+    horizonAccountingExtension.setMaxUsersToCheck(_maxUsersToCheck);
+    assertEq(horizonAccountingExtension.maxUsersToCheck(), _maxUsersToCheck);
+  }
+
+  function test_emitMaxUsersToCheck(address _arbitrator, uint256 _maxUsersToCheck) public happyPath(_arbitrator) {
+    vm.expectEmit();
+    emit MaxUsersToCheckSet(_maxUsersToCheck);
+
+    horizonAccountingExtension.setMaxUsersToCheck(_maxUsersToCheck);
   }
 }
