@@ -2,13 +2,13 @@
 pragma solidity 0.8.26;
 
 import {ValidatorLib} from '@defi-wonderland/prophet-core/solidity/libraries/ValidatorLib.sol';
-import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 
 import {IAccountingExtension} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IAccountingExtension.sol';
 
 import {
   EBOFinalityModule,
+  EnumerableSet,
   IArbitrable,
   IEBOFinalityModule,
   IEBORequestCreator,
