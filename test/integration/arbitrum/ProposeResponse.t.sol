@@ -29,26 +29,26 @@ contract IntegrationProposeResponse is IntegrationBase {
     bytes32 _requestId = _createRequest();
 
     // Pass the response deadline
-    vm.warp(responseDeadline);
+    vm.warp(oracle.requestCreatedAt(_requestId) + responseDeadline);
 
     // Revert if the response is proposed after the response deadline
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooLateToPropose.selector);
     _proposeResponse(_requestId);
 
     // Do not pass the response deadline
-    vm.warp(responseDeadline - 1);
+    vm.warp(oracle.requestCreatedAt(_requestId) + responseDeadline - 1);
 
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
 
     // Assert Oracle::proposeResponse
-    assertEq(oracle.responseCreatedAt(_responseId), block.number);
+    assertEq(oracle.responseCreatedAt(_responseId), block.timestamp);
     // Assert HorizonAccountingExtension::bond
     assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), responseBondSize);
     assertEq(horizonAccountingExtension.totalBonded(_proposer), responseBondSize);
 
     // Revert if the response has already been proposed
-    vm.expectRevert(IOracle.Oracle_InvalidResponseBody.selector);
+    vm.expectRevert(IOracle.Oracle_ResponseAlreadyProposed.selector);
     _proposeResponse(_requestId);
   }
 }
