@@ -7,18 +7,21 @@ contract IntegrationProposeResponse is IntegrationBase {
   function setUp() public override {
     super.setUp();
 
+    // Add chain IDs
+    _addChains();
+
     // Set modules data
     _setRequestModuleData();
     _setResponseModuleData();
     _setDisputeModuleData();
     _setResolutionModuleData();
 
-    // Deposit GRT and approve modules
-    _depositGRT();
+    // Approve modules
     _approveModules();
 
-    // Add chain IDs
-    _addChains();
+    // Stake GRT and create provisions
+    _stakeGRT();
+    _createProvisions();
   }
 
   function test_ProposeResponse() public {
@@ -40,9 +43,9 @@ contract IntegrationProposeResponse is IntegrationBase {
 
     // Assert Oracle::proposeResponse
     assertEq(oracle.responseCreatedAt(_responseId), block.number);
-    // Assert BondEscalationAccounting::bond
-    assertEq(bondEscalationAccounting.bondedAmountOf(_proposer, graphToken, _requestId), responseBondSize);
-    assertEq(bondEscalationAccounting.balanceOf(_proposer, graphToken), 0);
+    // Assert HorizonAccountingExtension::bond
+    assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), responseBondSize);
+    assertEq(horizonAccountingExtension.totalBonded(_proposer), responseBondSize);
 
     // Revert if the response has already been proposed
     vm.expectRevert(IOracle.Oracle_InvalidResponseBody.selector);
