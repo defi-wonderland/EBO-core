@@ -15,8 +15,6 @@ import {
 
 import {Validator} from '@defi-wonderland/prophet-core/solidity/contracts/Validator.sol';
 
-import 'forge-std/Console.sol';
-
 contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
