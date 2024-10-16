@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import {IOracle, Oracle} from '@defi-wonderland/prophet-core/solidity/contracts/Oracle.sol';
@@ -35,6 +35,7 @@ import {
   _ARBITRUM_SEPOLIA_EPOCH_MANAGER,
   _ARBITRUM_SEPOLIA_GRAPH_TOKEN,
   _ARBITRUM_SEPOLIA_HORIZON_STAKING,
+  _MAX_USERS_TO_CHECK,
   _MIN_THAWING_PERIOD
 } from 'script/Constants.sol';
 
@@ -145,8 +146,9 @@ contract Deploy is Script {
 
     // Deploy `HorizonAccountingExtension`
     address[] memory _authorizedCallers = _instantiateAuthorizedCallers();
-    horizonAccountingExtension =
-      new HorizonAccountingExtension(horizonStaking, oracle, graphToken, _MIN_THAWING_PERIOD, _authorizedCallers);
+    horizonAccountingExtension = new HorizonAccountingExtension(
+      horizonStaking, oracle, graphToken, arbitrable, _MIN_THAWING_PERIOD, _MAX_USERS_TO_CHECK, _authorizedCallers
+    );
     console.log('`HorizonAccountingExtension` deployed at:', address(horizonAccountingExtension));
 
     // Deploy `CouncilArbitrator`

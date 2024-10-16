@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
@@ -7,6 +7,8 @@ import {IBondEscalationModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
 import {IERC20} from '@openzeppelin/contracts/token/ERC20/IERC20.sol';
 import {IHorizonStaking} from 'interfaces/external/IHorizonStaking.sol';
+
+import {IArbitrable} from 'interfaces/IArbitrable.sol';
 
 interface IHorizonAccountingExtension is IValidator {
   /*///////////////////////////////////////////////////////////////
@@ -87,6 +89,13 @@ interface IHorizonAccountingExtension is IValidator {
   event EscalationRewardClaimed(
     bytes32 indexed _requestId, bytes32 indexed _disputeId, address indexed _pledger, uint256 _reward, uint256 _released
   );
+
+  /**
+   * @notice Emitted when max users to check is set
+   *
+   * @param _maxUsersToCheck   The new value of max users to check
+   */
+  event MaxUsersToCheckSet(uint256 _maxUsersToCheck);
 
   /*///////////////////////////////////////////////////////////////
                               ERRORS
@@ -194,6 +203,12 @@ interface IHorizonAccountingExtension is IValidator {
   function GRT() external view returns (IERC20 _GRT);
 
   /**
+   * @notice The Arbitrable contract
+   * @return _arbitrable The Arbitrable contract
+   */
+  function ARBITRABLE() external view returns (IArbitrable _arbitrable);
+
+  /**
    * @notice The minimum thawing period
    * @return _MIN_THAWING_PERIOD The minimum thawing period
    */
@@ -204,6 +219,18 @@ interface IHorizonAccountingExtension is IValidator {
    * @return _MAX_VERIFIER_CUT The maximum verifier cut
    */
   function MAX_VERIFIER_CUT() external view returns (uint32 _MAX_VERIFIER_CUT);
+
+  /**
+   * @notice The max number of users to slash
+   * @return _MAX_USERS_TO_SLASH The number of users to slash
+   */
+  function MAX_USERS_TO_SLASH() external view returns (uint32 _MAX_USERS_TO_SLASH);
+
+  /**
+   * @notice The maximum users to check
+   * @return _maxUsersToCheck The maximum users to check
+   */
+  function maxUsersToCheck() external view returns (uint128 _maxUsersToCheck);
 
   /**
    * @notice The total bonded tokens for a user
@@ -368,4 +395,18 @@ interface IHorizonAccountingExtension is IValidator {
    * @param _amount The amount of GRT to release
    */
   function release(address _bonder, bytes32 _requestId, IERC20 _token, uint256 _amount) external;
+
+  /**
+   * @notice Slashes the users that lost the dispute
+   * @param _disputeId The ID of the dispute
+   * @param _usersToSlash The number of users to slash
+   * @param _maxUsersToCheck The number of users to check
+   */
+  function slash(bytes32 _disputeId, uint256 _usersToSlash, uint256 _maxUsersToCheck) external;
+
+  /**
+   * @notice Sets the maximum users to check
+   * @param _maxUsersToCheck The new value of max users to check
+   */
+  function setMaxUsersToCheck(uint128 _maxUsersToCheck) external;
 }

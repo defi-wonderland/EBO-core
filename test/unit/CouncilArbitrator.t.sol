@@ -1,19 +1,19 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 import {IValidator} from '@defi-wonderland/prophet-core/solidity/interfaces/IValidator.sol';
-import {ValidatorLib} from '@defi-wonderland/prophet-core/solidity/libraries/ValidatorLib.sol';
-import {IArbitrator} from '@defi-wonderland/prophet-modules/solidity/interfaces/IArbitrator.sol';
-import {IArbitratorModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 
 import {Helpers} from 'test/utils/Helpers.sol';
 
-import {IArbitrable} from 'interfaces/IArbitrable.sol';
-import {ICouncilArbitrator} from 'interfaces/ICouncilArbitrator.sol';
-
-import {CouncilArbitrator} from 'contracts/CouncilArbitrator.sol';
+import {
+  CouncilArbitrator,
+  IArbitrable,
+  IArbitrator,
+  IArbitratorModule,
+  ICouncilArbitrator,
+  IOracle,
+  ValidatorLib
+} from 'contracts/CouncilArbitrator.sol';
 
 import 'forge-std/Test.sol';
 

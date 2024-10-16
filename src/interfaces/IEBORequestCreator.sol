@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
@@ -263,9 +263,8 @@ interface IEBORequestCreator {
   /**
    * @notice Set the finality data module
    * @param _finalityModule The finality module
-   * @param _finalityModuleData The finality module data
    */
-  function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external;
+  function setFinalityModuleData(address _finalityModule) external;
 
   /**
    * @notice Set the epoch manager

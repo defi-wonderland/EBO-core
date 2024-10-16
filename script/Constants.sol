@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 // Arbitrum One
@@ -19,3 +19,4 @@ address constant _ARBITRUM_SEPOLIA_COUNCIL = address(0x101);
 
 // Data
 uint64 constant _MIN_THAWING_PERIOD = 3 days;
+uint128 constant _MAX_USERS_TO_CHECK = 1;

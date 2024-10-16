@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
-import {IBondEscalationModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
-import {IArbitratorModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
-import {IBondedResponseModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
-import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
-import {IArbitrable, IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
-import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
+import {
+  IArbitrable,
+  IArbitratorModule,
+  IBondEscalationModule,
+  IBondedResponseModule,
+  IEBORequestCreator,
+  IEBORequestModule,
+  IEpochManager,
+  IOracle
+} from 'interfaces/IEBORequestCreator.sol';
 
 contract EBORequestCreator is IEBORequestCreator {
   using EnumerableSet for EnumerableSet.Bytes32Set;
@@ -161,15 +161,12 @@ contract EBORequestCreator is IEBORequestCreator {
     emit ResolutionModuleDataSet(_resolutionModule, _resolutionModuleData);
   }
 
-  // TODO: Why set finality module data?
-  // TODO: Change module data to the specific interface when we have
   /// @inheritdoc IEBORequestCreator
-  function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external {
+  function setFinalityModuleData(address _finalityModule) external {
     ARBITRABLE.validateArbitrator(msg.sender);
     requestData.finalityModule = _finalityModule;
-    requestData.finalityModuleData = _finalityModuleData;
 
-    emit FinalityModuleDataSet(_finalityModule, _finalityModuleData);
+    emit FinalityModuleDataSet(_finalityModule, new bytes(0));
   }
 
   /// @inheritdoc IEBORequestCreator
