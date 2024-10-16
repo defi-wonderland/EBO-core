@@ -353,6 +353,8 @@ interface IHorizonAccountingExtension is IValidator {
 
   /**
    * @notice Claims the reward for the pledger the given dispute
+   * @dev After the established thawing period the losing pledgers can withdraw their stake from Horizon.
+   *    Rewards should be claimed before that period ends to ensure that funds are available.
    * @param _disputeId The ID of the bond-escalated dispute
    * @param _pledger Address of the pledger to claim the rewards
    */
@@ -397,10 +399,12 @@ interface IHorizonAccountingExtension is IValidator {
   function release(address _bonder, bytes32 _requestId, IERC20 _token, uint256 _amount) external;
 
   /**
-   * @notice Slashes the users that lost the dispute
+   * @notice Allows a anyone to slash a number of users for a dispute
+   * @dev After the established thawing period the losing pledgers can withdraw their stake from Horizon.
+   *    Users should be slashed before that period ends to ensure that funds are available.
    * @param _disputeId The ID of the dispute
    * @param _usersToSlash The number of users to slash
-   * @param _maxUsersToCheck The number of users to check
+   * @param _maxUsersToCheck The maximum number of users to check before finishing the slashing
    */
   function slash(bytes32 _disputeId, uint256 _usersToSlash, uint256 _maxUsersToCheck) external;
 
