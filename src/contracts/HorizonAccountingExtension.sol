@@ -15,6 +15,8 @@ import {
 
 import {Validator} from '@defi-wonderland/prophet-core/solidity/contracts/Validator.sol';
 
+import 'forge-std/Console.sol';
+
 contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   using EnumerableSet for EnumerableSet.AddressSet;
   using SafeERC20 for IERC20;
@@ -229,8 +231,8 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       // If not enough balance, slash some users to get enough balance
       uint256 _balance = GRT.balanceOf(address(this)); // TODO: What if the balance is enough by means other than slashing?
 
-      // Claim one by one until the balance is enough
-      while (_balance < _claimAmount) {
+      // TODO: How many iterations should we do?
+      while (_balance < _rewardAmount) {
         _balance += _slash(_disputeId, MAX_USERS_TO_SLASH, maxUsersToCheck, _result, _status);
       }
 

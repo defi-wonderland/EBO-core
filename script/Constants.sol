@@ -19,4 +19,4 @@ address constant _ARBITRUM_SEPOLIA_COUNCIL = address(0x101);
 
 // Data
 uint64 constant _MIN_THAWING_PERIOD = 3 days;
-uint128 constant _MAX_USERS_TO_CHECK = 1;
+uint128 constant _MAX_USERS_TO_CHECK = 10;
