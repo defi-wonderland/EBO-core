@@ -40,6 +40,7 @@ contract IntegrationDisputeResponse is IntegrationBase {
     _disputeResponse(_requestId, _responseId);
 
     // TODO: Commented out because of a bug in prophet core dispute module
+    // Fix after this task is done https://linear.app/defi-wonderland/issue/OPO-669/incorrect-validation-in-bondescalationmodule
 
     // Pass the dispute deadline
     // vm.warp(_responseCreation + disputeDeadline + 1);
