@@ -28,15 +28,17 @@ contract IntegrationProposeResponse is IntegrationBase {
     // Create the request
     bytes32 _requestId = _createRequest();
 
+    uint256 _requestCreatedAt = oracle.requestCreatedAt(_requestId);
+
     // Pass the response deadline
-    vm.warp(oracle.requestCreatedAt(_requestId) + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the response is proposed after the response deadline
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooLateToPropose.selector);
     _proposeResponse(_requestId);
 
     // Do not pass the response deadline
-    vm.warp(oracle.requestCreatedAt(_requestId) + responseDeadline - 1);
+    vm.warp(_requestCreatedAt + responseDeadline - 1);
 
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
