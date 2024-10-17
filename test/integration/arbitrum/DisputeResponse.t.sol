@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import './IntegrationBase.sol';
@@ -7,18 +7,21 @@ contract IntegrationDisputeResponse is IntegrationBase {
   function setUp() public override {
     super.setUp();
 
+    // Add chain IDs
+    _addChains();
+
     // Set modules data
     _setRequestModuleData();
     _setResponseModuleData();
     _setDisputeModuleData();
     _setResolutionModuleData();
 
-    // Deposit GRT and approve modules
-    _depositGRT();
+    // Approve modules
     _approveModules();
 
-    // Add chain IDs
-    _addChains();
+    // Stake GRT and create provisions
+    _stakeGRT();
+    _createProvisions();
   }
 
   function test_DisputeResponse() public {
@@ -58,9 +61,9 @@ contract IntegrationDisputeResponse is IntegrationBase {
     IBondEscalationModule.BondEscalation memory _escalation = bondEscalationModule.getEscalation(_requestId);
     assertEq(_escalation.disputeId, _disputeId);
     assertEq(uint8(_escalation.status), uint8(IBondEscalationModule.BondEscalationStatus.Active));
-    // Assert BondEscalationAccounting::bond
-    assertEq(bondEscalationAccounting.bondedAmountOf(_disputer, graphToken, _requestId), disputeBondSize);
-    assertEq(bondEscalationAccounting.balanceOf(_disputer, graphToken), 0);
+    // Assert HorizonAccountingExtension::bond
+    assertEq(horizonAccountingExtension.bondedForRequest(_disputer, _requestId), disputeBondSize);
+    assertEq(horizonAccountingExtension.totalBonded(_disputer), disputeBondSize);
 
     // Revert if the response has already been disputed
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_ResponseAlreadyDisputed.selector, _responseId));

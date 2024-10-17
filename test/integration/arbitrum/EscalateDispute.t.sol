@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import './IntegrationBase.sol';
@@ -7,18 +7,21 @@ contract IntegrationEscalateDispute is IntegrationBase {
   function setUp() public override {
     super.setUp();
 
+    // Add chain IDs
+    _addChains();
+
     // Set modules data
     _setRequestModuleData();
     _setResponseModuleData();
     _setDisputeModuleData();
     _setResolutionModuleData();
 
-    // Deposit GRT and approve modules
-    _depositGRT();
+    // Approve modules
     _approveModules();
 
-    // Add chain IDs
-    _addChains();
+    // Stake GRT and create provisions
+    _stakeGRT();
+    _createProvisions();
   }
 
   function test_EscalateDispute() public {

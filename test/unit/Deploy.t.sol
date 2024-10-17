@@ -1,9 +1,7 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import {IOracle, Oracle} from '@defi-wonderland/prophet-core/solidity/contracts/Oracle.sol';
-import {BondEscalationAccounting} from
-  '@defi-wonderland/prophet-modules/solidity/contracts/extensions/BondEscalationAccounting.sol';
 import {
   BondEscalationModule,
   IBondEscalationModule
@@ -16,36 +14,32 @@ import {
   BondedResponseModule,
   IBondedResponseModule
 } from '@defi-wonderland/prophet-modules/solidity/contracts/modules/response/BondedResponseModule.sol';
+import {
+  IAccountingExtension,
+  IBondEscalationAccounting
+} from '@defi-wonderland/prophet-modules/solidity/interfaces/extensions/IBondEscalationAccounting.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
+import {Arbitrable} from 'contracts/Arbitrable.sol';
 import {CouncilArbitrator} from 'contracts/CouncilArbitrator.sol';
 import {EBOFinalityModule} from 'contracts/EBOFinalityModule.sol';
 import {EBORequestCreator} from 'contracts/EBORequestCreator.sol';
 import {EBORequestModule, IEBORequestModule} from 'contracts/EBORequestModule.sol';
+import {HorizonAccountingExtension} from 'contracts/HorizonAccountingExtension.sol';
 
 import {Deploy} from 'script/Deploy.s.sol';
 
-import {_ARBITRATOR, _COUNCIL, _EPOCH_MANAGER, _GRAPH_TOKEN} from 'script/Constants.sol';
+import {
+  _ARBITRUM_SEPOLIA_ARBITRATOR,
+  _ARBITRUM_SEPOLIA_COUNCIL,
+  _ARBITRUM_SEPOLIA_EPOCH_MANAGER,
+  _ARBITRUM_SEPOLIA_GRAPH_TOKEN,
+  _ARBITRUM_SEPOLIA_HORIZON_STAKING,
+  _MAX_USERS_TO_CHECK,
+  _MIN_THAWING_PERIOD
+} from 'script/Constants.sol';
 
 import 'forge-std/Test.sol';
-
-contract MockDeploy is Deploy {
-  address internal _ghost_precomputedAddress;
-  bool internal _ghost_mockPrecomputeCreateAddress;
-
-  function mock_setPrecomputedAddress(address _precomputedAddress) external {
-    _ghost_precomputedAddress = _precomputedAddress;
-    _ghost_mockPrecomputeCreateAddress = true;
-  }
-
-  function _precomputeCreateAddress(uint256 _deploymentOffset) internal view override returns (address _targetAddress) {
-    if (_ghost_mockPrecomputeCreateAddress) {
-      _targetAddress = _ghost_precomputedAddress;
-    } else {
-      _targetAddress = super._precomputeCreateAddress(_deploymentOffset);
-    }
-  }
-}
 
 contract UnitDeploy is Test {
   MockDeploy public deploy;
@@ -62,10 +56,11 @@ contract UnitDeploy is Test {
     deploy.setUp();
 
     // it should define The Graph accounts
-    assertEq(address(deploy.graphToken()).code, _GRAPH_TOKEN.code);
-    assertEq(address(deploy.epochManager()).code, _EPOCH_MANAGER.code);
-    assertEq(address(deploy.arbitrator()), _ARBITRATOR);
-    assertEq(address(deploy.council()), _COUNCIL);
+    assertEq(address(deploy.graphToken()).code, _ARBITRUM_SEPOLIA_GRAPH_TOKEN.code);
+    assertEq(address(deploy.horizonStaking()).code, _ARBITRUM_SEPOLIA_HORIZON_STAKING.code);
+    assertEq(address(deploy.epochManager()).code, _ARBITRUM_SEPOLIA_EPOCH_MANAGER.code);
+    assertEq(address(deploy.arbitrator()), _ARBITRUM_SEPOLIA_ARBITRATOR);
+    assertEq(address(deploy.council()), _ARBITRUM_SEPOLIA_COUNCIL);
   }
 
   function test_RunRevertWhen_TheGraphAccountsAreNotSetUp() public {
@@ -75,7 +70,9 @@ contract UnitDeploy is Test {
   }
 
   modifier givenTheGraphAccountsAreSetUp() {
-    vm.mockCall(_EPOCH_MANAGER, abi.encodeCall(IEpochManager.currentEpoch, ()), abi.encode(_currentEpoch));
+    vm.mockCall(
+      _ARBITRUM_SEPOLIA_EPOCH_MANAGER, abi.encodeCall(IEpochManager.currentEpoch, ()), abi.encode(_currentEpoch)
+    );
 
     deploy.setUp();
     _;
@@ -138,10 +135,27 @@ contract UnitDeploy is Test {
     assertEq(deploy.eboFinalityModule().getAllowedEBORequestCreators()[0], address(deploy.eboRequestCreator()));
     assertEq(address(deploy.eboFinalityModule().ARBITRABLE()), address(deploy.arbitrable()));
 
-    // it should deploy `BondEscalationAccounting` with correct args
-    BondEscalationAccounting _bondEscalationAccounting = new BondEscalationAccounting(deploy.oracle());
-    assertEq(address(deploy.bondEscalationAccounting()).code, address(_bondEscalationAccounting).code);
-    assertEq(address(deploy.bondEscalationAccounting().ORACLE()), address(deploy.oracle()));
+    // it should deploy `HorizonAccountingExtension` with correct args
+    address[] memory _authorizedCallers = _instantiateAuthorizedCallers();
+    HorizonAccountingExtension _horizonAccountingExtension = new HorizonAccountingExtension(
+      deploy.horizonStaking(),
+      deploy.oracle(),
+      deploy.graphToken(),
+      deploy.arbitrable(),
+      _MIN_THAWING_PERIOD,
+      _MAX_USERS_TO_CHECK,
+      _authorizedCallers
+    );
+    assertEq(address(deploy.horizonAccountingExtension()).code, address(_horizonAccountingExtension).code);
+    assertEq(address(deploy.horizonAccountingExtension().HORIZON_STAKING()), address(deploy.horizonStaking()));
+    assertEq(address(deploy.horizonAccountingExtension().ORACLE()), address(deploy.oracle()));
+    assertEq(address(deploy.horizonAccountingExtension().ARBITRABLE()), address(deploy.arbitrable()));
+    assertEq(address(deploy.horizonAccountingExtension().GRT()), address(deploy.graphToken()));
+    assertEq(deploy.horizonAccountingExtension().MIN_THAWING_PERIOD(), _MIN_THAWING_PERIOD);
+    assertEq(deploy.horizonAccountingExtension().maxUsersToCheck(), _MAX_USERS_TO_CHECK);
+    for (uint256 _i; _i < _authorizedCallers.length; ++_i) {
+      assertTrue(deploy.horizonAccountingExtension().authorizedCallers(_authorizedCallers[_i]));
+    }
 
     // it should deploy `EBORequestCreator` with correct args
     IOracle.Request memory _requestData = _instantiateRequestData();
@@ -158,6 +172,9 @@ contract UnitDeploy is Test {
     assertEq(address(deploy.councilArbitrator()).code, address(_councilArbitrator).code);
     assertEq(address(deploy.councilArbitrator().ARBITRATOR_MODULE()), address(deploy.arbitratorModule()));
     assertEq(address(deploy.councilArbitrator().ARBITRABLE()), address(deploy.arbitrable()));
+
+    // it should deploy `Arbitrable`
+    assertEq(address(deploy.arbitrable()).code, type(Arbitrable).runtimeCode);
   }
 
   function _instantiateRequestData() internal view returns (IOracle.Request memory _requestData) {
@@ -185,7 +202,7 @@ contract UnitDeploy is Test {
     view
     returns (IEBORequestModule.RequestParameters memory _requestParams)
   {
-    _requestParams.accountingExtension = deploy.bondEscalationAccounting();
+    _requestParams.accountingExtension = IAccountingExtension(address(deploy.horizonAccountingExtension()));
     _requestParams.paymentAmount = deploy.paymentAmount();
   }
 
@@ -194,7 +211,7 @@ contract UnitDeploy is Test {
     view
     returns (IBondedResponseModule.RequestParameters memory _responseParams)
   {
-    _responseParams.accountingExtension = deploy.bondEscalationAccounting();
+    _responseParams.accountingExtension = IAccountingExtension(address(deploy.horizonAccountingExtension()));
     _responseParams.bondToken = deploy.graphToken();
     _responseParams.bondSize = deploy.responseBondSize();
     _responseParams.deadline = deploy.responseDeadline();
@@ -206,7 +223,7 @@ contract UnitDeploy is Test {
     view
     returns (IBondEscalationModule.RequestParameters memory _disputeParams)
   {
-    _disputeParams.accountingExtension = deploy.bondEscalationAccounting();
+    _disputeParams.accountingExtension = IBondEscalationAccounting(address(deploy.horizonAccountingExtension()));
     _disputeParams.bondToken = deploy.graphToken();
     _disputeParams.bondSize = deploy.disputeBondSize();
     _disputeParams.maxNumberOfEscalations = deploy.maxNumberOfEscalations();
@@ -221,5 +238,28 @@ contract UnitDeploy is Test {
     returns (IArbitratorModule.RequestParameters memory _resolutionParams)
   {
     _resolutionParams.arbitrator = address(deploy.councilArbitrator());
+  }
+
+  function _instantiateAuthorizedCallers() internal view returns (address[] memory _authorizedCallers) {
+    _authorizedCallers = new address[](1);
+    _authorizedCallers[0] = address(deploy.bondEscalationModule());
+  }
+}
+
+contract MockDeploy is Deploy {
+  address internal _ghost_precomputedAddress;
+  bool internal _ghost_mockPrecomputeCreateAddress;
+
+  function mock_setPrecomputedAddress(address _precomputedAddress) external {
+    _ghost_precomputedAddress = _precomputedAddress;
+    _ghost_mockPrecomputeCreateAddress = true;
+  }
+
+  function _precomputeCreateAddress(uint256 _deploymentOffset) internal view override returns (address _targetAddress) {
+    if (_ghost_mockPrecomputeCreateAddress) {
+      _targetAddress = _ghost_precomputedAddress;
+    } else {
+      _targetAddress = super._precomputeCreateAddress(_deploymentOffset);
+    }
   }
 }

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 interface IHorizonStaking {
@@ -9,6 +9,7 @@ interface IHorizonStaking {
    * @return The provision details.
    */
   function getProvision(address serviceProvider, address verifier) external view returns (Provision memory);
+
   /**
    * @notice Deposit tokens on the staking contract.
    * @dev Pulls tokens from the caller.

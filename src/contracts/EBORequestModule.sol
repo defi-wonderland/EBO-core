@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import {IModule, Module} from '@defi-wonderland/prophet-core/solidity/contracts/Module.sol';
@@ -34,30 +34,12 @@ contract EBORequestModule is Module, IEBORequestModule {
   }
 
   /// @inheritdoc IEBORequestModule
-  function createRequest(bytes32 _requestId, bytes calldata _data, address _requester) external onlyOracle {
+  function createRequest(
+    bytes32, /* _requestId */
+    bytes calldata, /* _data */
+    address _requester
+  ) external view onlyOracle {
     if (!_eboRequestCreatorsAllowed.contains(_requester)) revert EBORequestModule_InvalidRequester();
-
-    RequestParameters memory _params = decodeRequestData(_data);
-
-    // TODO: Bond for the rewards
-  }
-
-  /// @inheritdoc IEBORequestModule
-  function finalizeRequest(
-    IOracle.Request calldata _request,
-    IOracle.Response calldata _response,
-    address _finalizer
-  ) external override(Module, IEBORequestModule) onlyOracle {
-    if (!_eboRequestCreatorsAllowed.contains(_request.requester)) revert EBORequestModule_InvalidRequester();
-
-    // TODO: Redeclare the `Request` struct
-    // RequestParameters memory _params = decodeRequestData(_request.requestModuleData);
-
-    if (_response.requestId != 0) {
-      // TODO: Bond for the rewards
-    }
-
-    emit RequestFinalized(_response.requestId, _response, _finalizer);
   }
 
   /// @inheritdoc IEBORequestModule
