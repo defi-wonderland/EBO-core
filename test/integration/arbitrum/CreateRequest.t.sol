@@ -51,7 +51,7 @@ contract IntegrationCreateRequest is IntegrationBase {
     bytes32 _requestId = eboRequestCreator.requestIdPerChainAndEpoch(_chainId, _currentEpoch);
 
     // Check that the request ID is stored correctly
-    assertEq(oracle.requestCreatedAt(_requestId), block.number);
+    assertEq(oracle.requestCreatedAt(_requestId), block.timestamp);
 
     // Expect revert if the request is already created
     vm.prank(_requester);

@@ -7,6 +7,7 @@ contract IntegrationBondEscalation is IntegrationBase {
   bytes32 internal _requestId;
   bytes32 internal _responseId;
   bytes32 internal _disputeId;
+  uint256 internal _disputeCreatedAt;
 
   function setUp() public override {
     super.setUp();
@@ -33,25 +34,27 @@ contract IntegrationBondEscalation is IntegrationBase {
     _responseId = _proposeResponse(_requestId);
     // Dispute the response
     _disputeId = _disputeResponse(_requestId, _responseId);
+
+    _disputeCreatedAt = oracle.disputeCreatedAt(_disputeId);
   }
 
   function test_PledgeForDispute() public {
     // Pass the dispute deadline, but not the tying buffer
-    vm.warp(disputeDeadline + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + 1);
 
     // Revert if breaking a tie during the tying buffer
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_CannotBreakTieDuringTyingBuffer.selector);
     _pledgeForDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Revert if the bond escalation deadline and the tying buffer have passed
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationOver.selector);
     _pledgeForDispute(_requestId, _disputeId);
 
     // Do not pass the dispute deadline nor the tying buffer
-    vm.warp(disputeDeadline);
+    vm.warp(_disputeCreatedAt + disputeDeadline);
 
     // Pledge for the dispute
     _pledgeForDispute(_requestId, _disputeId);
@@ -72,21 +75,21 @@ contract IntegrationBondEscalation is IntegrationBase {
 
   function test_PledgeAgainstDispute() public {
     // Pass the dispute deadline, but not the tying buffer
-    vm.warp(disputeDeadline + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + 1);
 
     // Revert if breaking a tie during the tying buffer
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_CannotBreakTieDuringTyingBuffer.selector);
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Revert if the bond escalation deadline and the tying buffer have passed
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationOver.selector);
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Do not pass the dispute deadline nor the tying buffer
-    vm.warp(disputeDeadline);
+    vm.warp(_disputeCreatedAt + disputeDeadline);
 
     // Pledge against the dispute
     _pledgeAgainstDispute(_requestId, _disputeId);
@@ -114,7 +117,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline, but not the tying buffer
-    vm.warp(disputeDeadline + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + 1);
 
     // Pledge for the dispute, again
     _pledgeForDispute(_requestId, _disputeId);
@@ -144,14 +147,14 @@ contract IntegrationBondEscalation is IntegrationBase {
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Revert if the bond escalation has tied
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_ShouldBeEscalated.selector);
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     // Do not pass the dispute deadline nor the tying buffer
-    vm.warp(disputeDeadline);
+    vm.warp(_disputeCreatedAt + disputeDeadline);
 
     // Pledge against the dispute
     _pledgeAgainstDispute(_requestId, _disputeId);
@@ -161,7 +164,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     _pledgeForDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
@@ -211,14 +214,14 @@ contract IntegrationBondEscalation is IntegrationBase {
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Revert if the bond escalation has tied
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_ShouldBeEscalated.selector);
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     // Do not pass the dispute deadline nor the tying buffer
-    vm.warp(disputeDeadline);
+    vm.warp(_disputeCreatedAt + disputeDeadline);
 
     // Pledge for the dispute
     _pledgeForDispute(_requestId, _disputeId);
@@ -228,7 +231,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
@@ -284,7 +287,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     _pledgeForDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
@@ -328,7 +331,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
