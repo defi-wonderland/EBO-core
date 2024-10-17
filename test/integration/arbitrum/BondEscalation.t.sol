@@ -32,22 +32,24 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
+    uint256 _disputeCreatedAt = oracle.disputeCreatedAt(_disputeId);
+
     // Pass the dispute deadline, but not the tying buffer
-    vm.warp(disputeDeadline + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + 1);
 
     // Revert if breaking a tie during the tying buffer
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_CannotBreakTieDuringTyingBuffer.selector);
     _pledgeForDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Revert if the bond escalation deadline and the tying buffer have passed
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationOver.selector);
     _pledgeForDispute(_requestId, _disputeId);
 
     // Do not pass the dispute deadline nor the tying buffer
-    vm.warp(disputeDeadline);
+    vm.warp(_disputeCreatedAt + disputeDeadline);
 
     // Pledge for the dispute
     _pledgeForDispute(_requestId, _disputeId);
@@ -74,22 +76,24 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
+    uint256 _disputeCreatedAt = oracle.disputeCreatedAt(_disputeId);
+
     // Pass the dispute deadline, but not the tying buffer
-    vm.warp(disputeDeadline + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + 1);
 
     // Revert if breaking a tie during the tying buffer
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_CannotBreakTieDuringTyingBuffer.selector);
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Revert if the bond escalation deadline and the tying buffer have passed
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationOver.selector);
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Do not pass the dispute deadline nor the tying buffer
-    vm.warp(disputeDeadline);
+    vm.warp(_disputeCreatedAt + disputeDeadline);
 
     // Pledge against the dispute
     _pledgeAgainstDispute(_requestId, _disputeId);
@@ -116,6 +120,8 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
+    uint256 _disputeCreatedAt = oracle.disputeCreatedAt(_disputeId);
+
     // Pledge for the dispute
     _pledgeForDispute(_requestId, _disputeId);
 
@@ -124,7 +130,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline, but not the tying buffer
-    vm.warp(disputeDeadline + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + 1);
 
     // Pledge for the dispute, again
     _pledgeForDispute(_requestId, _disputeId);
@@ -156,19 +162,21 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
+    uint256 _disputeCreatedAt = oracle.disputeCreatedAt(_disputeId);
+
     // Revert if the bond escalation deadline and the tying buffer have not passed
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationNotOver.selector);
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Revert if the bond escalation has tied
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_ShouldBeEscalated.selector);
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     // Do not pass the dispute deadline nor the tying buffer
-    vm.warp(disputeDeadline);
+    vm.warp(_disputeCreatedAt + disputeDeadline);
 
     // Pledge against the dispute
     _pledgeAgainstDispute(_requestId, _disputeId);
@@ -178,7 +186,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     _pledgeForDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
@@ -230,19 +238,21 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
+    uint256 _disputeCreatedAt = oracle.disputeCreatedAt(_disputeId);
+
     // Revert if the bond escalation deadline and the tying buffer have not passed
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationNotOver.selector);
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Revert if the bond escalation has tied
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_ShouldBeEscalated.selector);
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     // Do not pass the dispute deadline nor the tying buffer
-    vm.warp(disputeDeadline);
+    vm.warp(_disputeCreatedAt + disputeDeadline);
 
     // Pledge for the dispute
     _pledgeForDispute(_requestId, _disputeId);
@@ -252,7 +262,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
@@ -303,6 +313,8 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
+    uint256 _disputeCreatedAt = oracle.disputeCreatedAt(_disputeId);
+
     // Revert if the bond escalation has not been settled
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NoEscalationResult.selector);
     horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerFor);
@@ -315,7 +327,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     _pledgeForDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
@@ -354,6 +366,8 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
+    uint256 _disputeCreatedAt = oracle.disputeCreatedAt(_disputeId);
+
     // Revert if the bond escalation has not been settled
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NoEscalationResult.selector);
     horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerAgainst);
@@ -366,7 +380,7 @@ contract IntegrationBondEscalation is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
 
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
