@@ -459,12 +459,13 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
     if (_provisionData.maxVerifierCut != MAX_VERIFIER_CUT) revert HorizonAccountingExtension_InvalidMaxVerifierCut();
     if (_provisionData.thawingPeriod < MIN_THAWING_PERIOD) revert HorizonAccountingExtension_InvalidThawingPeriod();
-    if (_amount > _provisionData.tokens) revert HorizonAccountingExtension_InsufficientTokens();
-    // TODO: `thaw()` does not subtract from provision `tokens` but adds to `tokensThawing`
+
+    uint256 _availableTokens = _provisionData.tokens - _provisionData.tokensThawing;
+    if (_amount > _availableTokens) revert HorizonAccountingExtension_InsufficientTokens();
 
     totalBonded[_bonder] += _amount;
 
-    if (totalBonded[_bonder] > _provisionData.tokens + _provisionData.tokensThawing) {
+    if (totalBonded[_bonder] > _provisionData.tokens) {
       revert HorizonAccountingExtension_InsufficientBondedTokens();
     }
   }

@@ -52,6 +52,17 @@ contract IntegrationDisputeResponse is IntegrationBase {
     // Do not pass the dispute deadline
     vm.warp(_responseCreation + disputeDisputeWindow - 1);
 
+    // Thaw some tokens
+    _thaw(_disputer, 1);
+
+    // Disputing the response reverts because of insufficient funds as the disputer thawed some tokens
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector);
+    _disputeResponse(_requestId, _responseId);
+
+    // Reprovision the thawed token
+    _stakeGRT();
+    _addToProvision(_disputer, 1);
+
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
