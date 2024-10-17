@@ -96,6 +96,10 @@ contract HorizonAccountingExtensionForTest is HorizonAccountingExtension {
   function setAuthorizedCallerForTest(address _caller) public {
     authorizedCallers[_caller] = true;
   }
+
+  function setDisputeBalanceForTest(bytes32 _disputeId, uint256 _balance) public {
+    disputeBalance[_disputeId] = _balance;
+  }
 }
 
 contract HorizonAccountingExtension_Unit_BaseTest is Test, Helpers {
@@ -558,6 +562,10 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     vm.assume(_amount > type(uint16).max && _amount < type(uint64).max);
     vm.assume(_bondSize > 0 && _bondSize < type(uint16).max);
 
+    horizonAccountingExtension.setDisputeBalanceForTest(
+      _mockDisputeId, _amount * (_pledgesForDispute + _pledgesAgainstDispute)
+    );
+
     horizonAccountingExtension.setEscalationResultForTest(
       _mockDisputeId, _mockRequestId, _amount, _bondSize, bondEscalationModule
     );
@@ -638,6 +646,7 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
       abi.encodeWithSelector(IBondEscalationModule.pledgesAgainstDispute.selector, _mockRequestId, _pledger),
       abi.encode(_pledgesAgainstDispute)
     );
+    horizonAccountingExtension.setDisputeBalanceForTest(_mockDisputeId, 0);
 
     horizonAccountingExtension.setBondedTokensForTest(
       _pledger, _bondSize * (_pledgesForDispute + _pledgesAgainstDispute)
@@ -658,6 +667,7 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     uint256 _pledgesAfter = horizonAccountingExtension.pledges(_mockDisputeId);
     uint256 _pledgersLengthAfter = horizonAccountingExtension.getPledgersLengthForTest(_mockDisputeId);
 
+    assertEq(horizonAccountingExtension.disputeBalance(_mockDisputeId), 0);
     assertTrue(_pledgerClaimedAfter);
     assertEq(_pledgerTotalBondedAfter, 0);
     assertEq(_pledgesAfter, 0);
@@ -684,32 +694,18 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
       abi.encode(_pledgesForDispute)
     );
 
-    vm.mockCall(
-      address(grt),
-      abi.encodeWithSelector(IERC20.balanceOf.selector),
-      abi.encode(_amount * (_pledgesForDispute + _pledgesAgainstDispute))
-    );
+    uint256 _reward = _amount * _pledgesForDispute - _bondSize * _pledgesForDispute;
 
     // Mock and expect the transfer of the GRT tokens
-    _mockAndExpect(
-      address(grt),
-      abi.encodeWithSelector(
-        IERC20.transfer.selector, _pledger, _amount * _pledgesForDispute - _bondSize * _pledgesForDispute
-      ),
-      abi.encode(true)
-    );
+    _mockAndExpect(address(grt), abi.encodeWithSelector(IERC20.transfer.selector, _pledger, _reward), abi.encode(true));
 
     horizonAccountingExtension.setBondedTokensForTest(_pledger, _bondSize * _pledgesForDispute);
     horizonAccountingExtension.setPledgedForTest(_mockDisputeId, _amount * _pledgesForDispute);
 
     vm.expectEmit();
-    emit EscalationRewardClaimed(
-      _mockRequestId,
-      _mockDisputeId,
-      _pledger,
-      _amount * _pledgesForDispute - _bondSize * _pledgesForDispute,
-      _bondSize * _pledgesForDispute
-    );
+    emit EscalationRewardClaimed(_mockRequestId, _mockDisputeId, _pledger, _reward, _bondSize * _pledgesForDispute);
+
+    uint256 _balanceBefore = horizonAccountingExtension.disputeBalance(_mockDisputeId);
 
     horizonAccountingExtension.claimEscalationReward(_mockDisputeId, _pledger);
 
@@ -718,6 +714,7 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     uint256 _pledgesAfter = horizonAccountingExtension.pledges(_mockDisputeId);
     uint256 _pledgersLengthAfter = horizonAccountingExtension.getPledgersLengthForTest(_mockDisputeId);
 
+    assertEq(horizonAccountingExtension.disputeBalance(_mockDisputeId), _balanceBefore - _reward);
     assertTrue(_pledgerClaimedAfter);
     assertEq(_pledgerTotalBondedAfter, 0);
     assertEq(_pledgesAfter, 0);
@@ -744,32 +741,17 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
       abi.encode(_pledgesAgainstDispute)
     );
 
-    vm.mockCall(
-      address(grt),
-      abi.encodeWithSelector(IERC20.balanceOf.selector),
-      abi.encode(_amount * (_pledgesForDispute + _pledgesAgainstDispute))
-    );
-
+    uint256 _reward = _amount * _pledgesAgainstDispute - _bondSize * _pledgesAgainstDispute;
     // Mock and expect the transfer of the GRT tokens
-    _mockAndExpect(
-      address(grt),
-      abi.encodeWithSelector(
-        IERC20.transfer.selector, _pledger, _amount * _pledgesAgainstDispute - _bondSize * _pledgesAgainstDispute
-      ),
-      abi.encode(true)
-    );
+    _mockAndExpect(address(grt), abi.encodeWithSelector(IERC20.transfer.selector, _pledger, _reward), abi.encode(true));
 
     horizonAccountingExtension.setBondedTokensForTest(_pledger, _bondSize * _pledgesAgainstDispute);
     horizonAccountingExtension.setPledgedForTest(_mockDisputeId, _amount * _pledgesAgainstDispute);
 
     vm.expectEmit();
-    emit EscalationRewardClaimed(
-      _mockRequestId,
-      _mockDisputeId,
-      _pledger,
-      _amount * _pledgesAgainstDispute - _bondSize * _pledgesAgainstDispute,
-      _bondSize * _pledgesAgainstDispute
-    );
+    emit EscalationRewardClaimed(_mockRequestId, _mockDisputeId, _pledger, _reward, _bondSize * _pledgesAgainstDispute);
+
+    uint256 _balanceBefore = horizonAccountingExtension.disputeBalance(_mockDisputeId);
 
     horizonAccountingExtension.claimEscalationReward(_mockDisputeId, _pledger);
 
@@ -778,6 +760,7 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     uint256 _pledgesAfter = horizonAccountingExtension.pledges(_mockDisputeId);
     uint256 _pledgersLengthAfter = horizonAccountingExtension.getPledgersLengthForTest(_mockDisputeId);
 
+    assertEq(horizonAccountingExtension.disputeBalance(_mockDisputeId), _balanceBefore - _reward);
     assertTrue(_pledgerClaimedAfter);
     assertEq(_pledgerTotalBondedAfter, 0);
     assertEq(_pledgesAfter, 0);
@@ -829,48 +812,30 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
       abi.encode(true)
     );
 
-    vm.mockCall(address(grt), abi.encodeWithSelector(IERC20.balanceOf.selector), abi.encode(0));
+    horizonAccountingExtension.setDisputeBalanceForTest(_mockDisputeId, 0);
+
+    uint256 _reward = (_amount * _pledgesForDispute) - (_bondSize * _pledgesForDispute);
 
     // Mock and expect the transfer of the GRT tokens
-    vm.mockCall(
-      address(grt),
-      abi.encodeWithSelector(
-        IERC20.transfer.selector, _pledger, (_amount * _pledgesForDispute) - (_bondSize * _pledgesForDispute)
-      ),
-      abi.encode(true)
-    );
-
+    vm.mockCall(address(grt), abi.encodeWithSelector(IERC20.transfer.selector, _pledger, _reward), abi.encode(true));
     horizonAccountingExtension.setBondedTokensForTest(_pledger, _bondSize * _pledgesForDispute);
     horizonAccountingExtension.setBondedTokensForTest(_slashedUser, _bondSize * _pledgesAgainstDispute);
-
     horizonAccountingExtension.setPledgersForTest(_mockDisputeId, _notSlashedUser);
     horizonAccountingExtension.setPledgersForTest(_mockDisputeId, _slashedUser);
     horizonAccountingExtension.setPledgedForTest(_mockDisputeId, _pledgesForDispute * _amount);
 
     vm.expectEmit();
-    emit EscalationRewardClaimed(
-      _mockRequestId,
-      _mockDisputeId,
-      _pledger,
-      (_amount * _pledgesForDispute) - (_bondSize * _pledgesForDispute),
-      _bondSize * _pledgesForDispute
-    );
+    emit EscalationRewardClaimed(_mockRequestId, _mockDisputeId, _pledger, _reward, _bondSize * _pledgesForDispute);
 
     horizonAccountingExtension.claimEscalationReward(_mockDisputeId, _pledger);
 
-    bool _pledgerClaimedAfter = horizonAccountingExtension.pledgerClaimed(_mockRequestId, _pledger);
-    bool _slashedUserClaimedAfter = horizonAccountingExtension.pledgerClaimed(_mockRequestId, _slashedUser);
-    uint256 _pledgerTotalBondedAfter = horizonAccountingExtension.totalBonded(_pledger);
-    uint256 _slashedUserTotalBondedAfter = horizonAccountingExtension.totalBonded(_slashedUser);
-    uint256 _pledgesAfter = horizonAccountingExtension.pledges(_mockDisputeId);
-    uint256 _pledgersLengthAfter = horizonAccountingExtension.getPledgersLengthForTest(_mockDisputeId);
-
-    assertTrue(_pledgerClaimedAfter);
-    assertFalse(_slashedUserClaimedAfter);
-    assertEq(_pledgerTotalBondedAfter, 0);
-    assertEq(_slashedUserTotalBondedAfter, 0);
-    assertEq(_pledgesAfter, 0);
-    assertEq(_pledgersLengthAfter, 0);
+    assertEq(horizonAccountingExtension.disputeBalance(_mockDisputeId), (_pledgesAgainstDispute) * _bondSize - _reward);
+    assertTrue(horizonAccountingExtension.pledgerClaimed(_mockRequestId, _pledger));
+    assertFalse(horizonAccountingExtension.pledgerClaimed(_mockRequestId, _slashedUser));
+    assertEq(horizonAccountingExtension.totalBonded(_pledger), 0);
+    assertEq(horizonAccountingExtension.totalBonded(_slashedUser), 0);
+    assertEq(horizonAccountingExtension.pledges(_mockDisputeId), 0);
+    assertEq(horizonAccountingExtension.getPledgersLengthForTest(_mockDisputeId), 0);
   }
 
   function test_successfulCallLostAgainstDisputeSlashing(
@@ -906,6 +871,8 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
       abi.encode(0)
     );
 
+    _pledgesForDispute = _pledgesAgainstDispute * _amount / _bondSize + 1;
+
     _mockAndExpect(
       address(bondEscalationModule),
       abi.encodeWithSelector(IBondEscalationModule.pledgesForDispute.selector, _mockRequestId, _slashedUser),
@@ -918,16 +885,12 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
       abi.encode(true)
     );
 
-    vm.mockCall(address(grt), abi.encodeWithSelector(IERC20.balanceOf.selector), abi.encode(0));
+    horizonAccountingExtension.setDisputeBalanceForTest(_mockDisputeId, 0);
+
+    uint256 _reward = (_amount * _pledgesAgainstDispute) - (_bondSize * _pledgesAgainstDispute);
 
     // Mock and expect the transfer of the GRT tokens
-    vm.mockCall(
-      address(grt),
-      abi.encodeWithSelector(
-        IERC20.transfer.selector, _pledger, (_amount * _pledgesAgainstDispute) - (_bondSize * _pledgesAgainstDispute)
-      ),
-      abi.encode(true)
-    );
+    vm.mockCall(address(grt), abi.encodeWithSelector(IERC20.transfer.selector, _pledger, _reward), abi.encode(true));
 
     horizonAccountingExtension.setBondedTokensForTest(_pledger, _bondSize * _pledgesAgainstDispute);
     horizonAccountingExtension.setBondedTokensForTest(_slashedUser, _bondSize * _pledgesForDispute);
@@ -937,29 +900,16 @@ contract HorizonAccountingExtension_Unit_ClaimEscalationReward is HorizonAccount
     horizonAccountingExtension.setPledgedForTest(_mockDisputeId, _pledgesAgainstDispute * _amount);
 
     vm.expectEmit();
-    emit EscalationRewardClaimed(
-      _mockRequestId,
-      _mockDisputeId,
-      _pledger,
-      (_amount * _pledgesAgainstDispute) - (_bondSize * _pledgesAgainstDispute),
-      _bondSize * _pledgesAgainstDispute
-    );
-
+    emit EscalationRewardClaimed(_mockRequestId, _mockDisputeId, _pledger, _reward, _bondSize * _pledgesAgainstDispute);
     horizonAccountingExtension.claimEscalationReward(_mockDisputeId, _pledger);
 
-    bool _pledgerClaimedAfter = horizonAccountingExtension.pledgerClaimed(_mockRequestId, _pledger);
-    bool _slashedUserClaimedAfter = horizonAccountingExtension.pledgerClaimed(_mockRequestId, _slashedUser);
-    uint256 _pledgerTotalBondedAfter = horizonAccountingExtension.totalBonded(_pledger);
-    uint256 _slashedUserTotalBondedAfter = horizonAccountingExtension.totalBonded(_slashedUser);
-    uint256 _pledgesAfter = horizonAccountingExtension.pledges(_mockDisputeId);
-    uint256 _pledgersLengthAfter = horizonAccountingExtension.getPledgersLengthForTest(_mockDisputeId);
-
-    assertTrue(_pledgerClaimedAfter);
-    assertFalse(_slashedUserClaimedAfter);
-    assertEq(_pledgerTotalBondedAfter, 0);
-    assertEq(_slashedUserTotalBondedAfter, 0);
-    assertEq(_pledgesAfter, 0);
-    assertEq(_pledgersLengthAfter, 0);
+    assertEq(horizonAccountingExtension.disputeBalance(_mockDisputeId), (_pledgesForDispute) * _bondSize - _reward);
+    assertTrue(horizonAccountingExtension.pledgerClaimed(_mockRequestId, _pledger));
+    assertFalse(horizonAccountingExtension.pledgerClaimed(_mockRequestId, _slashedUser));
+    assertEq(horizonAccountingExtension.totalBonded(_pledger), 0);
+    assertEq(horizonAccountingExtension.totalBonded(_slashedUser), 0);
+    assertEq(horizonAccountingExtension.pledges(_mockDisputeId), 0);
+    assertEq(horizonAccountingExtension.getPledgersLengthForTest(_mockDisputeId), 0);
   }
 }
 
@@ -1583,6 +1533,7 @@ contract HorizonAccountingExtension_Unit_Slash is HorizonAccountingExtension_Uni
 
     horizonAccountingExtension.slash(_mockDisputeId, _length, _length);
 
+    assertEq(horizonAccountingExtension.disputeBalance(_mockDisputeId), _slashAmount * _length);
     uint256 _totalBondedAfter;
     for (uint256 _i; _i < _length; _i++) {
       _totalBondedAfter = horizonAccountingExtension.totalBonded(_cleanPledgers.at(_i));
@@ -1627,6 +1578,7 @@ contract HorizonAccountingExtension_Unit_Slash is HorizonAccountingExtension_Uni
 
     horizonAccountingExtension.slash(_mockDisputeId, _length, _length);
 
+    assertEq(horizonAccountingExtension.disputeBalance(_mockDisputeId), _slashAmount * _length);
     uint256 _totalBondedAfter;
     for (uint256 _i; _i < _length; _i++) {
       _totalBondedAfter = horizonAccountingExtension.totalBonded(_cleanPledgers.at(_i));
@@ -1655,6 +1607,7 @@ contract HorizonAccountingExtension_Unit_Slash is HorizonAccountingExtension_Uni
     vm.expectCall(address(horizonStaking), abi.encodeWithSelector(IHorizonStaking.slash.selector), 0);
 
     horizonAccountingExtension.slash(_mockDisputeId, _usersToSlash, _maxUsersToCheck);
+    assertEq(horizonAccountingExtension.disputeBalance(_mockDisputeId), 0);
   }
 }
 
