@@ -1,9 +1,13 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import './IntegrationBase.t.sol';
 
 contract IntegrationBondEscalation is IntegrationBase {
+  bytes32 internal _requestId;
+  bytes32 internal _responseId;
+  bytes32 internal _disputeId;
+
   function setUp() public override {
     super.setUp();
 
@@ -22,16 +26,16 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Stake GRT and create provisions
     _stakeGRT();
     _createProvisions();
+
+    // Create the request
+    _requestId = _createRequest();
+    // Propose the response
+    _responseId = _proposeResponse(_requestId);
+    // Dispute the response
+    _disputeId = _disputeResponse(_requestId, _responseId);
   }
 
   function test_PledgeForDispute() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
-    // Propose the response
-    bytes32 _responseId = _proposeResponse(_requestId);
-    // Dispute the response
-    bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
-
     // Pass the dispute deadline, but not the tying buffer
     vm.warp(disputeDeadline + 1);
 
@@ -67,13 +71,6 @@ contract IntegrationBondEscalation is IntegrationBase {
   }
 
   function test_PledgeAgainstDispute() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
-    // Propose the response
-    bytes32 _responseId = _proposeResponse(_requestId);
-    // Dispute the response
-    bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
-
     // Pass the dispute deadline, but not the tying buffer
     vm.warp(disputeDeadline + 1);
 
@@ -109,13 +106,6 @@ contract IntegrationBondEscalation is IntegrationBase {
   }
 
   function test_PledgeForAndAgainstDispute() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
-    // Propose the response
-    bytes32 _responseId = _proposeResponse(_requestId);
-    // Dispute the response
-    bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
-
     // Pledge for the dispute
     _pledgeForDispute(_requestId, _disputeId);
 
@@ -149,13 +139,6 @@ contract IntegrationBondEscalation is IntegrationBase {
   }
 
   function test_SettleBondEscalation_DisputerWon() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
-    // Propose the response
-    bytes32 _responseId = _proposeResponse(_requestId);
-    // Dispute the response
-    bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
-
     // Revert if the bond escalation deadline and the tying buffer have not passed
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationNotOver.selector);
     _settleBondEscalation(_requestId, _responseId, _disputeId);
@@ -221,13 +204,6 @@ contract IntegrationBondEscalation is IntegrationBase {
   }
 
   function test_SettleBondEscalation_DisputerLost() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
-    // Propose the response
-    bytes32 _responseId = _proposeResponse(_requestId);
-    // Dispute the response
-    bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
-
     // Revert if the bond escalation deadline and the tying buffer have not passed
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationNotOver.selector);
     _settleBondEscalation(_requestId, _responseId, _disputeId);
@@ -292,13 +268,6 @@ contract IntegrationBondEscalation is IntegrationBase {
   }
 
   function test_ClaimEscalationReward_DisputerWon() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
-    // Propose the response
-    bytes32 _responseId = _proposeResponse(_requestId);
-    // Dispute the response
-    bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
-
     // Revert if the bond escalation has not been settled
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NoEscalationResult.selector);
     _claimEscalationReward(_disputeId, _pledgerFor);
@@ -343,13 +312,6 @@ contract IntegrationBondEscalation is IntegrationBase {
   }
 
   function test_ClaimEscalationReward_DisputerLost() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
-    // Propose the response
-    bytes32 _responseId = _proposeResponse(_requestId);
-    // Dispute the response
-    bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
-
     // Revert if the bond escalation has not been settled
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NoEscalationResult.selector);
     _claimEscalationReward(_disputeId, _pledgerAgainst);

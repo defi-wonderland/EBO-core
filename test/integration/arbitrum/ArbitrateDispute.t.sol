@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import './IntegrationBase.t.sol';
@@ -102,6 +102,9 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     // Assert HorizonAccountingExtension::release
     assertEq(horizonAccountingExtension.bondedForRequest(_disputer, _requestId), 0);
     assertEq(horizonAccountingExtension.totalBonded(_disputer), 0);
+    // Assert Oracle::finalize
+    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedResponseId(_requestId), 0);
 
     // Revert if the dispute has already been arbitrated
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_DisputeAlreadyArbitrated.selector);
@@ -194,6 +197,12 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     // Assert GraphToken::transfer
     assertEq(graphToken.balanceOf(_proposer), disputeBondSize);
     assertEq(graphToken.balanceOf(_disputer), 0);
+    // Assert Oracle::finalize
+    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedResponseId(_requestId), _responseId);
+    // Assert HorizonAccountingExtension::release
+    assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), 0);
+    assertEq(horizonAccountingExtension.totalBonded(_proposer), 0);
 
     // Revert if the dispute has already been arbitrated
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_DisputeAlreadyArbitrated.selector);
@@ -271,6 +280,9 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     assertEq(horizonAccountingExtension.totalBonded(_disputer), 0);
     assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), responseBondSize);
     assertEq(horizonAccountingExtension.totalBonded(_proposer), responseBondSize);
+    // Assert Oracle::finalize
+    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedResponseId(_requestId), 0);
 
     // Revert if the dispute has already been arbitrated
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_DisputeAlreadyArbitrated.selector);

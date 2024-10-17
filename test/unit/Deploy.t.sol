@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import {IOracle, Oracle} from '@defi-wonderland/prophet-core/solidity/contracts/Oracle.sol';
@@ -35,6 +35,7 @@ import {
   _ARBITRUM_SEPOLIA_EPOCH_MANAGER,
   _ARBITRUM_SEPOLIA_GRAPH_TOKEN,
   _ARBITRUM_SEPOLIA_HORIZON_STAKING,
+  _MAX_USERS_TO_CHECK,
   _MIN_THAWING_PERIOD
 } from 'script/Constants.sol';
 
@@ -137,13 +138,21 @@ contract UnitDeploy is Test {
     // it should deploy `HorizonAccountingExtension` with correct args
     address[] memory _authorizedCallers = _instantiateAuthorizedCallers();
     HorizonAccountingExtension _horizonAccountingExtension = new HorizonAccountingExtension(
-      deploy.horizonStaking(), deploy.oracle(), deploy.graphToken(), _MIN_THAWING_PERIOD, _authorizedCallers
+      deploy.horizonStaking(),
+      deploy.oracle(),
+      deploy.graphToken(),
+      deploy.arbitrable(),
+      _MIN_THAWING_PERIOD,
+      _MAX_USERS_TO_CHECK,
+      _authorizedCallers
     );
     assertEq(address(deploy.horizonAccountingExtension()).code, address(_horizonAccountingExtension).code);
     assertEq(address(deploy.horizonAccountingExtension().HORIZON_STAKING()), address(deploy.horizonStaking()));
     assertEq(address(deploy.horizonAccountingExtension().ORACLE()), address(deploy.oracle()));
+    assertEq(address(deploy.horizonAccountingExtension().ARBITRABLE()), address(deploy.arbitrable()));
     assertEq(address(deploy.horizonAccountingExtension().GRT()), address(deploy.graphToken()));
     assertEq(deploy.horizonAccountingExtension().MIN_THAWING_PERIOD(), _MIN_THAWING_PERIOD);
+    assertEq(deploy.horizonAccountingExtension().maxUsersToCheck(), _MAX_USERS_TO_CHECK);
     for (uint256 _i; _i < _authorizedCallers.length; ++_i) {
       assertTrue(deploy.horizonAccountingExtension().authorizedCallers(_authorizedCallers[_i]));
     }
