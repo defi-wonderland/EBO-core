@@ -46,8 +46,9 @@ contract EBORequestCreatorForTest is EBORequestCreator {
 
 abstract contract EBORequestCreator_Unit_BaseTest is Test {
   /// Events
-
-  event RequestCreated(bytes32 indexed _requestId, uint256 indexed _epoch, string indexed _chainId);
+  event RequestCreated(
+    bytes32 indexed _requestId, IOracle.Request _request, uint256 indexed _epoch, string indexed _chainId
+  );
   event ChainAdded(string indexed _chainId);
   event ChainRemoved(string indexed _chainId);
   event RequestModuleDataSet(address indexed _requestModule, IEBORequestModule.RequestParameters _requestModuleData);
@@ -167,6 +168,10 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
       abi.encodeWithSelector(IArbitrable.validateArbitrator.selector, _arbitrator),
       abi.encode(true)
     );
+
+    _params.chainId = _chainId;
+    _params.epoch = _epoch;
+
     vm.startPrank(_arbitrator);
     _;
   }
@@ -309,8 +314,18 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     address _arbitrator
   ) external happyPath(_epoch, _chainId, _arbitrator) {
     vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), abi.encode(_requestId));
+
+    // Mock the request data
+    // Needed to do like this to avoid stack too deep
+    IOracle.Request memory _requestData = requestData;
+    _requestData.requester = address(eboRequestCreator);
+
+    // Mock the request module data
+    _requestData.requestModule = address(eboRequestModule);
+    _requestData.requestModuleData = abi.encode(_params);
+
     vm.expectEmit();
-    emit RequestCreated(_requestId, _epoch, _chainId);
+    emit RequestCreated(_requestId, _requestData, _epoch, _chainId);
 
     eboRequestCreator.createRequest(_epoch, _chainId);
   }
@@ -324,7 +339,7 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
     bytes32 _requestId,
     uint96 _finalizedAt,
     address _arbitrator
-  ) external happyPath(_epoch, '', _arbitrator) {
+  ) external happyPath(_epoch, _chainId, _arbitrator) {
     vm.assume(_finalizedAt > 0);
     vm.assume(_requestId != bytes32(0));
     eboRequestCreator.setChainIdForTest(_chainId);
@@ -340,8 +355,17 @@ contract EBORequestCreator_Unit_CreateRequest is EBORequestCreator_Unit_BaseTest
 
     vm.mockCall(address(oracle), abi.encodeWithSelector(IOracle.createRequest.selector), abi.encode(_requestId));
 
+    // Mock the request data
+    // Needed to do like this to avoid stack too deep
+    IOracle.Request memory _requestData = requestData;
+    _requestData.requester = address(eboRequestCreator);
+
+    // Mock the request module data
+    _requestData.requestModule = address(eboRequestModule);
+    _requestData.requestModuleData = abi.encode(_params);
+
     vm.expectEmit();
-    emit RequestCreated(_requestId, _epoch, _chainId);
+    emit RequestCreated(_requestId, _requestData, _epoch, _chainId);
 
     eboRequestCreator.createRequest(_epoch, _chainId);
   }
