@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
-import './IntegrationBase.sol';
+import './IntegrationBase.t.sol';
 
 contract IntegrationProposeResponse is IntegrationBase {
   function setUp() public override {

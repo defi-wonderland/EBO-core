@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
-import './IntegrationBase.sol';
+import './IntegrationBase.t.sol';
 
 contract IntegrationBondEscalation is IntegrationBase {
   bytes32 internal _requestId;
@@ -199,8 +199,6 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Revert if the bond escalation has already been settled
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationCantBeSettled.selector);
     _settleBondEscalation(_requestId, _responseId, _disputeId);
-
-    // Revert if the bond escalation has been settled
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_CannotEscalate.selector, _disputeId));
     _escalateDispute(_requestId, _responseId, _disputeId);
   }
@@ -265,8 +263,6 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Revert if the bond escalation has already been settled
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationCantBeSettled.selector);
     _settleBondEscalation(_requestId, _responseId, _disputeId);
-
-    // Revert if the bond escalation has been settled
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_CannotEscalate.selector, _disputeId));
     _escalateDispute(_requestId, _responseId, _disputeId);
   }
@@ -274,7 +270,7 @@ contract IntegrationBondEscalation is IntegrationBase {
   function test_ClaimEscalationReward_DisputerWon() public {
     // Revert if the bond escalation has not been settled
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NoEscalationResult.selector);
-    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerFor);
+    _claimEscalationReward(_disputeId, _pledgerFor);
 
     // Pledge against the dispute
     _pledgeAgainstDispute(_requestId, _disputeId);
@@ -290,8 +286,8 @@ contract IntegrationBondEscalation is IntegrationBase {
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     // Claim the escalation rewards
-    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerFor);
-    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerAgainst);
+    _claimEscalationReward(_disputeId, _pledgerFor);
+    _claimEscalationReward(_disputeId, _pledgerAgainst);
 
     // Assert HorizonAccountingExtension::claimEscalationReward
     assertTrue(horizonAccountingExtension.pledgerClaimed(_requestId, _pledgerFor));
@@ -312,13 +308,13 @@ contract IntegrationBondEscalation is IntegrationBase {
 
     // Revert if the escalation reward has already been claimed
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_AlreadyClaimed.selector);
-    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerFor);
+    _claimEscalationReward(_disputeId, _pledgerFor);
   }
 
   function test_ClaimEscalationReward_DisputerLost() public {
     // Revert if the bond escalation has not been settled
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NoEscalationResult.selector);
-    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerAgainst);
+    _claimEscalationReward(_disputeId, _pledgerAgainst);
 
     // Pledge for the dispute
     _pledgeForDispute(_requestId, _disputeId);
@@ -334,8 +330,8 @@ contract IntegrationBondEscalation is IntegrationBase {
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     // Claim the escalation rewards
-    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerFor);
-    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerAgainst);
+    _claimEscalationReward(_disputeId, _pledgerFor);
+    _claimEscalationReward(_disputeId, _pledgerAgainst);
 
     // Assert HorizonAccountingExtension::claimEscalationReward
     assertTrue(horizonAccountingExtension.pledgerClaimed(_requestId, _pledgerFor));
@@ -356,6 +352,6 @@ contract IntegrationBondEscalation is IntegrationBase {
 
     // Revert if the escalation reward has already been claimed
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_AlreadyClaimed.selector);
-    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerAgainst);
+    _claimEscalationReward(_disputeId, _pledgerAgainst);
   }
 }

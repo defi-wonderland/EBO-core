@@ -106,7 +106,7 @@ contract Deploy is Script {
     maxNumberOfEscalations = 2;
     disputeDeadline = block.timestamp + 10 days;
     tyingBuffer = 3 days;
-    disputeDisputeWindow = 1 weeks;
+    disputeDisputeWindow = block.timestamp + 2 weeks;
   }
 
   function run() public {

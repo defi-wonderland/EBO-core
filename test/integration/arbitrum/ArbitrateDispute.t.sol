@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
-import './IntegrationBase.sol';
+import './IntegrationBase.t.sol';
 
 contract IntegrationArbitrateDispute is IntegrationBase {
   function setUp() public override {
@@ -57,7 +57,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidAward.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
 
-    // Revert if the request is finalized before the response deadline
+    // Revert if the request is finalized without response before the response deadline
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Won);
 
@@ -148,7 +148,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidAward.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
 
-    // Revert if the request is finalized before the response deadline
+    // Revert if the request is finalized with response before the response deadline
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Lost);
 
@@ -159,7 +159,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Lost);
 
-    // Pass the dispute window
+    // Pass the response dispute window
     vm.roll(block.number + responseDisputeWindow - responseDeadline);
 
     // Arbitrate and resolve the dispute, and finalize the request with response
@@ -246,7 +246,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidAward.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
 
-    // Revert if the request is finalized before the response deadline
+    // Revert if the request is finalized without response before the response deadline
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.NoResolution);
 
