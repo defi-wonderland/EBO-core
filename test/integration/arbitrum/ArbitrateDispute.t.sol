@@ -44,7 +44,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
-    vm.warp(disputeDeadline + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
 
     // Escalate the dispute
     _escalateDispute(_requestId, _responseId, _disputeId);
@@ -56,13 +56,6 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     // Revert if the arbitration award is invalid
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidAward.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
-
-    // Revert if the request is finalized without response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Won);
-
-    // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
 
     // Arbitrate and resolve the dispute, and finalize the request without response
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Won);
@@ -103,7 +96,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     assertEq(horizonAccountingExtension.bondedForRequest(_disputer, _requestId), 0);
     assertEq(horizonAccountingExtension.totalBonded(_disputer), 0);
     // Assert Oracle::finalize
-    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedAt(_requestId), block.timestamp);
     assertEq(oracle.finalizedResponseId(_requestId), 0);
 
     // Revert if the dispute has already been arbitrated
@@ -135,7 +128,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
-    vm.warp(disputeDeadline + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
 
     // Escalate the dispute
     _escalateDispute(_requestId, _responseId, _disputeId);
@@ -148,19 +141,15 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidAward.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
 
-    // Revert if the request is finalized with response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Lost);
-
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(oracle.responseCreatedAt(_responseId) + responseDeadline);
 
     // Revert if the request is finalized with response before the dispute window
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Lost);
 
-    // Pass the response dispute window
-    vm.roll(block.number + responseDisputeWindow - responseDeadline);
+    // Pass the dispute window
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
 
     // Arbitrate and resolve the dispute, and finalize the request with response
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Lost);
@@ -198,7 +187,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     assertEq(graphToken.balanceOf(_proposer), disputeBondSize);
     assertEq(graphToken.balanceOf(_disputer), 0);
     // Assert Oracle::finalize
-    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedAt(_requestId), block.timestamp);
     assertEq(oracle.finalizedResponseId(_requestId), _responseId);
     // Assert HorizonAccountingExtension::release
     assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), 0);
@@ -233,7 +222,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
-    vm.warp(disputeDeadline + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
 
     // Escalate the dispute
     _escalateDispute(_requestId, _responseId, _disputeId);
@@ -245,13 +234,6 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     // Revert if the arbitration award is invalid
     vm.expectRevert(ICouncilArbitrator.CouncilArbitrator_InvalidAward.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
-
-    // Revert if the request is finalized without response before the response deadline
-    vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
-    _arbitrateDispute(_disputeId, IOracle.DisputeStatus.NoResolution);
-
-    // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
 
     // Arbitrate and resolve the dispute, and finalize the request without response
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.NoResolution);
@@ -281,7 +263,7 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), responseBondSize);
     assertEq(horizonAccountingExtension.totalBonded(_proposer), responseBondSize);
     // Assert Oracle::finalize
-    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedAt(_requestId), block.timestamp);
     assertEq(oracle.finalizedResponseId(_requestId), 0);
 
     // Revert if the dispute has already been arbitrated

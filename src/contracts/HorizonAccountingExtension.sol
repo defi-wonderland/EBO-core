@@ -58,6 +58,9 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
   /// @inheritdoc IHorizonAccountingExtension
   mapping(address _caller => bool _authorized) public authorizedCallers;
 
+  /// @inheritdoc IHorizonAccountingExtension
+  mapping(bytes32 _disputeId => uint256 _balance) public disputeBalance;
+
   /**
    * @notice Storing which modules have the users approved to bond their tokens.
    */
@@ -225,15 +228,18 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       _claimAmount = _amountPerPledger * _numberOfPledges;
       _rewardAmount = _claimAmount - _pledgeAmount;
 
+      _rewardAmount = _claimAmount - _pledgeAmount;
+
       // Check the balance in the contract
       // If not enough balance, slash some users to get enough balance
-      uint256 _balance = GRT.balanceOf(address(this)); // TODO: What if the balance is enough by means other than slashing?
-
       // TODO: How many iterations should we do?
-      while (_balance < _rewardAmount) {
-        _balance += _slash(_disputeId, MAX_USERS_TO_SLASH, maxUsersToCheck, _result, _status);
+      while (disputeBalance[_disputeId] < _rewardAmount) {
+        _slash(_disputeId, MAX_USERS_TO_SLASH, maxUsersToCheck, _result, _status);
       }
 
+      unchecked {
+        disputeBalance[_disputeId] -= _rewardAmount;
+      }
       // Send the user the amount they won by participating in the dispute
       GRT.safeTransfer(_pledger, _rewardAmount);
     }
@@ -414,6 +420,8 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
       // Remove the user from the list of users
       _users.remove(_user);
     }
+
+    disputeBalance[_disputeId] += _slashedAmount;
   }
 
   /**
@@ -451,12 +459,13 @@ contract HorizonAccountingExtension is Validator, IHorizonAccountingExtension {
 
     if (_provisionData.maxVerifierCut != MAX_VERIFIER_CUT) revert HorizonAccountingExtension_InvalidMaxVerifierCut();
     if (_provisionData.thawingPeriod < MIN_THAWING_PERIOD) revert HorizonAccountingExtension_InvalidThawingPeriod();
-    if (_amount > _provisionData.tokens) revert HorizonAccountingExtension_InsufficientTokens();
-    // TODO: `thaw()` does not subtract from provision `tokens` but adds to `tokensThawing`
+
+    uint256 _availableTokens = _provisionData.tokens - _provisionData.tokensThawing;
+    if (_amount > _availableTokens) revert HorizonAccountingExtension_InsufficientTokens();
 
     totalBonded[_bonder] += _amount;
 
-    if (totalBonded[_bonder] > _provisionData.tokens + _provisionData.tokensThawing) {
+    if (totalBonded[_bonder] > _provisionData.tokens) {
       revert HorizonAccountingExtension_InsufficientBondedTokens();
     }
   }

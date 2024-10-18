@@ -97,14 +97,14 @@ contract Deploy is Script {
     // Set response module params
     // TODO: Review production params (responseBondSize == disputeBondSize)
     responseBondSize = 0.5 ether;
-    responseDeadline = block.timestamp + 5 days;
-    responseDisputeWindow = block.timestamp + 1 weeks;
+    responseDeadline = 5 days;
+    responseDisputeWindow = 1 weeks;
 
     // Set dispute module params
     // TODO: Review production params (disputeBondSize == responseBondSize)
     disputeBondSize = 0.3 ether;
     maxNumberOfEscalations = 2;
-    disputeDeadline = block.timestamp + 10 days;
+    disputeDeadline = 10 days;
     tyingBuffer = 3 days;
     disputeDisputeWindow = block.timestamp + 2 weeks;
   }

@@ -40,20 +40,20 @@ contract IntegrationEscalateDispute is IntegrationBase {
     _pledgeForDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
-    vm.warp(disputeDeadline + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
 
     // Revert if the bond escalation has not tied
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_NotEscalatable.selector);
     _escalateDispute(_requestId, _responseId, _disputeId);
 
     // Do not pass the dispute deadline
-    vm.warp(disputeDeadline);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline);
 
     // Pledge against the dispute
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
-    vm.warp(disputeDeadline + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
 
     // Escalate the dispute
     _escalateDispute(_requestId, _responseId, _disputeId);
@@ -86,7 +86,7 @@ contract IntegrationEscalateDispute is IntegrationBase {
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + tyingBuffer + 1);
 
     // Revert if the dispute has been escalated
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationOver.selector);

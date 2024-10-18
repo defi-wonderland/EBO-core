@@ -28,27 +28,40 @@ contract IntegrationProposeResponse is IntegrationBase {
     // Create the request
     bytes32 _requestId = _createRequest();
 
+    // Thaw some tokens
+    _thaw(_proposer, 1);
+
+    // Propose the response reverts because of insufficient funds as the proposer thawed some tokens
+    vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_InsufficientTokens.selector);
+    _proposeResponse(_requestId);
+
+    // Reprovision the thawed token
+    _stakeGRT();
+    _addToProvision(_proposer, 1);
+
+    uint256 _requestCreatedAt = oracle.requestCreatedAt(_requestId);
+
     // Pass the response deadline
-    vm.warp(responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the response is proposed after the response deadline
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooLateToPropose.selector);
     _proposeResponse(_requestId);
 
     // Do not pass the response deadline
-    vm.warp(responseDeadline - 1);
+    vm.warp(_requestCreatedAt + responseDeadline - 1);
 
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
 
     // Assert Oracle::proposeResponse
-    assertEq(oracle.responseCreatedAt(_responseId), block.number);
+    assertEq(oracle.responseCreatedAt(_responseId), block.timestamp);
     // Assert HorizonAccountingExtension::bond
     assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), responseBondSize);
     assertEq(horizonAccountingExtension.totalBonded(_proposer), responseBondSize);
 
     // Revert if the response has already been proposed
-    vm.expectRevert(IOracle.Oracle_InvalidResponseBody.selector);
+    vm.expectRevert(IOracle.Oracle_ResponseAlreadyProposed.selector);
     _proposeResponse(_requestId);
   }
 }
