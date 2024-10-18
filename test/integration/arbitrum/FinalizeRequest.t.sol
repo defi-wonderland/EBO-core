@@ -4,6 +4,9 @@ pragma solidity 0.8.26;
 import './IntegrationBase.t.sol';
 
 contract IntegrationFinalizeRequest is IntegrationBase {
+  bytes32 _requestId;
+  uint256 _requestCreatedAt;
+
   function setUp() public override {
     super.setUp();
 
@@ -22,12 +25,13 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     // Stake GRT and create provisions
     _stakeGRT();
     _createProvisions();
+
+    // Create the request
+    _requestId = _createRequest();
+    _requestCreatedAt = oracle.requestCreatedAt(_requestId);
   }
 
   function test_FinalizeRequest_TooEarlyToFinalize() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
-
     // Revert if the request is finalized without response before the response deadline
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
     _finalizeRequest(_requestId, 0);
@@ -40,7 +44,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _finalizeRequest(_requestId, _responseId);
 
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the request is finalized with response before the dispute window
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
@@ -48,17 +52,14 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   }
 
   function test_FinalizeRequest_NoResponse() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
-
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Finalize the request without response
     _finalizeRequest(_requestId, 0);
 
     // Assert Oracle::finalize
-    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedAt(_requestId), block.timestamp);
     assertEq(oracle.finalizedResponseId(_requestId), 0);
 
     // Revert if the request has already been finalized
@@ -69,26 +70,26 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   }
 
   function test_FinalizeRequest_NoEscalation() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
 
+    uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
+
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
 
     // Pass the response dispute window
-    vm.roll(block.number + responseDisputeWindow - responseDeadline);
+    vm.warp(_responseCreatedAt + responseDisputeWindow);
 
     // Finalize the request with response
     _finalizeRequest(_requestId, _responseId);
 
     // Assert Oracle::finalize
-    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedAt(_requestId), block.timestamp);
     assertEq(oracle.finalizedResponseId(_requestId), _responseId);
     // Assert HorizonAccountingExtension::release
     assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), 0);
@@ -104,20 +105,20 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   }
 
   function test_FinalizeRequest_BondEscalation_DisputerWon() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
 
+    uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
+
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
 
     // Pass the response dispute window
-    vm.roll(block.number + responseDisputeWindow - responseDeadline);
+    vm.warp(_responseCreatedAt + responseDisputeWindow - responseDeadline);
 
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
@@ -137,7 +138,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _pledgeForDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + tyingBuffer + 1);
 
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
@@ -150,7 +151,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _finalizeRequest(_requestId, 0);
 
     // Assert Oracle::finalize
-    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedAt(_requestId), block.timestamp);
     assertEq(oracle.finalizedResponseId(_requestId), 0);
 
     // Revert if the request has already been finalized
@@ -161,20 +162,20 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   }
 
   function test_FinalizeRequest_BondEscalation_DisputerLost() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
 
+    uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
+
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
 
     // Pass the response dispute window
-    vm.roll(block.number + responseDisputeWindow - responseDeadline);
+    vm.warp(_responseCreatedAt + responseDisputeWindow - responseDeadline);
 
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
@@ -194,7 +195,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + tyingBuffer + 1);
 
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
@@ -207,7 +208,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _finalizeRequest(_requestId, _responseId);
 
     // Assert Oracle::finalize
-    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedAt(_requestId), block.timestamp);
     assertEq(oracle.finalizedResponseId(_requestId), _responseId);
     // Assert HorizonAccountingExtension::release
     assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), 0);
@@ -221,20 +222,20 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   }
 
   function test_FinalizeRequest_Arbitration_Won() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
 
+    uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
+
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
 
     // Pass the response dispute window
-    vm.roll(block.number + responseDisputeWindow - responseDeadline);
+    vm.warp(_responseCreatedAt + responseDisputeWindow - responseDeadline);
 
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
@@ -252,7 +253,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
-    vm.warp(disputeDeadline + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
 
     // Escalate the dispute
     _escalateDispute(_requestId, _responseId, _disputeId);
@@ -261,7 +262,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Won);
 
     // Assert Oracle::finalize
-    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedAt(_requestId), block.timestamp);
     assertEq(oracle.finalizedResponseId(_requestId), 0);
 
     // Revert if the request has already been finalized
@@ -272,20 +273,20 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   }
 
   function test_FinalizeRequest_Arbitration_Lost() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
 
+    uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
+
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
 
     // Pass the response dispute window
-    vm.roll(block.number + responseDisputeWindow - responseDeadline);
+    vm.warp(_responseCreatedAt + responseDisputeWindow - responseDeadline);
 
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
@@ -303,16 +304,18 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
-    vm.warp(disputeDeadline + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
 
     // Escalate the dispute
     _escalateDispute(_requestId, _responseId, _disputeId);
+
+    vm.warp(_responseCreatedAt + responseDisputeWindow);
 
     // Arbitrate and resolve the dispute, and finalize the request with response
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Lost);
 
     // Assert Oracle::finalize
-    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedAt(_requestId), block.timestamp);
     assertEq(oracle.finalizedResponseId(_requestId), _responseId);
     // Assert HorizonAccountingExtension::release
     assertEq(horizonAccountingExtension.bondedForRequest(_proposer, _requestId), 0);
@@ -326,20 +329,20 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   }
 
   function test_FinalizeRequest_Arbitration_NoResolution() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
 
+    uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
+
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
 
     // Pass the response dispute window
-    vm.roll(block.number + responseDisputeWindow - responseDeadline);
+    vm.warp(_responseCreatedAt + responseDisputeWindow - responseDeadline);
 
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
@@ -357,7 +360,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
-    vm.warp(disputeDeadline + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
 
     // Escalate the dispute
     _escalateDispute(_requestId, _responseId, _disputeId);
@@ -366,7 +369,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.NoResolution);
 
     // Assert Oracle::finalize
-    assertEq(oracle.finalizedAt(_requestId), block.number);
+    assertEq(oracle.finalizedAt(_requestId), block.timestamp);
     assertEq(oracle.finalizedResponseId(_requestId), 0);
 
     // Revert if the request has already been finalized
@@ -377,17 +380,17 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   }
 
   function test_ReleaseUnutilizedResponse_BondEscalation_DisputerWon() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
+
+    uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
 
     // Revert if the request has not been finalized
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_InvalidReleaseParameters.selector);
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
@@ -410,7 +413,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _pledgeForDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + tyingBuffer + 1);
 
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
@@ -431,17 +434,17 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   }
 
   function test_ReleaseUnutilizedResponse_BondEscalation_DisputerLost() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
+
+    uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
 
     // Revert if the request has not been finalized
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_InvalidReleaseParameters.selector);
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
@@ -464,7 +467,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline and the tying buffer
-    vm.warp(disputeDeadline + tyingBuffer + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + tyingBuffer + 1);
 
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
@@ -485,17 +488,17 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   }
 
   function test_ReleaseUnutilizedResponse_Arbitration_Won() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
+
+    uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
 
     // Revert if the request has not been finalized
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_InvalidReleaseParameters.selector);
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
@@ -516,7 +519,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
-    vm.warp(disputeDeadline + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
 
     // Escalate the dispute
     _escalateDispute(_requestId, _responseId, _disputeId);
@@ -540,17 +543,17 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   }
 
   function test_ReleaseUnutilizedResponse_Arbitration_Lost() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
+
+    uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
 
     // Revert if the request has not been finalized
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_InvalidReleaseParameters.selector);
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
@@ -571,10 +574,13 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
-    vm.warp(disputeDeadline + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
 
     // Escalate the dispute
     _escalateDispute(_requestId, _responseId, _disputeId);
+
+    // Pass the response dispute window
+    vm.warp(_responseCreatedAt + responseDisputeWindow);
 
     // Arbitrate and resolve the dispute, and finalize the request with response
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Lost);
@@ -595,17 +601,17 @@ contract IntegrationFinalizeRequest is IntegrationBase {
   }
 
   function test_ReleaseUnutilizedResponse_Arbitration_NoResolution() public {
-    // Create the request
-    bytes32 _requestId = _createRequest();
     // Propose the response
     bytes32 _responseId = _proposeResponse(_requestId);
+
+    uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
 
     // Revert if the request has not been finalized
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_InvalidReleaseParameters.selector);
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
     // Pass the response deadline
-    vm.roll(block.number + responseDeadline);
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
@@ -626,7 +632,7 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     _pledgeAgainstDispute(_requestId, _disputeId);
 
     // Pass the dispute deadline
-    vm.warp(disputeDeadline + 1);
+    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
 
     // Escalate the dispute
     _escalateDispute(_requestId, _responseId, _disputeId);
