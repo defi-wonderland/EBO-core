@@ -117,9 +117,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
 
-    // Pass the response dispute window
-    vm.warp(_responseCreatedAt + responseDisputeWindow - responseDeadline);
-
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
@@ -173,9 +170,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
-
-    // Pass the response dispute window
-    vm.warp(_responseCreatedAt + responseDisputeWindow - responseDeadline);
 
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
@@ -234,9 +228,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
 
-    // Pass the response dispute window
-    vm.warp(_responseCreatedAt + responseDisputeWindow - responseDeadline);
-
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
@@ -278,15 +269,9 @@ contract IntegrationFinalizeRequest is IntegrationBase {
 
     uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
 
-    // Pass the response deadline
-    vm.warp(_requestCreatedAt + responseDeadline);
-
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
-
-    // Pass the response dispute window
-    vm.warp(_responseCreatedAt + responseDisputeWindow - responseDeadline);
 
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
@@ -341,9 +326,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
 
-    // Pass the response dispute window
-    vm.warp(_responseCreatedAt + responseDisputeWindow - responseDeadline);
-
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
@@ -389,11 +371,11 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_InvalidReleaseParameters.selector);
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
-    // Pass the response deadline
-    vm.warp(_requestCreatedAt + responseDeadline);
-
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
+
+    // Pass the response deadline
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // TODO: What if the request is finalized without response, after a response has been disputed but before
     //       its bond escalation settlement or dispute arbitration?
@@ -443,14 +425,13 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_InvalidReleaseParameters.selector);
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
-    // Pass the response deadline
-    vm.warp(_requestCreatedAt + responseDeadline);
-
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
 
     // TODO: What if the request is finalized without response, after a response has been disputed but before
     //       its bond escalation settlement or dispute arbitration?
+    // Pass the response deadline
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Finalize the request without response
     _finalizeRequest(_requestId, 0);
@@ -497,11 +478,11 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_InvalidReleaseParameters.selector);
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
-    // Pass the response deadline
-    vm.warp(_requestCreatedAt + responseDeadline);
-
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
+
+    // Pass the response deadline
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // TODO: What if the request is finalized without response, after a response has been disputed but before
     //       its bond escalation settlement or dispute arbitration?
@@ -552,11 +533,11 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_InvalidReleaseParameters.selector);
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
-    // Pass the response deadline
-    vm.warp(_requestCreatedAt + responseDeadline);
-
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
+
+    // Pass the response deadline
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // TODO: What if the request is finalized without response, after a response has been disputed but before
     //       its bond escalation settlement or dispute arbitration?
@@ -610,11 +591,11 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_InvalidReleaseParameters.selector);
     _releaseUnfinalizableResponseBond(_requestId, _responseId);
 
-    // Pass the response deadline
-    vm.warp(_requestCreatedAt + responseDeadline);
-
     // Dispute the response
     bytes32 _disputeId = _disputeResponse(_requestId, _responseId);
+
+    // Pass the response deadline
+    vm.warp(_requestCreatedAt + responseDeadline);
 
     // TODO: What if the request is finalized without response, after a response has been disputed but before
     //       its bond escalation settlement or dispute arbitration?
