@@ -75,9 +75,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
 
     uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
 
-    // Pass the response deadline
-    vm.warp(_requestCreatedAt + responseDeadline);
-
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
     _finalizeRequest(_requestId, 0);
@@ -109,9 +106,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     bytes32 _responseId = _proposeResponse(_requestId);
 
     uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
-
-    // Pass the response deadline
-    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
@@ -163,9 +157,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     bytes32 _responseId = _proposeResponse(_requestId);
 
     uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
-
-    // Pass the response deadline
-    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
@@ -220,9 +211,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     bytes32 _responseId = _proposeResponse(_requestId);
 
     uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
-
-    // Pass the response deadline
-    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
@@ -318,9 +306,6 @@ contract IntegrationFinalizeRequest is IntegrationBase {
     bytes32 _responseId = _proposeResponse(_requestId);
 
     uint256 _responseCreatedAt = oracle.responseCreatedAt(_responseId);
-
-    // Pass the response deadline
-    vm.warp(_requestCreatedAt + responseDeadline);
 
     // Revert if the request is finalized without response when a response without dispute exists
     vm.expectRevert(abi.encodeWithSelector(IOracle.Oracle_FinalizableResponseExists.selector, _responseId));
