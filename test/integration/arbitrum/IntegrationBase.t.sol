@@ -243,6 +243,14 @@ contract IntegrationBase is Deploy, Test {
     vm.stopPrank();
   }
 
+  function _stakeGRT(address _sender, uint256 _amount) internal {
+    vm.startPrank(_sender);
+    deal(address(graphToken), _sender, _amount, true);
+    graphToken.approve(address(horizonStaking), _amount);
+    horizonStaking.stake(_amount);
+    vm.stopPrank();
+  }
+
   function _createProvisions() internal {
     vm.startPrank(_proposer);
     horizonStaking.provision(
@@ -304,6 +312,18 @@ contract IntegrationBase is Deploy, Test {
   function _addToProvision(address _sender, uint256 _amount) internal {
     vm.prank(_sender);
     horizonStaking.addToProvision(_sender, address(horizonAccountingExtension), _amount);
+  }
+
+  function _createProvision(address _sender, uint256 _amount) internal {
+    vm.startPrank(_sender);
+    horizonStaking.provision(
+      _sender,
+      address(horizonAccountingExtension),
+      _amount,
+      horizonAccountingExtension.MAX_VERIFIER_CUT(),
+      horizonAccountingExtension.MIN_THAWING_PERIOD()
+    );
+    vm.stopPrank();
   }
 
   function _thaw(address _sender, uint256 _amount) internal {

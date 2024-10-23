@@ -386,6 +386,80 @@ contract IntegrationBondEscalation is IntegrationBase {
     _claimEscalationReward(_disputeId, _pledgerFor);
   }
 
+  function test_ClaimEscalationReward_DisputerWon_ManualSlash() public {
+    // Create a new pledger
+    address _pledgerFor2 = makeAddr('pledgerFor2');
+    _stakeGRT(_pledgerFor2, disputeBondSize * maxNumberOfEscalations);
+    _createProvision(_pledgerFor2, disputeBondSize * maxNumberOfEscalations);
+
+    // Pledge against the dispute
+    _pledgeAgainstDispute(_requestId, _disputeId);
+
+    // Pledge for the dispute, twice
+    _pledgeForDispute(_requestId, _disputeId);
+    _pledgeForDispute(_pledgerFor2, _requestId, _disputeId);
+
+    // Pass the dispute deadline and the tying buffer
+    vm.warp(_disputeCreatedAt + disputeDeadline + tyingBuffer + 1);
+
+    // Settle the bond escalation
+    _settleBondEscalation(_requestId, _responseId, _disputeId);
+
+    assertEq(graphToken.balanceOf(address(horizonAccountingExtension)), 0);
+
+    horizonAccountingExtension.slash(_disputeId, 1, 1);
+
+    assertEq(graphToken.balanceOf(address(horizonAccountingExtension)), disputeBondSize);
+
+    // Slashing manually should increase the balance for the dispute
+    assertEq(horizonAccountingExtension.disputeBalance(_disputeId), disputeBondSize);
+
+    // Try to slash a lot of people
+    horizonAccountingExtension.slash(_disputeId, 100, 100);
+
+    // Dispute balance should remain equal
+    assertEq(horizonAccountingExtension.disputeBalance(_disputeId), disputeBondSize);
+
+    // Claim the escalation rewards
+    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerAgainst);
+
+    // Pledger against doesn't get any reward so the disputeBalance should remain the same
+    assertEq(horizonAccountingExtension.disputeBalance(_disputeId), disputeBondSize);
+
+    // The first pledger for claims their reward and gets half the total amount from the pledger against
+    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerFor);
+    assertEq(horizonAccountingExtension.disputeBalance(_disputeId), disputeBondSize / 2);
+
+    // The pledges for the pledgerFor2 and half of the pledge from the pledgerAgainst are still in the contract
+    assertEq(horizonAccountingExtension.pledges(_disputeId), disputeBondSize + disputeBondSize / 2);
+
+    // The second pledger for claims their reward and gets half the total amount from the pledger against
+    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledgerFor2);
+    assertEq(horizonAccountingExtension.disputeBalance(_disputeId), 0);
+
+    // Assert HorizonAccountingExtension::claimEscalationReward
+    assertTrue(horizonAccountingExtension.pledgerClaimed(_requestId, _pledgerFor));
+    assertTrue(horizonAccountingExtension.pledgerClaimed(_requestId, _pledgerAgainst));
+    assertTrue(horizonAccountingExtension.pledgerClaimed(_requestId, _pledgerFor2));
+    assertEq(horizonAccountingExtension.pledges(_disputeId), 0);
+    assertEq(horizonAccountingExtension.totalBonded(_pledgerFor), 0);
+    assertEq(horizonAccountingExtension.totalBonded(_pledgerAgainst), 0);
+    assertEq(horizonAccountingExtension.totalBonded(_pledgerFor2), 0);
+
+    // Assert HorizonStaking::slash
+    IHorizonStaking.Provision memory _pledgerForProvision =
+      horizonStaking.getProvision(_pledgerFor, address(horizonAccountingExtension));
+    IHorizonStaking.Provision memory _pledgerAgainstProvision =
+      horizonStaking.getProvision(_pledgerAgainst, address(horizonAccountingExtension));
+    assertEq(_pledgerForProvision.tokens, disputeBondSize * maxNumberOfEscalations);
+    assertEq(_pledgerAgainstProvision.tokens, disputeBondSize * maxNumberOfEscalations - disputeBondSize);
+
+    // Assert GraphToken::transfer
+    assertEq(graphToken.balanceOf(_pledgerFor), disputeBondSize / 2);
+    assertEq(graphToken.balanceOf(_pledgerFor2), disputeBondSize / 2);
+    assertEq(graphToken.balanceOf(_pledgerAgainst), 0);
+  }
+
   function test_ClaimEscalationReward_DisputerLost() public {
     // Revert if the bond escalation has not been settled
     vm.expectRevert(IHorizonAccountingExtension.HorizonAccountingExtension_NoEscalationResult.selector);
