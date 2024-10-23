@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@defi-wonderland/prophet-core": "0.0.0-96d1084b",
-    "@defi-wonderland/prophet-modules": "0.0.0-b3fa5d2c"
+    "@defi-wonderland/prophet-modules": "0.0.0-b72dcda6"
   },
   "devDependencies": {
     "@commitlint/cli": "19.3.0",
