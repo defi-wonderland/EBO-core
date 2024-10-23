@@ -39,18 +39,8 @@ contract IntegrationDisputeResponse is IntegrationBase {
     vm.expectRevert(IBondEscalationModule.BondEscalationModule_DisputeWindowOver.selector);
     _disputeResponse(_requestId, _responseId);
 
-    // TODO: Commented out because of a bug in prophet core dispute module
-    // Fix after this task is done https://linear.app/defi-wonderland/issue/OPO-669/incorrect-validation-in-bondescalationmodule
-
-    // Pass the dispute deadline
-    // vm.warp(_responseCreation + disputeDeadline + 1);
-
-    // Revert if the bond escalation deadline has passed
-    // vm.expectRevert(IBondEscalationModule.BondEscalationModule_BondEscalationOver.selector);
-    // _disputeResponse(_requestId, _responseId);
-
-    // Do not pass the dispute deadline
-    vm.warp(_responseCreation + disputeDisputeWindow - 1);
+    // Do not pass the dispute window
+    vm.warp(_responseCreation + disputeDisputeWindow);
 
     // Thaw some tokens
     _thaw(_disputer, 1);

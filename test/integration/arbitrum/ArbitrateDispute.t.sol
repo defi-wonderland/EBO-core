@@ -142,14 +142,14 @@ contract IntegrationArbitrateDispute is IntegrationBase {
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Escalated);
 
     // Pass the response deadline
-    vm.warp(oracle.responseCreatedAt(_responseId) + responseDeadline);
+    vm.warp(oracle.requestCreatedAt(_requestId) + responseDeadline);
 
     // Revert if the request is finalized with response before the dispute window
     vm.expectRevert(IBondedResponseModule.BondedResponseModule_TooEarlyToFinalize.selector);
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Lost);
 
     // Pass the dispute window
-    vm.warp(oracle.disputeCreatedAt(_disputeId) + disputeDeadline + 1);
+    vm.warp(oracle.responseCreatedAt(_responseId) + responseDisputeWindow);
 
     // Arbitrate and resolve the dispute, and finalize the request with response
     _arbitrateDispute(_disputeId, IOracle.DisputeStatus.Lost);
