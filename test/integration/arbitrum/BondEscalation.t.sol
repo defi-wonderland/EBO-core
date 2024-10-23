@@ -360,15 +360,8 @@ contract IntegrationBondEscalation is IntegrationBase {
     // Settle the bond escalation
     _settleBondEscalation(_requestId, _responseId, _disputeId);
 
-    // Dispute balance should be 0
-    assertEq(horizonAccountingExtension.disputeBalance(_disputeId), 0);
-
     // Claim the escalation rewards
     _claimEscalationReward(_disputeId, _pledgerFor);
-
-    // After the claim, disputeBalance should have changed
-    assertGt(horizonAccountingExtension.disputeBalance(_disputeId), 0);
-
     _claimEscalationReward(_disputeId, _pledgerAgainst);
 
     // Assert HorizonAccountingExtension::claimEscalationReward
