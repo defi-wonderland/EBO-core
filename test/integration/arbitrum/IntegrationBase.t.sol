@@ -156,6 +156,24 @@ contract IntegrationBase is Deploy, Test {
     councilArbitrator.arbitrateDispute(_disputeId, _award);
   }
 
+  function _finalizeRequest(bytes32 _requestId, bytes32 _responseId) internal {
+    IOracle.Request memory _requestData = _requests[_requestId];
+    IOracle.Response memory _responseData = _responses[_responseId];
+
+    oracle.finalize(_requestData, _responseData);
+  }
+
+  function _releaseUnfinalizableResponseBond(bytes32 _requestId, bytes32 _responseId) internal {
+    IOracle.Request memory _requestData = _requests[_requestId];
+    IOracle.Response memory _responseData = _responses[_responseId];
+
+    bondedResponseModule.releaseUnutilizedResponse(_requestData, _responseData);
+  }
+
+  function _claimEscalationReward(bytes32 _disputeId, address _pledger) internal {
+    horizonAccountingExtension.claimEscalationReward(_disputeId, _pledger);
+  }
+
   function _addChains() internal {
     string[] memory _chainIds = _getChains();
 
