@@ -1,23 +1,28 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
-import {IBondEscalationModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
-import {IBondedResponseModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {EnumerableSet} from '@openzeppelin/contracts/utils/structs/EnumerableSet.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
-import {Arbitrable} from 'contracts/Arbitrable.sol';
-import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
-import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
+import {
+  IArbitrable,
+  IArbitratorModule,
+  IBondEscalationModule,
+  IBondedResponseModule,
+  IEBORequestCreator,
+  IEBORequestModule,
+  IEpochManager,
+  IOracle
+} from 'interfaces/IEBORequestCreator.sol';
 
-contract EBORequestCreator is IEBORequestCreator, Arbitrable {
+contract EBORequestCreator is IEBORequestCreator {
   using EnumerableSet for EnumerableSet.Bytes32Set;
 
   /// @inheritdoc IEBORequestCreator
   IOracle public immutable ORACLE;
+
+  /// @inheritdoc IEBORequestCreator
+  IArbitrable public immutable ARBITRABLE;
 
   /// @inheritdoc IEBORequestCreator
   uint256 public immutable START_EPOCH;
@@ -39,11 +44,12 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   constructor(
     IOracle _oracle,
     IEpochManager _epochManager,
-    address _arbitrator,
-    address _council,
+    IArbitrable _arbitrable,
     IOracle.Request memory _requestData
-  ) Arbitrable(_arbitrator, _council) {
+  ) {
     if (_requestData.nonce != 0) revert EBORequestCreator_InvalidNonce();
+
+    ARBITRABLE = _arbitrable;
 
     ORACLE = _oracle;
     _setEpochManager(_epochManager);
@@ -55,11 +61,11 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function createRequests(uint256 _epoch, string[] calldata _chainIds) external {
+  function createRequest(uint256 _epoch, string calldata _chainId) external {
     if (_epoch > epochManager.currentEpoch() || START_EPOCH > _epoch) revert EBORequestCreator_InvalidEpoch();
 
-    bytes32 _encodedChainId;
-    bytes32 _requestId;
+    bytes32 _encodedChainId = _encodeChainId(_chainId);
+    if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
 
     IOracle.Request memory _requestData = requestData;
 
@@ -68,32 +74,27 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
 
     _requestModuleData.epoch = _epoch;
 
-    for (uint256 _i; _i < _chainIds.length; _i++) {
-      _encodedChainId = _encodeChainId(_chainIds[_i]);
-      if (!_chainIdsAllowed.contains(_encodedChainId)) revert EBORequestCreator_ChainNotAdded();
+    bytes32 _requestId = requestIdPerChainAndEpoch[_chainId][_epoch];
 
-      _requestId = requestIdPerChainAndEpoch[_chainIds[_i]][_epoch];
+    if (
+      _requestId != bytes32(0)
+        && (ORACLE.finalizedAt(_requestId) == 0 || ORACLE.finalizedResponseId(_requestId) != bytes32(0))
+    ) revert EBORequestCreator_RequestAlreadyCreated();
 
-      if (
-        _requestId == bytes32(0)
-          || (ORACLE.finalizedAt(_requestId) > 0 && ORACLE.finalizedResponseId(_requestId) == bytes32(0))
-      ) {
-        _requestModuleData.chainId = _chainIds[_i];
-        //TODO: REWARDS
+    _requestModuleData.chainId = _chainId;
 
-        _requestData.requestModuleData = abi.encode(_requestModuleData);
+    _requestData.requestModuleData = abi.encode(_requestModuleData);
 
-        _requestId = ORACLE.createRequest(_requestData, bytes32(0));
+    _requestId = ORACLE.createRequest(_requestData, bytes32(0));
 
-        requestIdPerChainAndEpoch[_chainIds[_i]][_epoch] = _requestId;
+    requestIdPerChainAndEpoch[_chainId][_epoch] = _requestId;
 
-        emit RequestCreated(_requestId, _epoch, _chainIds[_i]);
-      }
-    }
+    emit RequestCreated(_requestId, _requestData, _epoch, _chainId);
   }
 
   /// @inheritdoc IEBORequestCreator
-  function addChain(string calldata _chainId) external onlyArbitrator {
+  function addChain(string calldata _chainId) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
     bytes32 _encodedChainId = _encodeChainId(_chainId);
     if (!_chainIdsAllowed.add(_encodedChainId)) {
       revert EBORequestCreator_ChainAlreadyAdded();
@@ -103,7 +104,8 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   }
 
   /// @inheritdoc IEBORequestCreator
-  function removeChain(string calldata _chainId) external onlyArbitrator {
+  function removeChain(string calldata _chainId) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
     bytes32 _encodedChainId = _encodeChainId(_chainId);
     if (!_chainIdsAllowed.remove(_encodedChainId)) {
       revert EBORequestCreator_ChainNotAdded();
@@ -116,7 +118,8 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   function setRequestModuleData(
     address _requestModule,
     IEBORequestModule.RequestParameters calldata _requestModuleData
-  ) external onlyArbitrator {
+  ) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
     requestData.requestModule = _requestModule;
     requestData.requestModuleData = abi.encode(_requestModuleData);
 
@@ -127,7 +130,8 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   function setResponseModuleData(
     address _responseModule,
     IBondedResponseModule.RequestParameters calldata _responseModuleData
-  ) external onlyArbitrator {
+  ) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
     requestData.responseModule = _responseModule;
     requestData.responseModuleData = abi.encode(_responseModuleData);
 
@@ -138,7 +142,8 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   function setDisputeModuleData(
     address _disputeModule,
     IBondEscalationModule.RequestParameters calldata _disputeModuleData
-  ) external onlyArbitrator {
+  ) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
     requestData.disputeModule = _disputeModule;
     requestData.disputeModuleData = abi.encode(_disputeModuleData);
 
@@ -149,25 +154,37 @@ contract EBORequestCreator is IEBORequestCreator, Arbitrable {
   /// @inheritdoc IEBORequestCreator
   function setResolutionModuleData(
     address _resolutionModule,
-    bytes calldata _resolutionModuleData
-  ) external onlyArbitrator {
+    IArbitratorModule.RequestParameters calldata _resolutionModuleData
+  ) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
     requestData.resolutionModule = _resolutionModule;
-    requestData.resolutionModuleData = _resolutionModuleData;
+    requestData.resolutionModuleData = abi.encode(_resolutionModuleData);
 
     emit ResolutionModuleDataSet(_resolutionModule, _resolutionModuleData);
   }
 
   /// @inheritdoc IEBORequestCreator
-  function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external onlyArbitrator {
+  function setFinalityModuleData(address _finalityModule) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
     requestData.finalityModule = _finalityModule;
-    requestData.finalityModuleData = _finalityModuleData;
 
-    emit FinalityModuleDataSet(_finalityModule, _finalityModuleData);
+    emit FinalityModuleDataSet(_finalityModule, new bytes(0));
   }
 
   /// @inheritdoc IEBORequestCreator
-  function setEpochManager(IEpochManager _epochManager) external onlyArbitrator {
+  function setEpochManager(IEpochManager _epochManager) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
     _setEpochManager(_epochManager);
+  }
+
+  /// @inheritdoc IEBORequestCreator
+  function getRequestData() external view returns (IOracle.Request memory _requestData) {
+    _requestData = requestData;
+  }
+
+  /// @inheritdoc IEBORequestCreator
+  function getAllowedChainIds() external view returns (bytes32[] memory _chainIds) {
+    _chainIds = _chainIdsAllowed.values();
   }
 
   /**

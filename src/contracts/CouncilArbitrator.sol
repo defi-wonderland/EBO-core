@@ -1,29 +1,27 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
-import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 import {ValidatorLib} from '@defi-wonderland/prophet-core/solidity/libraries/ValidatorLib.sol';
 import {IArbitrator} from '@defi-wonderland/prophet-modules/solidity/interfaces/IArbitrator.sol';
-import {IArbitratorModule} from
-  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 
-import {Arbitrable} from 'contracts/Arbitrable.sol';
-import {ICouncilArbitrator} from 'interfaces/ICouncilArbitrator.sol';
+import {IArbitrable, IArbitratorModule, ICouncilArbitrator, IOracle} from 'interfaces/ICouncilArbitrator.sol';
 
 /**
  * @title CouncilArbitrator
  * @notice Resolves disputes by arbitration by The Graph
  */
-contract CouncilArbitrator is Arbitrable, ICouncilArbitrator {
+contract CouncilArbitrator is ICouncilArbitrator {
   using ValidatorLib for IOracle.Dispute;
 
   /// @inheritdoc ICouncilArbitrator
   IOracle public immutable ORACLE;
   /// @inheritdoc ICouncilArbitrator
   IArbitratorModule public immutable ARBITRATOR_MODULE;
+  /// @inheritdoc ICouncilArbitrator
+  IArbitrable public immutable ARBITRABLE;
 
   /// @inheritdoc ICouncilArbitrator
-  mapping(bytes32 _disputeId => ResolutionParameters _resolutionData) public resolutions;
+  mapping(bytes32 _disputeId => ResolutionParameters _resolutionParams) public resolutions;
   /// @inheritdoc IArbitrator
   mapping(bytes32 _disputeId => IOracle.DisputeStatus _status) public getAnswer;
 
@@ -38,16 +36,12 @@ contract CouncilArbitrator is Arbitrable, ICouncilArbitrator {
   /**
    * @notice Constructor
    * @param _arbitratorModule The address of the Arbitrator Module
-   * @param _arbitrator The address of The Graph's Arbitrator
-   * @param _council The address of The Graph's Council
+   * @param _arbitrable The address of the Arbitrable contract
    */
-  constructor(
-    IArbitratorModule _arbitratorModule,
-    address _arbitrator,
-    address _council
-  ) Arbitrable(_arbitrator, _council) {
+  constructor(IArbitratorModule _arbitratorModule, IArbitrable _arbitrable) {
     ORACLE = _arbitratorModule.ORACLE();
     ARBITRATOR_MODULE = _arbitratorModule;
+    ARBITRABLE = _arbitrable;
   }
 
   /// @inheritdoc IArbitrator
@@ -64,18 +58,33 @@ contract CouncilArbitrator is Arbitrable, ICouncilArbitrator {
   }
 
   /// @inheritdoc ICouncilArbitrator
-  function resolveDispute(bytes32 _disputeId, IOracle.DisputeStatus _status) external onlyArbitrator {
-    ResolutionParameters memory _resolutionData = resolutions[_disputeId];
+  function arbitrateDispute(bytes32 _disputeId, IOracle.DisputeStatus _award) external {
+    ARBITRABLE.validateArbitrator(msg.sender);
 
-    if (_resolutionData.dispute.disputer == address(0)) revert CouncilArbitrator_InvalidResolution();
-    if (_status <= IOracle.DisputeStatus.Escalated) revert CouncilArbitrator_InvalidResolutionStatus();
-    if (getAnswer[_disputeId] != IOracle.DisputeStatus.None) revert CouncilArbitrator_DisputeAlreadyResolved();
+    ResolutionParameters memory _resolutionParams = resolutions[_disputeId];
 
-    getAnswer[_disputeId] = _status;
+    if (_resolutionParams.dispute.disputer == address(0)) revert CouncilArbitrator_InvalidDispute();
+    if (_award <= IOracle.DisputeStatus.Escalated) revert CouncilArbitrator_InvalidAward();
+    if (getAnswer[_disputeId] != IOracle.DisputeStatus.None) revert CouncilArbitrator_DisputeAlreadyArbitrated();
 
-    ORACLE.resolveDispute(_resolutionData.request, _resolutionData.response, _resolutionData.dispute);
-    ORACLE.finalize(_resolutionData.request, _resolutionData.response);
+    getAnswer[_disputeId] = _award;
 
-    emit DisputeResolved(_disputeId, _status);
+    ORACLE.resolveDispute(_resolutionParams.request, _resolutionParams.response, _resolutionParams.dispute);
+
+    // If the request was not finalized, finalize it
+    if (ORACLE.finalizedAt(_resolutionParams.dispute.requestId) == 0) {
+      // If the dispute was lost, finalize with response
+      if (_award != IOracle.DisputeStatus.Lost) {
+        _resolutionParams.response.requestId = 0;
+      }
+      ORACLE.finalize(_resolutionParams.request, _resolutionParams.response);
+    }
+
+    emit DisputeArbitrated(_disputeId, _award);
+  }
+
+  /// @inheritdoc ICouncilArbitrator
+  function getResolution(bytes32 _disputeId) external view returns (ResolutionParameters memory _resolutionParams) {
+    _resolutionParams = resolutions[_disputeId];
   }
 }

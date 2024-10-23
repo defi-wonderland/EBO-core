@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
@@ -13,7 +13,7 @@ import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
  * @title EBORequestModule
  * @notice Module allowing users to create a request for RPC data for a specific epoch
  */
-interface IEBORequestModule is IRequestModule, IArbitrable {
+interface IEBORequestModule is IRequestModule {
   /*///////////////////////////////////////////////////////////////
                               STRUCTS
   //////////////////////////////////////////////////////////////*/
@@ -37,10 +37,16 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Emitted when the EBORequestCreator is set
+   * @notice Emitted when the EBORequestCreator is added
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  event SetEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
+  event AddEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
+
+  /**
+   * @notice Emitted when an EBORequestCreator is removed
+   * @param _eboRequestCreator The address of the EBORequestCreator
+   */
+  event RemoveEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
 
   /*///////////////////////////////////////////////////////////////
                               ERRORS
@@ -56,10 +62,16 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Returns the address of the EBORequestCreator
-   * @return _eboRequestCreator The address of the EBORequestCreator
+   * @notice Returns the address of the arbitrable contract
+   * @return _ARBITRABLE The address of the arbitrable contract
    */
-  function eboRequestCreator() external view returns (IEBORequestCreator _eboRequestCreator);
+  function ARBITRABLE() external view returns (IArbitrable _ARBITRABLE);
+
+  /**
+   * @notice Returns the EBORequestCreators allowed
+   * @return _eboRequestCreators The EBORequestCreators allowed
+   */
+  function getAllowedEBORequestCreators() external view returns (address[] memory _eboRequestCreators);
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC
@@ -75,24 +87,18 @@ interface IEBORequestModule is IRequestModule, IArbitrable {
   function createRequest(bytes32 _requestId, bytes calldata _data, address _requester) external;
 
   /**
-   * @notice Finalizes the request by paying the proposer for the response or releasing the requester's bond if no response was submitted
-   * @dev Callable only by the Oracle
-   * @param _request The request being finalized
-   * @param _response The final response
-   * @param _finalizer The address that initiated the finalization
-   */
-  function finalizeRequest(
-    IOracle.Request calldata _request,
-    IOracle.Response calldata _response,
-    address _finalizer
-  ) external;
-
-  /**
-   * @notice Sets the address of the EBORequestCreator
+   * @notice Adds the address of the EBORequestCreator
    * @dev Callable only by The Graph's Arbitrator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
+  function addEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
+
+  /**
+   * @notice Removes an EBORequestCreator
+   * @dev Callable only by The Graph's Arbitrator
+   * @param _eboRequestCreator The address of the EBORequestCreator
+   */
+  function removeEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
 
   /**
    * @notice Determines how to decode the inputted request data

@@ -1,13 +1,16 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 import {IBondEscalationModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/dispute/IBondEscalationModule.sol';
+import {IArbitratorModule} from
+  '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
 import {IBondedResponseModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/response/IBondedResponseModule.sol';
 import {IEpochManager} from 'interfaces/external/IEpochManager.sol';
 
+import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
 interface IEBORequestCreator {
@@ -18,10 +21,13 @@ interface IEBORequestCreator {
   /**
    * @notice Emitted when a request is created
    * @param _requestId The id of the request
+   * @param _request The request created
    * @param _epoch The epoch of the request
    * @param _chainId The chain id of the request
    */
-  event RequestCreated(bytes32 indexed _requestId, uint256 indexed _epoch, string indexed _chainId);
+  event RequestCreated(
+    bytes32 indexed _requestId, IOracle.Request _request, uint256 indexed _epoch, string indexed _chainId
+  );
 
   /**
    * @notice Emitted when a chain is added
@@ -65,7 +71,9 @@ interface IEBORequestCreator {
    * @param _resolutionModule The resolution module
    * @param _resolutionModuleData The resolution module data
    */
-  event ResolutionModuleDataSet(address indexed _resolutionModule, bytes _resolutionModuleData);
+  event ResolutionModuleDataSet(
+    address indexed _resolutionModule, IArbitratorModule.RequestParameters _resolutionModuleData
+  );
 
   /**
    * @notice Emitted when the finality data module is set
@@ -94,6 +102,11 @@ interface IEBORequestCreator {
   error EBORequestCreator_ChainAlreadyAdded();
 
   /**
+   * @notice Thrown when the request is already created
+   */
+  error EBORequestCreator_RequestAlreadyCreated();
+
+  /**
    * @notice Thrown when the chain is not added
    */
   error EBORequestCreator_ChainNotAdded();
@@ -118,6 +131,12 @@ interface IEBORequestCreator {
    * @return _START_EPOCH The start epoch
    */
   function START_EPOCH() external view returns (uint256 _START_EPOCH);
+
+  /**
+   * @notice Returns the address of the arbitrable contract
+   * @return _ARBITRABLE The address of the arbitrable contract
+   */
+  function ARBITRABLE() external view returns (IArbitrable _ARBITRABLE);
 
   /**
    * @notice The epoch manager contract
@@ -159,6 +178,12 @@ interface IEBORequestCreator {
     );
 
   /**
+   * @notice The request data
+   * @return _requestData The request data
+   */
+  function getRequestData() external view returns (IOracle.Request memory _requestData);
+
+  /**
    * @notice The request id per chain and epoch
    * @param _chainId The chain id
    * @param _epoch The epoch
@@ -169,16 +194,22 @@ interface IEBORequestCreator {
     uint256 _epoch
   ) external view returns (bytes32 _requestId);
 
+  /**
+   * @notice Returns the allowed chain ids
+   * @return _chainIds The allowed chain ids
+   */
+  function getAllowedChainIds() external view returns (bytes32[] memory _chainIds);
+
   /*///////////////////////////////////////////////////////////////
                             LOGIC
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Create requests
+   * @notice Create request
    * @param _epoch The epoch of the request
-   * @param _chainIds The chain ids to update
+   * @param _chainId The chain id to update
    */
-  function createRequests(uint256 _epoch, string[] calldata _chainIds) external;
+  function createRequest(uint256 _epoch, string calldata _chainId) external;
 
   /**
    * @notice Add a chain to the allowed chains which can be updated
@@ -227,14 +258,16 @@ interface IEBORequestCreator {
    * @param _resolutionModule The resolution module
    * @param _resolutionModuleData The resolution module data
    */
-  function setResolutionModuleData(address _resolutionModule, bytes calldata _resolutionModuleData) external;
+  function setResolutionModuleData(
+    address _resolutionModule,
+    IArbitratorModule.RequestParameters calldata _resolutionModuleData
+  ) external;
 
   /**
    * @notice Set the finality data module
    * @param _finalityModule The finality module
-   * @param _finalityModuleData The finality module data
    */
-  function setFinalityModuleData(address _finalityModule, bytes calldata _finalityModuleData) external;
+  function setFinalityModuleData(address _finalityModule) external;
 
   /**
    * @notice Set the epoch manager

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
@@ -6,13 +6,14 @@ import {IFinalityModule} from '@defi-wonderland/prophet-core/solidity/interfaces
 
 import {IArbitrable} from 'interfaces/IArbitrable.sol';
 import {IEBORequestCreator} from 'interfaces/IEBORequestCreator.sol';
+import {IEBORequestModule} from 'interfaces/IEBORequestModule.sol';
 
 /**
  * @title EBOFinalityModule
  * @notice Module allowing users to index data into the subgraph
  * as a result of a request being finalized
  */
-interface IEBOFinalityModule is IFinalityModule, IArbitrable {
+interface IEBOFinalityModule is IFinalityModule {
   /*///////////////////////////////////////////////////////////////
                               EVENTS
   //////////////////////////////////////////////////////////////*/
@@ -34,10 +35,16 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
   event AmendEpoch(uint256 indexed _epoch, string indexed _chainId, uint256 _blockNumber);
 
   /**
-   * @notice Emitted when the EBORequestCreator is set
+   * @notice Emitted when the EBORequestCreator is added
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  event SetEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
+  event AddEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
+
+  /**
+   * @notice Emitted when an EBORequestCreator is removed
+   * @param _eboRequestCreator The address of the EBORequestCreator
+   */
+  event RemoveEBORequestCreator(IEBORequestCreator indexed _eboRequestCreator);
 
   /*///////////////////////////////////////////////////////////////
                               ERRORS
@@ -58,10 +65,16 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Returns the address of the EBORequestCreator
-   * @return _eboRequestCreator The address of the EBORequestCreator
+   * @notice Returns the address of the arbitrable contract
+   * @return _ARBITRABLE The address of the arbitrable contract
    */
-  function eboRequestCreator() external view returns (IEBORequestCreator _eboRequestCreator);
+  function ARBITRABLE() external view returns (IArbitrable _ARBITRABLE);
+
+  /**
+   * @notice Returns the EBORequestCreators allowed
+   * @return _eboRequestCreators The EBORequestCreators allowed
+   */
+  function getAllowedEBORequestCreators() external view returns (address[] memory _eboRequestCreators);
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC
@@ -90,9 +103,33 @@ interface IEBOFinalityModule is IFinalityModule, IArbitrable {
   function amendEpoch(uint256 _epoch, string[] calldata _chainIds, uint256[] calldata _blockNumbers) external;
 
   /**
-   * @notice Sets the address of the EBORequestCreator
+   * @notice Adds the address of the EBORequestCreator
    * @dev Callable only by The Graph's Arbitrator
    * @param _eboRequestCreator The address of the EBORequestCreator
    */
-  function setEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
+  function addEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
+
+  /**
+   * @notice Removes the address of the EBORequestCreator
+   * @dev Callable only by The Graph's Arbitrator
+   * @param _eboRequestCreator The address of the EBORequestCreator
+   */
+  function removeEBORequestCreator(IEBORequestCreator _eboRequestCreator) external;
+
+  /**
+   * @notice Decodes the request data
+   * @param _data The request data
+   * @return _params The decoded request data
+   */
+  function decodeRequestData(bytes calldata _data)
+    external
+    pure
+    returns (IEBORequestModule.RequestParameters memory _params);
+
+  /**
+   * @notice Decodes the response data
+   * @param _data The response data
+   * @return _block The decoded response data which is the block number
+   */
+  function decodeResponseData(bytes calldata _data) external pure returns (uint256 _block);
 }

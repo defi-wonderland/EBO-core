@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 /**
@@ -53,21 +53,26 @@ interface IArbitrable {
 
   /**
    * @notice Returns the address of The Graph's Arbitrator
-   * @return _arbitrator The address of The Graph's Arbitrator
+   * @return __arbitrator The address of The Graph's Arbitrator
    */
-  function arbitrator() external view returns (address _arbitrator);
+  function arbitrator() external view returns (address __arbitrator);
 
   /**
    * @notice Returns the address of The Graph's Council
-   * @return _council The address of The Graph's Council
+   * @return __council The address of The Graph's Council
    */
-  function council() external view returns (address _council);
+  function council() external view returns (address __council);
 
   /**
    * @notice Returns the address of the pending The Graph's Council
-   * @return _pendingCouncil The address of the pending The Graph's Council
+   * @return __pendingCouncil The address of the pending The Graph's Council
    */
-  function pendingCouncil() external view returns (address _pendingCouncil);
+  function pendingCouncil() external view returns (address __pendingCouncil);
+
+  /**
+   * @notice Checks that the caller is The Graph's Arbitrator
+   */
+  function validateArbitrator(address _caller) external view;
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC

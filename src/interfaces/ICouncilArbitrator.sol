@@ -1,10 +1,12 @@
-// SPDX-License-Identifier: UNLICENSED
+// SPDX-License-Identifier: GPL-3.0
 pragma solidity 0.8.26;
 
 import {IOracle} from '@defi-wonderland/prophet-core/solidity/interfaces/IOracle.sol';
 import {IArbitrator} from '@defi-wonderland/prophet-modules/solidity/interfaces/IArbitrator.sol';
 import {IArbitratorModule} from
   '@defi-wonderland/prophet-modules/solidity/interfaces/modules/resolution/IArbitratorModule.sol';
+
+import {IArbitrable} from 'interfaces/IArbitrable.sol';
 
 /**
  * @title CouncilArbitrator
@@ -16,7 +18,7 @@ interface ICouncilArbitrator is IArbitrator {
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Parameters of the resolution as stored in the module
+   * @notice Parameters of the resolution as stored in the contract
    * @param request The request data
    * @param response The response data
    * @param dispute The dispute data
@@ -43,11 +45,11 @@ interface ICouncilArbitrator is IArbitrator {
   );
 
   /**
-   * @notice Emitted when a dispute is resolved by The Graph's Arbitrator
-   * @param _disputeId The ID of the dispute that was resolved
-   * @param _status The final result of the resolution
+   * @notice Emitted when a dispute is arbitrated by The Graph's Arbitrator
+   * @param _disputeId The ID of the dispute that was arbitrated
+   * @param _award The final result of the resolution
    */
-  event DisputeResolved(bytes32 indexed _disputeId, IOracle.DisputeStatus _status);
+  event DisputeArbitrated(bytes32 indexed _disputeId, IOracle.DisputeStatus _award);
 
   /*///////////////////////////////////////////////////////////////
                               ERRORS
@@ -59,19 +61,19 @@ interface ICouncilArbitrator is IArbitrator {
   error CouncilArbitrator_OnlyArbitratorModule();
 
   /**
-   * @notice Thrown when trying to resolve a dispute with no pending resolution
+   * @notice Thrown when trying to arbitrate a dispute with no pending resolution
    */
-  error CouncilArbitrator_InvalidResolution();
+  error CouncilArbitrator_InvalidDispute();
 
   /**
-   * @notice Thrown when trying to resolve a dispute with an invalid status
+   * @notice Thrown when trying to arbitrate a dispute with an invalid award
    */
-  error CouncilArbitrator_InvalidResolutionStatus();
+  error CouncilArbitrator_InvalidAward();
 
   /**
-   * @notice Thrown when trying to resolve a dispute that is already resolved
+   * @notice Thrown when trying to arbitrate a dispute that is already arbitrated
    */
-  error CouncilArbitrator_DisputeAlreadyResolved();
+  error CouncilArbitrator_DisputeAlreadyArbitrated();
 
   /*///////////////////////////////////////////////////////////////
                               VARIABLES
@@ -90,28 +92,39 @@ interface ICouncilArbitrator is IArbitrator {
   function ARBITRATOR_MODULE() external view returns (IArbitratorModule _arbitratorModule);
 
   /**
+   * @notice Returns the address of the arbitrable contract
+   * @return _ARBITRABLE The address of the arbitrable contract
+   */
+  function ARBITRABLE() external view returns (IArbitrable _ARBITRABLE);
+
+  /**
    * @notice Returns the resolution data for a dispute
    * @param _disputeId The ID of the dispute
    * @return _request The request data
    * @return _response The response data
    * @return _dispute The dispute data
    */
-  function resolutions(
-    bytes32 _disputeId
-  )
+  function resolutions(bytes32 _disputeId)
     external
     view
     returns (IOracle.Request memory _request, IOracle.Response memory _response, IOracle.Dispute memory _dispute);
+
+  /**
+   * @notice Returns the resolution parameters for a dispute
+   * @param _disputeId The ID of the dispute
+   * @return _resolutionParams The resolution parameters
+   */
+  function getResolution(bytes32 _disputeId) external view returns (ResolutionParameters memory _resolutionParams);
 
   /*///////////////////////////////////////////////////////////////
                               LOGIC
   //////////////////////////////////////////////////////////////*/
 
   /**
-   * @notice Publishes the result, resolves a dispute and finalizes a request
+   * @notice Publishes the arbitration award, resolves a dispute and, if applicable, finalizes a request
    * @dev Callable only by The Graph's Arbitrator
    * @param _disputeId The ID of the dispute
-   * @param _status The result of the resolution for the dispute
+   * @param _award The result of the resolution for the dispute
    */
-  function resolveDispute(bytes32 _disputeId, IOracle.DisputeStatus _status) external;
+  function arbitrateDispute(bytes32 _disputeId, IOracle.DisputeStatus _award) external;
 }
